@@ -51,7 +51,7 @@ export default {
     props:['navOfChild'],
     data () {
     return {
-      drawer: true,
+      drawer: false,
       items: [
         { title: 'Dashboard', icon: 'mdi-view-dashboard' },
         { title: 'Photos', icon: 'mdi-image' },
@@ -66,9 +66,6 @@ export default {
       navOfChild: function(newVal, oldVal) {
         this.drawer = !this.drawer
       },
-      drawer: function(newVal, oldVal) {
-        this.$emit('navState', this.drawer);
-      }
   },
 
 }
