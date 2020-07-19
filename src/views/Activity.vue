@@ -4,18 +4,16 @@
         <v-col cols="12">
           <v-row>
             <v-card
-              id="book_list"
               v-for="book in books"
               :key="book.id"
-              :book_id="book.id"
-              :title="book.title"
-              class="ma-6 pa-14"
+              :style="{border: '1px solid black', textAlign: 'center'}"
+              class="book_list ma-6 pa-14"
               outlined
               width=240px
               height="200px"
-              :click="ser"
+              @click="bookClicked(book.id)"
             >
-              {{ book.id }}
+            {{ book.title }}
             </v-card>
           </v-row>
         </v-col>
@@ -41,18 +39,14 @@ export default {
       ]
     }
   },
-
   methods: {
-    test(e) {
-      alert(e);
-    },
+    bookClicked(b) {
+      var router = this.$router;
+      router.push({ name: 'ActivityChoose' , params: { bookId: b }});
+    }
   },
 }
 </script>
 
-<style>
-#book_list{
-  text-align: center;
-  border:1px solid black
-}
+<style scoped>
 </style>

@@ -30,6 +30,21 @@ Vue.use(VueRouter)
     name: 'ActivityList',
     component: () => import('../views/ActivityList.vue')
   },
+  {
+    path: '/activity/choose',
+    name: 'ActivityChoose',
+    component: () => import('../views/ActivityChoose.vue')
+  },
+  {
+    path: '/quizgame',
+    name: 'QuizGame',
+    component: () => import('../views/QuizGame.vue')
+  },
+  {
+    path: '/mindmap',
+    name: 'MindMap',
+    component: () => import('../views/MindMap.vue')
+  },
 ]
 
 const router = new VueRouter({
