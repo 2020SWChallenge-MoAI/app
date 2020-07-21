@@ -17,72 +17,81 @@
 </template>
 
 <script>
-import D3Network from 'vue-d3-network';
+import D3Network from "vue-d3-network";
 import Mindmap from "../components/Mindmap";
 
 export default {
-    data: function() {
-        return {
-            nodes: [
-                {id: 1, name: "Node 1"},
-                {id: 2, name: "Node 2"},
-                {id: 3, name: "Node 3"},
-                {id: 4, name: "Node 4"},
-            ],
-            links: [
-                {id: 1, sid: 1, tid: 2, _color: "black"},
-                {id: 1, sid: 1, tid: 3, _color: "black"},
-                {id: 1, sid: 1, tid: 4, _color: "black"},
-            ],
-            options: {
-                force: 10000,
-                nodeSize: 10,
-                linkWidth: 2
-            },
-            mindmapData:
-            {
-                text: "Level 1",
+  data: function() {
+    return {
+      /*
+          nodes: [
+              {id: 1, name: "Node 1"},
+              {id: 2, name: "Node 2"},
+              {id: 3, name: "Node 3"},
+              {id: 4, name: "Node 4"},
+          ],
+          links: [
+              {id: 1, sid: 1, tid: 2, _color: "black"},
+              {id: 1, sid: 1, tid: 3, _color: "black"},
+              {id: 1, sid: 1, tid: 4, _color: "black"},
+          ],
+          options: {
+              force: 10000,
+              nodeSize: 10,
+              linkWidth: 2
+          },*/
+      mindmapData: {
+        text: "Level 1 asfdasfdasdf",
+        children: [
+          {
+            text: "Level 2-1",
+            children: [
+              {
+                text: "Level 3-1",
+                children: []
+              },
+              {
+                text: "Level 3-2",
+                children: []
+              }
+            ]
+          },
+          {
+            text: "Level 2-2",
+            children: [
+              {
+                text: "백지연",
+                children: []
+              },
+              {
+                text: "Level 3-4",
                 children: [
-                    {
-                        text: "Level 2-1",
-                        children: [
-                            {
-                                text: "Level 3-1",
-                                children: []
-                            },
-                            {
-                                text: "Level 3-2",
-                                children: []
-                            },
-                        ]
-                    },
-                    {
-                        text: "Level 2-2",
-                        children: [
-                            {
-                                text: "Level 3-3",
-                                children: []
-                            },
-                            {
-                                text: "Level 3-4",
-                                children: []
-                            },
-                        ]
-                    },
-                    {
-                        text: "Level 2-3",
-                        children: []
-                    }
-
+                  {
+                    text: "동해물과 백두산이",
+                    children: []
+                  }
                 ]
-            }
-        }
-    },
-    components: {
-        D3Network,
-        Mindmap
-    }
-}
+              }
+            ]
+          },
+          {
+            text: "Level 2-3",
+            children: []
+          }
+        ]
+      }
+      /*
+      mindmapData: {
+        text: "Title",
+        children: []
+      }*/
+    };
+  },
+  components: {
+    D3Network,
+    Mindmap
+  }
+};
 </script>
 
 <style>
