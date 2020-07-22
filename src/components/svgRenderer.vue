@@ -124,8 +124,6 @@
       </v-dialog>
 
     </div>
-
-    
     
   </div>
 </template>
@@ -186,10 +184,10 @@ export default {
       return "M " + d.M + " Q " + d.Q.join(" ") + " " + d.X;
     },
     getSelectedNodeAncestors() {
-      console.log(this.selectedNode);
+      //console.log(this.selectedNode);
     }, 
     addDialog_Apply() {
-      this.getSelectedNodeAncestors();
+      //this.getSelectedNodeAncestors();
     },
   }
 };
