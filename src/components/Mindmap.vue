@@ -64,6 +64,7 @@ export default {
     this.nodes[0].fy = this.center.y;
 
     var props = {
+      mindmapData: this.mindmapData,
       size: this.size,
       nodes: this.nodes,
       links: this.links,
@@ -104,6 +105,7 @@ export default {
 
         this.netNodes.push({
           id: curNodeId,
+          parentId: parentNodeId,
           depth: depth,
           text: text
         });

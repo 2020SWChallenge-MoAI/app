@@ -56,28 +56,90 @@
     </svg>
 
     <div class="btns">
-      <button type="button" class="btn add" disabled>
-        <i class="fas fa-plus-circle"></i>
-      </button>
-      <button type="button" class="btn edit" disabled>
-        <i class="fas fa-pen"></i>
-      </button>
-      <button type="button" class="btn delete" disabled>
-        <i class="fas fa-trash-alt"></i>
-      </button>
-      <button type="button" class="btn suggestion" disabled>
-        <i class="fas fa-lightbulb"></i>
-      </button>
+      <v-dialog v-model="addDialog" persistent max-width="600px">
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn class="btn add" :icon="true" :disabled="true" :block="true" v-bind="attrs" v-on="on">
+            <i class="fas fa-plus-circle"></i>
+          </v-btn>
+        </template>
+        <v-card>
+          <v-card-title>
+            <span class="headline">새 항목 추가하기</span>
+          </v-card-title>
+          <v-card-text>
+            <v-container>
+              <v-text-field label="내용" required></v-text-field>
+            </v-container>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue darken-1" text @click="addDialog = false">취소</v-btn>
+            <v-btn color="blue darken-1" text @click="addDialog_Apply()">적용</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <v-dialog v-model="editDialog" persistent max-width="600px">
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn class="btn edit" :icon="true" :disabled="true" :block="true" v-bind="attrs" v-on="on">
+            <i class="fas fa-pen"></i>
+          </v-btn>
+        </template>
+        <v-card>
+          <v-card-title>
+            <span class="headline">기존 항목 수정하기</span>
+          </v-card-title>
+          <v-card-text>
+            <v-container>
+              <v-text-field label="내용" required></v-text-field>
+            </v-container>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue darken-1" text @click="editDialog = false">취소</v-btn>
+            <v-btn color="blue darken-1" text @click="editDialog = false">적용</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <v-dialog v-model="deleteDialog" persistent max-width="600px">
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn class="btn edit" :icon="true" :disabled="true" :block="true" v-bind="attrs" v-on="on">
+            <i class="fas fa-trash-alt"></i>
+          </v-btn>
+        </template>
+        <v-card>
+          <v-card-title>
+            <span class="headline">삭제 확인</span>
+          </v-card-title>
+          <v-card-text>
+            선택한 항목을 삭제하시겠습니까? 선택한 항목의 하위 항목들도 함께 삭제됩니다.
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue darken-1" text @click="deleteDialog = false">취소</v-btn>
+            <v-btn color="blue darken-1" text @click="deleteDialog = false">확인</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
     </div>
+
+    
+    
   </div>
 </template>
 
 <script>
 export default {
   name: "svg-renderer",
-  props: ["size", "nodes", "links", "textSize", "selected", "selectedNode"],
+  props: ["mindmapData", "size", "nodes", "links", "textSize", "selected", "selectedNode"],
   data: function() {
-    return {};
+    return {
+      addDialog: false,
+      editDialog: false,
+      deleteDialog: false,
+    };
   },
   updated: function() {
     this.$nextTick(function() {
@@ -95,10 +157,12 @@ export default {
       if (this.selected == true) {
         this.$el.querySelectorAll(".btns .btn").forEach(function(item) {
           item.removeAttribute("disabled");
+          if(item.classList.contains("v-btn--disabled")) item.classList.remove("v-btn--disabled");
         });
       } else {
         this.$el.querySelectorAll(".btns .btn").forEach(function(item) {
           item.setAttribute("disabled");
+          if(!item.classList.contains("v-btn--disabled")) item.classList.add("v-btn--disabled");
         });
       }
     }
@@ -120,7 +184,13 @@ export default {
       d.Q = [link.source.x, link.target.y];
 
       return "M " + d.M + " Q " + d.Q.join(" ") + " " + d.X;
-    }
+    },
+    getSelectedNodeAncestors() {
+      console.log(this.selectedNode);
+    }, 
+    addDialog_Apply() {
+      this.getSelectedNodeAncestors();
+    },
   }
 };
 </script>
@@ -136,18 +206,17 @@ export default {
   position: absolute;
   bottom: 10px;
   right: 10px;
-  font-size: 40px;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   column-gap: 20px;
 }
 
 .btns .btn {
-  color: black;
+  font-size: 40px;
 }
 
-.btns .btn:disabled {
-  opacity: 0.1;
+.modal.disabled {
+  display: none;
 }
 
 .background {
