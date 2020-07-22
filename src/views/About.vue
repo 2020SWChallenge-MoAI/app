@@ -11,4 +11,4 @@ export default {
   },
   
 }
-</script>
+</script scoped>
