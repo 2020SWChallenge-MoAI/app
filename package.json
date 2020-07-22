@@ -1,5 +1,5 @@
 {
-  "name": "vue_project",
+  "name": "ddokdok",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,6 +9,7 @@
   "dependencies": {
     "@babel/polyfill": "^7.4.4",
     "core-js": "^3.6.5",
+    "register-service-worker": "^1.7.1",
     "vue": "^2.6.11",
     "vue-d3-network": "^0.1.28",
     "vue-router": "^3.2.0",
@@ -19,6 +20,7 @@
   "devDependencies": {
     "@mdi/font": "^5.3.45",
     "@vue/cli-plugin-babel": "~4.4.0",
+    "@vue/cli-plugin-pwa": "^4.4.6",
     "@vue/cli-plugin-router": "~4.4.0",
     "@vue/cli-plugin-vuex": "~4.4.0",
     "@vue/cli-service": "~4.4.0",
