@@ -4,9 +4,9 @@
       <v-app>
         <Navigation :navOfChild="nav" />
 
-          <v-content class="main">
+          <div class="main">
             <router-view/>
-          </v-content>
+          </div>
 
       </v-app>
   </div>
@@ -43,5 +43,8 @@ import Navigation from './Navigation.vue';
 
 .main {
   border:1px solid red;
+  padding-top: 64px;
+  height:100%;
+  width:100%;
 }
 </style>

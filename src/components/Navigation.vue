@@ -2,6 +2,7 @@
 <div>
     <v-navigation-drawer
         v-model="drawer"
+        id ="navigation_drawer"
         color="grey darken-1"
         left="true"
         absolute
@@ -53,9 +54,8 @@ export default {
     return {
       drawer: false,
       items: [
-        { title: 'Dashboard', icon: 'mdi-view-dashboard' },
-        { title: 'Photos', icon: 'mdi-image' },
-        { title: 'About', icon: 'mdi-help-box' },
+        { title: '활동기록', icon: 'mdi-view-dashboard' },
+        { title: '내정보', icon: 'mdi-help-box' },
       ],
       resize:true,
     }
@@ -71,6 +71,8 @@ export default {
 }
 </script>
 
-<style>
-
+<style scoped>
+#navigation_drawer {
+  padding-top: 64px;
+}
 </style>

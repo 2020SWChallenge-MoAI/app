@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div id="toolbar">
     <v-app-bar color='' dark="dark">
       <v-app-bar-nav-icon @click.stop="changeNav"></v-app-bar-nav-icon>
       <v-toolbar-title>Title</v-toolbar-title>
@@ -8,13 +8,12 @@
         <v-icon>mdi-magnify</v-icon>
       </v-btn>
       <v-btn icon>
-        <v-icon>mdi-heart</v-icon>
+        <v-icon @click="gotoHome">mdi-home</v-icon>
       </v-btn>
       <v-btn icon>
         <v-icon>mdi-dots-vertical</v-icon>
       </v-btn>
     </v-app-bar>
-
   </div>
 </template>
 
@@ -30,11 +29,22 @@
     },
     methods: {
         changeNav() {
-            this.$emit('navChange');
+          this.$emit('navChange');
+        },
+        gotoHome() {
+          var router = this.$router;
+          router.replace({ name: 'Home'});
         }
     },
   }
 </script>
 
 <style scoped>
+#toolbar{
+  position: fixed;
+  left:0;
+  right:0;
+  top:0;
+  z-index:30;
+}
 </style>

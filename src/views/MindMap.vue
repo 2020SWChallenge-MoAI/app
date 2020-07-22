@@ -1,11 +1,10 @@
 <template>
   <div id="outside">
     <div id="top">
-      <span id="bookname">{{ this.$route.params.bookId }}</span>
-
-      <span id="submitbtn">
-        <v-btn class="ma-2" x-large color="primary">제출하기</v-btn>
-      </span>
+        <span id="bookname">{{ this.$route.params.bookId }}</span>
+        <span id="submitbtn">
+            <v-btn x-large color="primary">제출하기</v-btn>
+        </span>
     </div>
 
     <hr />
