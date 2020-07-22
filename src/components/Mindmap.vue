@@ -13,14 +13,12 @@ export default {
   },
   data: function() {
     return {
-      netNodes: [],
-      netLinks: [],
       nodes: [],
       links: [],
       simulation: null,
       size: {
-        w: 500,
-        h: 500
+        w: 0,
+        h: 0
       },
       textSize: 15,
       forces: {
@@ -48,8 +46,6 @@ export default {
   },
   created: function() {
     this.convertDataIntoGraph(this.mindmapData);
-    this.buildNodes(this.netNodes);
-    this.buildLinks(this.netLinks);
   },
   mounted: function() {
     this.size.w = this.$el.clientWidth;
@@ -60,8 +56,13 @@ export default {
     })
   },
   render: function(createElement) {
-    this.nodes[0].fx = this.center.x;
-    this.nodes[0].fy = this.center.y;
+    //첫 번째 node가 최초 고정 위치로 화면 중앙을 잡는 코드
+    if(this.center.x != 0 && this.center.y != 0) {
+      if(this.nodes[0].fx === undefined && this.nodes[0].fy === undefined) {
+        this.nodes[0].fx = this.center.x;
+        this.nodes[0].fy = this.center.y;
+      }
+    }
 
     var props = {
       mindmapData: this.mindmapData,
@@ -80,6 +81,11 @@ export default {
       on: { action: this.methodCall }
     })]);
   },
+  watch: {
+    mindmapData() {
+      this.convertDataIntoGraph();
+    }
+  },
   methods: {
     convertDataIntoGraph(mindmapData) {
       var root = mindmapData;
@@ -91,33 +97,51 @@ export default {
       queue.push({
         depth: 0,
         content: root,
-        parentNodeId: undefined
+        parentNode: {
+          id: undefined
+        }
       });
 
       while (queue.length != 0) {
         var item = queue.shift();
 
         var curNodeId = nodeId++;
-        var parentNodeId = item["parentNodeId"];
+        var parentNode = item["parentNode"];
         var depth = item["depth"];
         var text = item["content"]["text"];
         var children = item["content"]["children"];
 
-        this.netNodes.push({
+        var curNode = {
           id: curNodeId,
-          parentId: parentNodeId,
+          parentId: parentNode.id,
           depth: depth,
-          text: text
-        });
+          text: text,
+          x: 0,
+          y: 0,
+          class: ["node", "depth-" + depth],
+          rx: 10,
+          ry: 10,
+          pinned: false,
+          fx: undefined,
+          fy: undefined
+        };
+
+        this.nodes.push(curNode);
 
         if (depth > 0) {
           var curLinkId = linkId++;
-          this.netLinks.push({
+
+          var curLink = {
             id: curLinkId,
-            from: parentNodeId,
-            to: curNodeId,
-            depth: depth
-          });
+            from: parentNode.id,
+            to: curNode.id,
+            depth: depth,
+            source: parentNode,
+            target: curNode,
+            class: ["link",  "depth-" + parentNode.depth]
+          };
+
+          this.links.push(curLink);
         }
 
         for (var i = 0; i < children.length; i++) {
@@ -125,10 +149,12 @@ export default {
           queue.push({
             depth: depth + 1,
             content: child,
-            parentNodeId: curNodeId
+            parentNode: curNode
           });
         }
       }
+
+      this.nodes[0].pinned = true; //0번 노드(제목) 위치 고정
     },
     methodCall (action, args) {
       let method = this[action]
@@ -136,31 +162,6 @@ export default {
         if (args) method(...args)
         else method()
       }
-    },
-    buildNodes(netNodes) {
-      var vm = this;
-      this.nodes = netNodes.map((node, index) => {
-        vm.$set(node, 'x', 0);
-        vm.$set(node, 'y', 0);
-        vm.$set(node, 'rx', node.rx);
-        vm.$set(node, 'ry', node.ry);
-        vm.$set(node, 'class', ["node",  "depth-" + node.depth]);
-
-        return node;
-      });
-
-      
-      this.nodes[0].pinned = true;
-    },
-    buildLinks(netLinks) {
-      var vm = this;
-      this.links = netLinks.map((link, index) => {
-        vm.$set(link, 'source', this.nodes[link.from]);
-        vm.$set(link, 'target', this.nodes[link.to]);
-        vm.$set(link, 'class', ["link",  "depth-" + link.source.depth]);
-
-        return link;
-      });
     },
     animate() {
       if(this.simulation) this.simulation.stop();
@@ -228,6 +229,7 @@ export default {
     },
     // -- Render helpers
     nodeClick (event, selectedNode) {
+      console.log(selectedNode.text);
       this.selected = true;
       this.selectedNode = node;
 
