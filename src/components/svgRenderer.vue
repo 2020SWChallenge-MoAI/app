@@ -96,15 +96,15 @@
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="blue darken-1" text @click="editDialog = false">취소</v-btn>
-            <v-btn color="blue darken-1" text @click="editDialog = false">적용</v-btn>
+            <v-btn color="blue darken-1" text @click="editDialog_Cancel()">취소</v-btn>
+            <v-btn color="blue darken-1" text @click="editDialog_Apply()">적용</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
 
       <v-dialog v-model="deleteDialog" persistent max-width="600px">
         <template v-slot:activator="{ on, attrs }">
-          <v-btn class="btn edit" :icon="true" :disabled="true" :block="true" v-bind="attrs" v-on="on">
+          <v-btn class="btn delete" :icon="true" :disabled="true" :block="true" v-bind="attrs" v-on="on">
             <i class="fas fa-trash-alt"></i>
           </v-btn>
         </template>
@@ -117,8 +117,8 @@
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="blue darken-1" text @click="deleteDialog = false">취소</v-btn>
-            <v-btn color="blue darken-1" text @click="deleteDialog = false">확인</v-btn>
+            <v-btn color="blue darken-1" text @click="deleteDialog_Cancel()">취소</v-btn>
+            <v-btn color="blue darken-1" text @click="deleteDialog_Apply()">확인</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -158,21 +158,11 @@ export default {
   },
   watch: {
     selected() {
-      if (this.selected == true) {
-        this.$el.querySelectorAll(".btns .btn").forEach(function(item) {
-          item.removeAttribute("disabled");
-          if(item.classList.contains("v-btn--disabled")) item.classList.remove("v-btn--disabled");
-        });
-      } else {
-        this.$el.querySelectorAll(".btns .btn").forEach(function(item) {
-          item.setAttribute("disabled");
-          if(!item.classList.contains("v-btn--disabled")) item.classList.add("v-btn--disabled");
-        });
-      }
+      this.updateBtnActivation();
     },
     selectedNode() {
-      //this.getSelectedNodeAncestors();
-      this.modelEditText = this.selectedNode.text;
+      this.updateBtnActivation();
+      this.modalEditText = this.selectedNode.text;
     }
   },
   methods: {
@@ -195,6 +185,48 @@ export default {
       d.Q = [link.source.x, link.target.y];
 
       return "M " + d.M + " Q " + d.Q.join(" ") + " " + d.X;
+    },
+    updateBtnActivation() {
+      if (this.selected === true) {
+        var target;
+        
+        //add btn
+        target = this.$el.querySelector(".btns .btn.add")
+        target.removeAttribute("disabled");
+        if(target.classList.contains("v-btn--disabled")) target.classList.remove("v-btn--disabled");
+
+        //edit btn
+        target = this.$el.querySelector(".btns .btn.edit")
+        if(this.selectedNode.id != 0) { //처음 노드(최고 노드)는 편집하면 안됨(책 제목) -> 처음 노드가 선택되면 아예 버튼 활성화를 안 시킴
+          target.removeAttribute("disabled");
+          if(target.classList.contains("v-btn--disabled")) target.classList.remove("v-btn--disabled");
+        } else {
+          target.setAttribute("disabled", true);
+          if(!target.classList.contains("v-btn--disabled")) target.classList.add("v-btn--disabled");
+        }
+
+        //delete btn
+        target = this.$el.querySelector(".btns .btn.delete")
+        if(this.selectedNode.id != 0) { //처음 노드(최고 노드)는 제거하면 안됨 -> 처음 노드가 선택되면 아예 버튼 활성화를 안 시킴
+          target.removeAttribute("disabled");
+          if(target.classList.contains("v-btn--disabled")) target.classList.remove("v-btn--disabled");
+        } else {
+          target.setAttribute("disabled", true);
+          if(!target.classList.contains("v-btn--disabled")) target.classList.add("v-btn--disabled");
+        }
+        
+        /*
+        //suggestion btn
+        var target = this.$el.querySelector(".btns .btn.add")
+        target.removeAttribute("disabled");
+        if(target.classList.contains("v-btn--disabled")) target.classList.remove("v-btn--disabled");
+        */
+      } else {
+        this.$el.querySelectorAll(".btns .btn").forEach(function(item) {
+          item.setAttribute("disabled", true);
+          if(!item.classList.contains("v-btn--disabled")) item.classList.add("v-btn--disabled");
+        });
+      }
     },
     getSelectedNodeAncestors() {
       var ancestors = [];
@@ -222,6 +254,16 @@ export default {
 
       return ancestors;
     },
+    getNewMindmapNodeId() {
+      var maxId = -1;
+      for(var node of this.nodes) {
+        if(node.id > maxId) {
+          maxId = node.id;
+        }
+      }
+
+      return maxId + 1;
+    },
     addDialog_Cancel() {
       this.modalAddText = "";
       this.addDialog = false;
@@ -231,14 +273,7 @@ export default {
       ancestors.shift();  //처음 노드(최고 노드) 제거
 
       //새 노드를 위한 id 발급 : 전체 노드들의 아이디 중 최고값 + 1
-      var maxId = -1;
-      for(var node of this.nodes) {
-        if(node.id > maxId) {
-          maxId = node.id;
-        }
-      }
-
-      var newNodeId = maxId + 1;
+      var newNodeId = this.getNewMindmapNodeId();
 
       //현재 노드(새 노드의 부모) 찾기
       var current = this.mindmapData;
@@ -248,6 +283,7 @@ export default {
         for(var child of current.children) {
           if(child.id === id) {
             current = child;
+            break;
           }
         }
       }
@@ -266,6 +302,70 @@ export default {
       this.modalAddText = "";
       this.addDialog = false;
     },
+    editDialog_Cancel() {
+      this.editDialog = false;
+    },
+    editDialog_Apply() {
+      var ancestors = this.getSelectedNodeAncestors().reverse(); //최고 노드부터 나오게 역순으로 정렬
+      ancestors.shift();  //처음 노드(최고 노드) 제거
+
+      //현재 노드 찾기
+      var current = this.mindmapData;
+      for (var ancestor of ancestors) {
+        var id = ancestor.id;
+
+        for(var child of current.children) {
+          if(child.id === id) {
+            current = child;
+            break;
+          }
+        }
+      }
+
+      //현재 노드 편집하기
+      current.text = this.modalEditText;
+
+      //update
+      this.$emit("mindmapDataUpdated", this.mindmapData);
+
+      //reset
+      this.editDialog = false;
+    },
+    deleteDialog_Cancel() {
+      this.deleteDialog = false;
+    },
+    deleteDialog_Apply() {
+      var ancestors = this.getSelectedNodeAncestors().reverse(); //최고 노드부터 나오게 역순으로 정렬
+      ancestors.shift();  //처음 노드(최고 노드) 제거
+
+      //현재 노드와 부모 노드 찾기
+      var current = this.mindmapData;
+      var parent = undefined;
+      var currentIndexInParentChildrenArr = -1;
+      for (var ancestor of ancestors) {
+        parent = current;
+        var id = ancestor.id;
+
+        for(var i = 0; i < current.children.length; i++) {
+          var child = current.children[i];
+          if(child.id === id) {
+            current = child;
+            currentIndexInParentChildrenArr = i;
+            break;
+          }
+        }
+      }
+
+      if(current.id != 0) { //처음 노드(최고 노드)는 제거하면 안됨
+        parent.children.splice(currentIndexInParentChildrenArr, 1);
+
+        //update
+        this.$emit("mindmapDataUpdated", this.mindmapData);
+      }
+
+      //reset
+      this.deleteDialog = false;
+    }
   }
 };
 </script>

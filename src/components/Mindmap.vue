@@ -43,7 +43,6 @@ export default {
     mindmapData: {
       deep: true,
       handler() {
-        console.log("watched!");
         this.convertDataIntoGraph(this.mindmapData);
         this.reset();
       }
@@ -90,7 +89,7 @@ export default {
     convertDataIntoGraph(mindmapData) {
       this.nodes = [];
       this.links = [];
-      
+
       var root = mindmapData;
       
       var linkId = 0;
