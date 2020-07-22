@@ -40,8 +40,13 @@ export default {
     }
   },
   watch: {
-    mindmapData: function(newData) {
-      convertDataIntoGraph(this.mindmapData);
+    mindmapData: {
+      deep: true,
+      handler() {
+        console.log("watched!");
+        this.convertDataIntoGraph(this.mindmapData);
+        this.reset();
+      }
     }
   },
   created: function() {
@@ -78,18 +83,16 @@ export default {
       on: { 'mousemove': this.move, '&touchmove': this.move }
     }, [createElement('svg-renderer', {
       props,
-      on: { action: this.methodCall }
+      on: { action: this.methodCall, mindmapDataUpdated: this.mindmapDataUpdated }
     })]);
-  },
-  watch: {
-    mindmapData() {
-      this.convertDataIntoGraph();
-    }
   },
   methods: {
     convertDataIntoGraph(mindmapData) {
+      this.nodes = [];
+      this.links = [];
+      
       var root = mindmapData;
-      var nodeId = 0;
+      
       var linkId = 0;
 
       var queue = [];
@@ -105,15 +108,16 @@ export default {
       while (queue.length != 0) {
         var item = queue.shift();
 
-        var curNodeId = nodeId++;
+        var curNodeId = item["content"]["id"];
         var parentNode = item["parentNode"];
+        var parentNodeId = parentNode["id"];
         var depth = item["depth"];
         var text = item["content"]["text"];
         var children = item["content"]["children"];
 
         var curNode = {
           id: curNodeId,
-          parentId: parentNode.id,
+          parentId: parentNodeId,
           depth: depth,
           text: text,
           x: 0,
@@ -133,7 +137,7 @@ export default {
 
           var curLink = {
             id: curLinkId,
-            from: parentNode.id,
+            from: parentNodeId,
             to: curNode.id,
             depth: depth,
             source: parentNode,
@@ -155,6 +159,9 @@ export default {
       }
 
       this.nodes[0].pinned = true; //0번 노드(제목) 위치 고정
+    },
+    mindmapDataUpdated(mindmapData) {
+      this.$emit("mindmapDataUpdated", mindmapData);
     },
     methodCall (action, args) {
       let method = this[action]
@@ -229,9 +236,8 @@ export default {
     },
     // -- Render helpers
     nodeClick (event, selectedNode) {
-      console.log(selectedNode.text);
       this.selected = true;
-      this.selectedNode = node;
+      this.selectedNode = selectedNode;
 
       for(var node of this.nodes) {
         if(node.id == selectedNode.id) {

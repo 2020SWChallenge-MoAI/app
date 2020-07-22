@@ -68,12 +68,12 @@
           </v-card-title>
           <v-card-text>
             <v-container>
-              <v-text-field label="내용" required></v-text-field>
+              <v-text-field label="내용" v-model="modalAddText" required></v-text-field>
             </v-container>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="blue darken-1" text @click="addDialog = false">취소</v-btn>
+            <v-btn color="blue darken-1" text @click="addDialog_Cancel()">취소</v-btn>
             <v-btn color="blue darken-1" text @click="addDialog_Apply()">적용</v-btn>
           </v-card-actions>
         </v-card>
@@ -91,7 +91,7 @@
           </v-card-title>
           <v-card-text>
             <v-container>
-              <v-text-field label="내용" required></v-text-field>
+              <v-text-field label="내용" v-model="modalEditText" required></v-text-field>
             </v-container>
           </v-card-text>
           <v-card-actions>
@@ -125,6 +125,9 @@
 
     </div>
     
+    <div class="debug" v-text="this.debug">
+    </div>
+
   </div>
 </template>
 
@@ -137,6 +140,9 @@ export default {
       addDialog: false,
       editDialog: false,
       deleteDialog: false,
+      modalAddText: "",
+      modalEditText: "",
+      debug: "null"
     };
   },
   updated: function() {
@@ -163,9 +169,16 @@ export default {
           if(!item.classList.contains("v-btn--disabled")) item.classList.add("v-btn--disabled");
         });
       }
+    },
+    selectedNode() {
+      //this.getSelectedNodeAncestors();
+      this.modelEditText = this.selectedNode.text;
     }
   },
   methods: {
+    debugFunc() {
+      return this.debug;
+    },
     joinClass(classList) {
       var arr = Array.prototype.slice.call(classList);
       return arr.join(" ");
@@ -184,10 +197,74 @@ export default {
       return "M " + d.M + " Q " + d.Q.join(" ") + " " + d.X;
     },
     getSelectedNodeAncestors() {
-      //console.log(this.selectedNode);
-    }, 
+      var ancestors = [];
+
+      var current = this.selectedNode;
+      while(true) {
+        ancestors.push({
+          id: current.id,
+          index: current.index,
+          text: current.text
+        });
+        
+        var parentId = current.parentId;
+
+        if(parentId === undefined) break;
+        else {
+          for(var node of this.nodes) {
+            if(node.id === parentId) {
+              current = node;
+              break;
+            }
+          }
+        }
+      }
+
+      return ancestors;
+    },
+    addDialog_Cancel() {
+      this.modalAddText = "";
+      this.addDialog = false;
+    },
     addDialog_Apply() {
-      //this.getSelectedNodeAncestors();
+      var ancestors = this.getSelectedNodeAncestors().reverse(); //최고 노드부터 나오게 역순으로 정렬
+      ancestors.shift();  //처음 노드(최고 노드) 제거
+
+      //새 노드를 위한 id 발급 : 전체 노드들의 아이디 중 최고값 + 1
+      var maxId = -1;
+      for(var node of this.nodes) {
+        if(node.id > maxId) {
+          maxId = node.id;
+        }
+      }
+
+      var newNodeId = maxId + 1;
+
+      //현재 노드(새 노드의 부모) 찾기
+      var current = this.mindmapData;
+      for (var ancestor of ancestors) {
+        var id = ancestor.id;
+
+        for(var child of current.children) {
+          if(child.id === id) {
+            current = child;
+          }
+        }
+      }
+
+      //현재 노드에 새 노드 추가하기
+      current.children.push({
+        id: newNodeId,
+        text: this.modalAddText,
+        children: []
+      });
+
+      //update
+      this.$emit("mindmapDataUpdated", this.mindmapData);
+
+      //reset
+      this.modalAddText = "";
+      this.addDialog = false;
     },
   }
 };

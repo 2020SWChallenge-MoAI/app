@@ -10,7 +10,7 @@
     <hr />
     <div id="mindmap">
       <!--d3-network :net-nodes="nodes" :net-links="links" :options="options" /-->
-      <mindmap :mindmapData="mindmapData" />
+      <mindmap :mindmapData="mindmapData" @mindmapDataUpdated="mindmapDataUpdated"/>
     </div>
   </div>
 </template>
@@ -22,51 +22,42 @@ import Mindmap from "../components/Mindmap";
 export default {
   data: function() {
     return {
-      /*
-          nodes: [
-              {id: 1, name: "Node 1"},
-              {id: 2, name: "Node 2"},
-              {id: 3, name: "Node 3"},
-              {id: 4, name: "Node 4"},
-          ],
-          links: [
-              {id: 1, sid: 1, tid: 2, _color: "black"},
-              {id: 1, sid: 1, tid: 3, _color: "black"},
-              {id: 1, sid: 1, tid: 4, _color: "black"},
-          ],
-          options: {
-              force: 10000,
-              nodeSize: 10,
-              linkWidth: 2
-          },*/
       mindmapData: {
-        text: "Level 1 asfdasfdasdf",
+        id: 0,
+        text: "[0] 0",
         children: [
           {
-            text: "Level 2-1",
+            id: 1,
+            text: "[1] 0-1",
             children: [
               {
-                text: "Level 3-1",
+                id: 2,
+                text: "[2] 0-1-2",
                 children: []
               },
               {
-                text: "Level 3-2",
+                id: 3,
+                text: "[3] 0-1-3",
                 children: []
               }
             ]
           },
           {
-            text: "Level 2-2",
+            id: 4,
+            text: "[4] 0-4",
             children: [
               {
-                text: "백지연",
+                id: 5,
+                text: "[5] 0-4-5",
                 children: []
               },
               {
-                text: "Level 3-4",
+                id: 6,
+                text: "[6] 0-4-6",
                 children: [
                   {
-                    text: "동해물과 백두산이",
+                    id: 7,
+                    text: "[7] 0-4-6-7",
                     children: []
                   }
                 ]
@@ -74,21 +65,22 @@ export default {
             ]
           },
           {
-            text: "Level 2-3",
+            id: 8,
+            text: "[8] 0-8",
             children: []
           }
         ]
       }
-      /*
-      mindmapData: {
-        text: "Title",
-        children: []
-      }*/
     };
   },
   components: {
     D3Network,
     Mindmap
+  },
+  methods: {
+    mindmapDataUpdated(mindmapData) {
+      this.mindmapData = mindmapData;
+    }
   }
 };
 </script>
