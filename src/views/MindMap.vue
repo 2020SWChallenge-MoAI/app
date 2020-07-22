@@ -3,7 +3,7 @@
     <div id="top">
         <span id="bookname">{{ this.$route.params.bookId }}</span>
         <span id="submitbtn">
-            <v-btn x-large color="primary">제출하기</v-btn>
+            <v-btn x-large color="primary" style="float:right;">제출하기</v-btn>
         </span>
     </div>
 
