@@ -11,7 +11,7 @@
         <v-icon @click="gotoHome">mdi-home</v-icon>
       </v-btn>
       <v-btn icon>
-        <v-icon>mdi-dots-vertical</v-icon>
+        <v-icon>mdi-logout</v-icon>
       </v-btn>
     </v-app-bar>
   </div>

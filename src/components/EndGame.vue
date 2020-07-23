@@ -1,9 +1,9 @@
 <template>
   <div>
         <div class="gameEndMessage">게임이 종료되었습니다</div>
-        <div>
-            <span>username: {{ my }}</span>
-            <span>computer: {{ computer }}</span>
+        <div class="gameResult">
+            <span style="margin:3%;">username: {{ my }}</span>
+            <span style="margin:3%;">computer: {{ computer }}</span>
         </div>
         <v-btn class="submitbtn" color="success" @click="backbtnClicked" style="margin-top: 5%;">로비로 돌아가기</v-btn>
     </div>
@@ -40,5 +40,10 @@ export default {
     width: 60%;
     margin-top: 1%;
     margin-left: 20%;
+}
+.gameResult {
+    text-align: center;
+    font-size: 20px;
+    margin-top: 5%;
 }
 </style>
