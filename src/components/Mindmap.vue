@@ -6,7 +6,8 @@ var d3 = Object.assign({}, forceSimulation);
 export default {
   name: "mindmap",
   props: {
-    mindmapData: Object
+    mindmapData: Object,
+    bookId: Number
   },
   components: {
     svgRenderer
@@ -69,6 +70,7 @@ export default {
     }
 
     var props = {
+      bookId: this.bookId,
       mindmapData: this.mindmapData,
       size: this.size,
       nodes: this.nodes,

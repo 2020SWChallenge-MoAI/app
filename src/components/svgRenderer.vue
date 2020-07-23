@@ -142,7 +142,7 @@ import axios from 'axios';
 
 export default {
   name: "svg-renderer",
-  props: ["mindmapData", "size", "nodes", "links", "textSize", "selected", "selectedNode"],
+  props: ["bookId", "mindmapData", "size", "nodes", "links", "textSize", "selected", "selectedNode"],
   data: function() {
     return {
       addBtnActive: false,
@@ -446,15 +446,15 @@ export default {
 
       var ancestors = this.getSelectedNodeAncestors().map( item => item.text );
 
-      var body = {
-        "ancestors": ancestors
-      }
-
       axios({
-        url: "http://172.26.0.1:8888/api/mind-map/suggestion/",
+        url: "api/mind-map/suggestion/",
         method: "POST",
         data: {
-          "ancestors": ancestors
+          book_id: this.bookId,
+          ancestors: ancestors
+        },
+        headers: {
+          "Access-Control-Allow-Origin": "*"
         }
       }).then(this.fetch_then.bind(this));
     },
@@ -462,6 +462,7 @@ export default {
       this.suggestions = undefined;
     },
     fetch_then(res) {
+      console.log(res);
       try {
         if(res.status === 200) { //Success
           this.suggestions = [];
