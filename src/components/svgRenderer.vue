@@ -8,7 +8,7 @@
       @touchend.passive='emit("dragEnd",[$event])'
       @touchstart.passive=""
     >
-      <rect class="background" :width="size.w" :height="size.h" @click='emit("background")' />
+      <rect class="background" :width="size.w" :height="size.h" @click='emit("resetSelection")' />
       <g class="links" id="l-links">
         <path
           v-for="link in links"
@@ -55,79 +55,85 @@
       </g>
     </svg>
 
-    <div class="btns">
-      <v-dialog v-model="addDialog" persistent max-width="600px">
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn class="btn add" :icon="true" :disabled="true" :block="true" v-bind="attrs" v-on="on">
-            <i class="fas fa-plus-circle"></i>
-          </v-btn>
-        </template>
-        <v-card>
-          <v-card-title>
-            <span class="headline">새 항목 추가하기</span>
-          </v-card-title>
-          <v-card-text>
-            <v-container>
-              <v-text-field label="내용" v-model="modalAddText" required></v-text-field>
-            </v-container>
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn color="blue darken-1" text @click="addDialog_Cancel()">취소</v-btn>
-            <v-btn color="blue darken-1" text @click="addDialog_Apply()">적용</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
+    <div class="bottom-line">
+      <div class="suggestions">
+        <a v-if="suggestions.length != 0" @click="resetSuggestions();" class="suggestions-close-btn"><i class="fas fa-times"></i></a>
+        <v-chip v-if="suggestions.length >= 1" class="suggestion suggestion-1" :label="true">{{ suggestions[0] }}</v-chip>
+        <v-chip v-if="suggestions.length >= 2" class="suggestion suggestion-2" :label="true">{{ suggestions[1] }}</v-chip>
+      </div>
+      <div class="btns">
+        <v-dialog v-model="addDialog" persistent max-width="600px">
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn class="btn add" :icon="true" :disabled="true" :block="true" v-bind="attrs" v-on="on">
+              <i class="fas fa-plus-circle"></i>
+            </v-btn>
+          </template>
+          <v-card>
+            <v-card-title>
+              <span class="headline">새 항목 추가하기</span>
+            </v-card-title>
+            <v-card-text>
+              <v-container>
+                <v-text-field label="내용" v-model="modalAddText" required></v-text-field>
+              </v-container>
+            </v-card-text>
+            <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn color="blue darken-1" text @click="addDialog_Cancel()">취소</v-btn>
+              <v-btn color="blue darken-1" text @click="addDialog_Apply()">적용</v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
 
-      <v-dialog v-model="editDialog" persistent max-width="600px">
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn class="btn edit" :icon="true" :disabled="true" :block="true" v-bind="attrs" v-on="on">
-            <i class="fas fa-pen"></i>
-          </v-btn>
-        </template>
-        <v-card>
-          <v-card-title>
-            <span class="headline">기존 항목 수정하기</span>
-          </v-card-title>
-          <v-card-text>
-            <v-container>
-              <v-text-field label="내용" v-model="modalEditText" required></v-text-field>
-            </v-container>
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn color="blue darken-1" text @click="editDialog_Cancel()">취소</v-btn>
-            <v-btn color="blue darken-1" text @click="editDialog_Apply()">적용</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
+        <v-dialog v-model="editDialog" persistent max-width="600px">
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn class="btn edit" :icon="true" :disabled="true" :block="true" v-bind="attrs" v-on="on">
+              <i class="fas fa-pen"></i>
+            </v-btn>
+          </template>
+          <v-card>
+            <v-card-title>
+              <span class="headline">기존 항목 수정하기</span>
+            </v-card-title>
+            <v-card-text>
+              <v-container>
+                <v-text-field label="내용" v-model="modalEditText" required></v-text-field>
+              </v-container>
+            </v-card-text>
+            <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn color="blue darken-1" text @click="editDialog_Cancel()">취소</v-btn>
+              <v-btn color="blue darken-1" text @click="editDialog_Apply()">적용</v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
 
-      <v-dialog v-model="deleteDialog" persistent max-width="600px">
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn class="btn delete" :icon="true" :disabled="true" :block="true" v-bind="attrs" v-on="on">
-            <i class="fas fa-trash-alt"></i>
-          </v-btn>
-        </template>
-        <v-card>
-          <v-card-title>
-            <span class="headline">삭제 확인</span>
-          </v-card-title>
-          <v-card-text>
-            선택한 항목을 삭제하시겠습니까? 선택한 항목의 하위 항목들도 함께 삭제됩니다.
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn color="blue darken-1" text @click="deleteDialog_Cancel()">취소</v-btn>
-            <v-btn color="blue darken-1" text @click="deleteDialog_Apply()">확인</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
+        <v-dialog v-model="deleteDialog" persistent max-width="600px">
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn class="btn delete" :icon="true" :disabled="true" :block="true" v-bind="attrs" v-on="on">
+              <i class="fas fa-trash-alt"></i>
+            </v-btn>
+          </template>
+          <v-card>
+            <v-card-title>
+              <span class="headline">삭제 확인</span>
+            </v-card-title>
+            <v-card-text>
+              선택한 항목을 삭제하시겠습니까? 선택한 항목의 하위 항목들도 함께 삭제됩니다.
+            </v-card-text>
+            <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn color="blue darken-1" text @click="deleteDialog_Cancel()">취소</v-btn>
+              <v-btn color="blue darken-1" text @click="deleteDialog_Apply()">확인</v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
 
+        <v-btn class="btn suggestion" :icon="true" :disabled="true" :block="true" :loading="isSuggestionBtnLoading" @click="suggestionBtnClicked()"><i class="fas fa-lightbulb"></i></v-btn>
+
+      </div>
     </div>
     
-    <div class="debug" v-text="this.debug">
-    </div>
-
   </div>
 </template>
 
@@ -142,6 +148,8 @@ export default {
       deleteDialog: false,
       modalAddText: "",
       modalEditText: "",
+      isSuggestionBtnLoading: false,
+      suggestions: [],
       debug: "null"
     };
   },
@@ -157,12 +165,46 @@ export default {
     });
   },
   watch: {
-    selected() {
-      this.updateBtnActivation();
-    },
     selectedNode() {
-      this.updateBtnActivation();
+      if (this.selected === true) {
+        this.activateBtn("add");
+        
+        if(this.selectedNode.id != 0) { //처음 노드(최고 노드)는 편집하면 안됨(책 제목) -> 처음 노드가 선택되면 아예 버튼 활성화를 안 시킴
+          this.activateBtn("edit");
+        } else {
+          this.deactivateBtn("edit");
+        }
+
+        //delete btn
+        if(this.selectedNode.id != 0) { //처음 노드(최고 노드)는 제거하면 안됨 -> 처음 노드가 선택되면 아예 버튼 활성화를 안 시킴
+          this.activateBtn("delete");
+        } else {
+          this.deactivateBtn("delete");
+        }
+        
+        //suggestion btn
+        this.activateBtn("suggestion");
+        
+      } else {
+        this.deactivateBtn("add");
+        this.deactivateBtn("edit");
+        this.deactivateBtn("delete");
+        this.deactivateBtn("suggestion");
+
+
+      }
+
       this.modalEditText = this.selectedNode.text;
+    },
+    isSuggestionBtnLoading() {
+      if(this.isSuggestionBtnLoading) {
+        this.deactivateBtn("add");
+        this.deactivateBtn("edit");
+        this.deactivateBtn("delete");
+        this.deactivateBtn("suggestion");
+      } else {
+        this.updateBtnActivationByData();
+      }
     }
   },
   methods: {
@@ -186,46 +228,41 @@ export default {
 
       return "M " + d.M + " Q " + d.Q.join(" ") + " " + d.X;
     },
-    updateBtnActivation() {
+    activateBtn(target) {
+      var targetObj = this.$el.querySelector(".btns .btn." + target);
+      targetObj.removeAttribute("disabled");
+      if(targetObj.classList.contains("v-btn--disabled")) targetObj.classList.remove("v-btn--disabled");
+    },
+    deactivateBtn(target) {
+      var targetObj = this.$el.querySelector(".btns .btn." + target);
+      targetObj.setAttribute("disabled", true);
+      if(!targetObj.classList.contains("v-btn--disabled")) targetObj.classList.add("v-btn--disabled");
+    },
+    updateBtnActivationByData() {
       if (this.selected === true) {
-        var target;
+        this.activateBtn("add");
         
-        //add btn
-        target = this.$el.querySelector(".btns .btn.add")
-        target.removeAttribute("disabled");
-        if(target.classList.contains("v-btn--disabled")) target.classList.remove("v-btn--disabled");
-
-        //edit btn
-        target = this.$el.querySelector(".btns .btn.edit")
         if(this.selectedNode.id != 0) { //처음 노드(최고 노드)는 편집하면 안됨(책 제목) -> 처음 노드가 선택되면 아예 버튼 활성화를 안 시킴
-          target.removeAttribute("disabled");
-          if(target.classList.contains("v-btn--disabled")) target.classList.remove("v-btn--disabled");
+          this.activateBtn("edit");
         } else {
-          target.setAttribute("disabled", true);
-          if(!target.classList.contains("v-btn--disabled")) target.classList.add("v-btn--disabled");
+          this.deactivateBtn("edit");
         }
 
         //delete btn
-        target = this.$el.querySelector(".btns .btn.delete")
         if(this.selectedNode.id != 0) { //처음 노드(최고 노드)는 제거하면 안됨 -> 처음 노드가 선택되면 아예 버튼 활성화를 안 시킴
-          target.removeAttribute("disabled");
-          if(target.classList.contains("v-btn--disabled")) target.classList.remove("v-btn--disabled");
+          this.activateBtn("delete");
         } else {
-          target.setAttribute("disabled", true);
-          if(!target.classList.contains("v-btn--disabled")) target.classList.add("v-btn--disabled");
+          this.deactivateBtn("delete");
         }
         
-        /*
         //suggestion btn
-        var target = this.$el.querySelector(".btns .btn.add")
-        target.removeAttribute("disabled");
-        if(target.classList.contains("v-btn--disabled")) target.classList.remove("v-btn--disabled");
-        */
+        this.activateBtn("suggestion");
+        
       } else {
-        this.$el.querySelectorAll(".btns .btn").forEach(function(item) {
-          item.setAttribute("disabled", true);
-          if(!item.classList.contains("v-btn--disabled")) item.classList.add("v-btn--disabled");
-        });
+        this.deactivateBtn("add");
+        this.deactivateBtn("edit");
+        this.deactivateBtn("delete");
+        this.deactivateBtn("suggestion");
       }
     },
     getSelectedNodeAncestors() {
@@ -364,7 +401,42 @@ export default {
       }
 
       //reset
+      this.$emit("resetSelection");
       this.deleteDialog = false;
+    },
+    suggestionBtnClicked() {
+      this.isSuggestionBtnLoading = true;
+      this.resetSuggestions;
+
+      var ancestors = this.getSelectedNodeAncestors().map( item => item.text );
+      
+      /*
+      fetch("http://server-url/api/suggestion", {
+        method: "POST",
+        body: ancestors
+      }).then(function(res) {
+        if(res.status === 200) { //Success
+          res.json().then(function(json) {
+            this.suggestions.push(json[0]);
+            this.suggestions.push(json[1]);
+          });
+        } else { //Fail
+          console.log(res.statusText);
+        }
+      }).catch( function(e){
+        console.log(e);
+      }).finally(function() {
+        this.isSuggestionBtnLoading = false;
+      });*/
+
+      //testing
+      this.suggestions.push("Suggestion 0");
+      this.suggestions.push("Suggestion 1");
+
+      this.isSuggestionBtnLoading = false;
+    },
+    resetSuggestions() {
+      this.suggestions = [];
     }
   }
 };
@@ -377,120 +449,138 @@ export default {
   position: relative;
 }
 
-.btns {
+.mindmap .bottom-line {
   position: absolute;
   bottom: 10px;
+  left: 10px;
   right: 10px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.mindmap .bottom-line .suggestions {
+  display: grid;
+  grid-template-columns: auto 1fr 1fr;
+  column-gap: 20px;
+  align-items: center;
+}
+
+.mindmap .bottom-line .suggestions .suggestions-close-btn {
+  margin-left: 10px;
+}
+
+.mindmap .bottom-line .btns {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   column-gap: 20px;
 }
 
-.btns .btn {
+.mindmap .bottom-line .btns .btn {
   font-size: 40px;
 }
 
-.modal.disabled {
-  display: none;
-}
-
-.background {
+.mindmap svg .background {
   fill: transparent;
 }
 
-.node {
+.mindmap svg .node {
   cursor: grab;
 }
 
-.node:active {
+.mindmap svg .node:active {
   cursor: grabbing;
 }
 
-.node ellipse {
+.mindmap svg .node ellipse {
   stroke-width: 0px;
-  fill: whitesmoke !important;
+  fill: whitesmoke;
 }
 
-.node text {
+.mindmap svg .node text {
   font-family: "Gaegu", cursive;
 }
 
-.node.selected text {
-  color: red;
-}
-
-.node.depth-0 ellipse {
+.mindmap svg .node.selected ellipse {
+  stroke-width: 2px;
   stroke: red;
-  fill: orange !important;
 }
 
-.node.depth-1 ellipse {
-  stroke: orange;
-  fill: #e88eca;
+.mindmap svg .node.selected text {
+  fill: red;
 }
 
-.node.depth-2 ellipse {
-  stroke: yellow;
-  fill: #cc89d1;
+.mindmap svg .node.depth-0 ellipse {
+  /* stroke: red; */
+  fill: orange;
 }
 
-.node.depth-3 ellipse {
-  stroke: green;
-  fill: #dfc7eb;
+.mindmap svg .node.depth-1 ellipse {
+  /* stroke: orange; */
+  /* fill: #e88eca; */
 }
 
-.node.depth-4 ellipse {
-  stroke: blue;
-  fill: #ad87de;
+.mindmap svg .node.depth-2 ellipse {
+  /* stroke: orange; */
+  /* fill: #e88eca; */
 }
 
-.node.depth-5 ellipse {
-  stroke: navy;
-  fill: navy;
+.mindmap svg .node.depth-3 ellipse {
+  /* stroke: orange; */
+  /* fill: #e88eca; */
 }
 
-.node.depth-6 ellipse {
-  stroke: purple;
-  fill: purple;
+.mindmap svg .node.depth-4 ellipse {
+  /* stroke: orange; */
+  /* fill: #e88eca; */
 }
 
-.link {
+.mindmap svg .node.depth-5 ellipse {
+  /* stroke: orange; */
+  /* fill: #e88eca; */
+}
+
+.mindmap svg .node.depth-6 ellipse {
+  /* stroke: orange; */
+  /* fill: #e88eca; */
+}
+
+.mindmap svg .link {
   stroke-width: 5px;
   fill: transparent;
   stroke: gray;
 }
 
-.link.depth-0 {
+.mindmap svg .link.depth-0 {
   /*stroke: darkgray;*/
   stroke-width: 20px;
 }
 
-.link.depth-1 {
+.mindmap svg .link.depth-1 {
   /*stroke: orange;*/
   stroke-width: 15px;
 }
 
-.link.depth-2 {
+.mindmap svg .link.depth-2 {
   /*stroke: yellow;*/
   stroke-width: 10px;
 }
 
-.link.depth-3 {
+.mindmap svg .link.depth-3 {
   /*stroke: green;*/
   stroke-width: 5px;
 }
 
-.link.depth-4 {
+.mindmap svg .link.depth-4 {
   /*stroke: blue;*/
   stroke-width: 2px;
 }
 
-.link.depth-5 {
+.mindmap svg .link.depth-5 {
   /*stroke: navy;*/
   stroke-width: 1px;
 }
 
-.link.depth-6 {
+.mindmap svg .link.depth-6 {
   /*stroke: purple;*/
   stroke-width: 1px;
 }

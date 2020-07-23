@@ -82,7 +82,7 @@ export default {
       on: { 'mousemove': this.move, '&touchmove': this.move }
     }, [createElement('svg-renderer', {
       props,
-      on: { action: this.methodCall, mindmapDataUpdated: this.mindmapDataUpdated }
+      on: { action: this.methodCall, mindmapDataUpdated: this.mindmapDataUpdated, resetSelection: this.resetSelection }
     })]);
   },
   methods: {
@@ -268,6 +268,15 @@ export default {
       var arr = this.removeSelectedFromClassList(classList);
       arr.push("selected");
       return arr;
+    },
+    resetSelection() {
+      this.selected = false;
+      this.selectedNode = {};
+
+      for(var node of this.nodes) {
+        var newClassList = this.removeSelectedFromClassList(node.class);
+        node.class = newClassList;
+      }
     }
   }
 };
