@@ -5,9 +5,9 @@
             <v-btn class="selectbtn" color="primary" @click="type2">주관식 문제</v-btn></center>
         </div>
         <div class="Problem">
-            <div v-if="Ptype == 1">
-                <div><textarea v-model="MPQ" class="prob" placeholder="  질문을 입력해주세요."></textarea> 
-                <v-btn class="checkbtn" color="error" @click="checkQuestion">검사하기</v-btn></div>
+            <div v-if="Ptype == 0">
+                <div><textarea v-model="MPQ" @input="inputChange" class="prob" placeholder="  질문을 입력해주세요."></textarea> 
+                <v-btn class="checkbtn" :color="btnColor" @click="checkQuestion">검사하기</v-btn></div>
 
                 <label><div class="ex"><input v-model="MPA" type="radio" name="one" value="1"><input v-model="MPEList[0]" class="multi_ex" placeholder="1번 보기를 입력해주세요."></div></label>
                 <label><div class="ex"><input v-model="MPA" type="radio" name="one" value="2"><input v-model="MPEList[1]" class="multi_ex" placeholder="2번 보기를 입력해주세요."></div><br></label>
@@ -15,8 +15,8 @@
                 <label><div class="ex"><input v-model="MPA" type="radio" name="one" value="4"><input v-model="MPEList[3]" class="multi_ex" placeholder="4번 보기를 입력해주세요."></div></label>
             </div>
 
-            <div v-if="Ptype == 2">
-                <textarea v-model="MPQ" class="prob" placeholder="  질문을 입력해주세요."></textarea> <v-btn class="checkbtn" color="error" @click="checkQuestion">검사하기</v-btn>
+            <div v-if="Ptype == 1">
+                <textarea v-model="MPQ" @input="inputChange" class="prob" placeholder="  질문을 입력해주세요."></textarea> <v-btn class="checkbtn" :color="btnColor" @click="checkQuestion">검사하기</v-btn>
                 <input v-model="MPA" class="short_answer" placeholder="정답을 입력해주세요.">
             </div>
         </div>
@@ -30,12 +30,13 @@
 import Dialog from '../components/Dialog.vue';
 import axios from 'axios';
 export default {
+    props: ['bookId'],
     components: {
         Dialog,
     },
     data () {
         return {
-            Ptype: 0,
+            Ptype: -1,
             Ftype: 0,
             MPQ: '',
             MPA: '',
@@ -50,21 +51,22 @@ export default {
             dialog: false,
 
             idididid: -1,
+            btnColor: 'error',
         }
     },
     methods: {
         type1() {
-            this.Ptype = 1
+            this.Ptype = 0
         },
         type2() {
-            this.Ptype = 2
+            this.Ptype = 1
         },
         questionSubmitClicked() {
             if (this.MPQ == '') {
                 this.message = '문제를 입력해주세요.'
                 this.dialog = true
             }
-            else if (this.Ptype == 1){
+            else if (this.Ptype == 0){
                 if (this.MPEList[0] == '' || this.MPEList[1] == '' || this.MPEList[2] == '' || this.MPEList[3] == '') {
                     this.message = '보기를 입력해주세요.'
                     this.dialog = true
@@ -78,11 +80,28 @@ export default {
                         this.message = '문제를 다시 생각해보세요.'
                         this.dialog = true
                     }
-                    else if (!this.AOK) {
+                    else {
+                        axios
+                            .post('', {
+                                "email": "eve.holt@reqres.in",
+                                "password": "pistol"
+                            })
+                            .then(res => {
+                                console.log(this.idididid)
+                                this.idididid = res["data"].id
+                                console.log(this.idididid)
+                                console.log(res)
+                            })
+                            .catch(err => {
+                                console.log(err)
+                            })
+
+                        if (!this.AOK) {
+                        
+                        }
                         this.message = '정답을 다시 생각해보세요.'
                         this.dialog = true
-                    }
-                    else {
+
                         this.Ftype = (this.Ftype + 1) % 2
                         this.ifSubmitProb = true
                         this.curAction = (this.curAction + 1) % 2
@@ -91,7 +110,7 @@ export default {
                     }
                 }
             }
-            else if (this.Ptype == 2) {
+            else if (this.Ptype == 1) {
                 if (this.MPA == '') {
                     this.message = '정답을 입력해주세요.'
                     this.dialog = true
@@ -107,7 +126,7 @@ export default {
                     }
                     else {
                         axios
-                            .post('https://reqres.in/api/register', {
+                            .post('', {
                                 "email": "eve.holt@reqres.in",
                                 "password": "pistol"
                             })
@@ -134,7 +153,26 @@ export default {
             this.dialog = dialog
         },
         checkQuestion() {
+            this.btnColor = 'success'
             this.QOK = !this.QOK
+            axios
+                .post('', {
+                    "bookId": this.bookId,
+                    "problem": this.MPQ,
+                })
+                .then(res => {
+                    console.log(this.idididid)
+                    this.idididid = res["data"].id
+                    console.log(this.idididid)
+                    console.log(res)
+                })
+                .catch(err => {
+                    console.log(err)
+                })
+        },
+        inputChange() {
+            this.QOK = false
+            this.btnColor = 'error'
         },
     },
 }

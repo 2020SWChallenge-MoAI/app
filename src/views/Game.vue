@@ -6,11 +6,11 @@
         <span class="username" style="float: right;">BOT</span>
     </div>
     <div class="container">
-        <MakeProblem v-if="Ftype == 0" style="width:100%; height: 100%;" @parentTimeStop="timeStop" @childFtype="getFtype"/>
+        <MakeProblem v-if="Ftype == 0" style="width:100%; height: 100%;" :bookId="bookId" @parentTimeStop="timeStop" @childFtype="getFtype"/>
 
-        <SolveProblem v-if="Ftype == 1" style="width:100%; height: 100%;" @parentTimeStop="timeStop" @childFtype="getFtype"/>
+        <SolveProblem v-if="Ftype == 1" style="width:100%; height: 100%;" :bookId="bookId" @parentTimeStop="timeStop" @childFtype="getFtype" @myPoint="getMyPoint"/>
 
-        <EndGame v-if="Ftype == 2" style="width:100%; height: 100%;" @parentBack="backbtnClicked"/>
+        <EndGame v-if="Ftype == 2" style="width:100%; height: 100%;" :myPoint="mypoint" @parentBack="backbtnClicked"/>
     </div>
 </div>
 </template>
@@ -30,8 +30,10 @@ export default {
         return {
             time: 10,
             Ftype: 0,
+            bookId: this.$route.params.bookId,
 
             gameFinish: false,
+            mypoint: false,
         }
     },
     created() {
@@ -54,24 +56,19 @@ export default {
             }, 1000)
         },
         timeOver() {
-            if (this.curAction == 0) {
-                if (!this.ifSubmitProb) {
-                    this.message = '문제를 제출하지 않았습니다.'
-                    this.dialog = true
-                    this.Ftype = (this.Ftype + 1) % 2
-                    this.curAction = (this.curAction + 1) % 2
-                }
+            if (this.Ftype == 0) {
+                this.message = '문제를 제출하지 않았습니다.'
+                this.dialog = true
+                this.Ftype = (this.Ftype + 1) % 2
+                this.curAction = (this.curAction + 1) % 2
             }
-            else if(this.curAction == 1) {
-                if (!this.ifSubmitAnsw) {
-                    this.message = '정답을 제출하지 않았습니다.'
-                    this.dialog = true
-                    this.Ftype = 2
-                    this.curAction = 2
-                }
+            else if(this.Ftype == 1) {
+                this.message = '정답을 제출하지 않았습니다.'
+                this.dialog = true
+                this.Ftype = 2
+                this.curAction = 2
             }
             else {
-                this.timeStop
                 this.gameFinish = true
             }
             this.timeStop()
@@ -83,6 +80,9 @@ export default {
         },
         backbtnClicked(b) {
             this.gameFinish = b
+        },
+        getMyPoint(p) {
+            this.mypoint = p
         },
     },
     beforeDestroy() {
@@ -97,10 +97,10 @@ export default {
     margin-left:4%;
 }
 .container {
-    height: 60%;
+    height: 70%;
     width: 80%;
     margin-left:10%;
-    margin-top: 5%;
+    margin-top: 3%;
     border:3px solid green;
 }
 .username {

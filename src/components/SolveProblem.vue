@@ -22,6 +22,7 @@ import Dialog from '../components/Dialog.vue';
 import axios from 'axios';
 
 export default {
+    props: ['bookId'],
     components: {
         Dialog,
     },
@@ -46,11 +47,28 @@ export default {
                 this.dialog = true
             }
             else {
+
+                axios
+                .post('', {
+                    "bookId": this.bookId,
+                    "problem": this.MPQ,
+                })
+                .then(res => {
+                    console.log(this.idididid)
+                    this.idididid = res["data"].id
+                    console.log(this.idididid)
+                    console.log(res)
+                })
+                .catch(err => {
+                    console.log(err)
+                })
+
                 this.Ftype = 2
                 this.ifSubmitAnsw = true
                 //this.timeStop()
                 this.$emit('childFtype', this.Ftype)
                 this.$emit('parentTimeStop')
+                this.$emit('myPoint', true)
             }
         },
         dialogChange(dialog) {

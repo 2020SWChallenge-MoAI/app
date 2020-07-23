@@ -72,6 +72,7 @@ export default {
       mindmapData: {
         id: 0,
         text: this.$route.params.bookTitle,
+        children: [],
       }
     };
   },
