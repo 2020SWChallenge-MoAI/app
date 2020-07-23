@@ -1,5 +1,5 @@
 <template>
-<div style="margin-top: 25%">
+<div style="margin-top: 10%">
     <v-container class="d-flex justify-center mb-6" style="width:100%; height:100%;">
     <v-btn id="btnL" v-if="clicked" color="warning" dark @click="quizClicked">퀴즈게임</v-btn>
     <v-btn id="btnS" v-if="!clicked" color="warning" dark @click="friendClicked">친구와 하기</v-btn>

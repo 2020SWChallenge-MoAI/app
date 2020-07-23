@@ -76,9 +76,6 @@ export default {
       }
     };
   },
-  mounted() {
-    console.log(this.$route.params.bookId, this.$route.params.bookTitle)
-  },
   components: {
     D3Network,
     Mindmap

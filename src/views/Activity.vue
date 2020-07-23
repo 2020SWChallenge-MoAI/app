@@ -43,7 +43,6 @@ export default {
     bookClicked(bid, btitle) {
       var router = this.$router;
       router.push({ name: 'ActivityChoose' , params: { bookId: bid, bookTitle: btitle }});
-      console.log(btitle)
     }
   },
 }
