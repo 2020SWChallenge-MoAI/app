@@ -7,7 +7,7 @@
 
     <hr />
     <div id="mindmap">
-      <mindmap :mindmapData="mindmapData" @mindmapDataUpdated="mindmapDataUpdated"/>
+      <mindmap :mindmapData="mindmapData" :bookId="bookId" @mindmapDataUpdated="mindmapDataUpdated"/>
     </div>
   </div>
 </template>
@@ -19,56 +19,7 @@ import Mindmap from "../components/Mindmap";
 export default {
   data: function() {
     return {
-      /*
-      mindmapData: {
-        id: 0,
-        text: "[0] 0",
-        children: [
-          {
-            id: 1,
-            text: "[1] 0-1",
-            children: [
-              {
-                id: 2,
-                text: "[2] 0-1-2",
-                children: []
-              },
-              {
-                id: 3,
-                text: "[3] 0-1-3",
-                children: []
-              }
-            ]
-          },
-          {
-            id: 4,
-            text: "[4] 0-4",
-            children: [
-              {
-                id: 5,
-                text: "[5] 0-4-5",
-                children: []
-              },
-              {
-                id: 6,
-                text: "[6] 0-4-6",
-                children: [
-                  {
-                    id: 7,
-                    text: "[7] 0-4-6-7",
-                    children: []
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            id: 8,
-            text: "[8] 0-8",
-            children: []
-          }
-        ]
-      }*/
+      bookId: this.$route.params.bookId,
       mindmapData: {
         id: 0,
         text: this.$route.params.bookTitle,
@@ -77,7 +28,7 @@ export default {
     };
   },
   mounted() {
-    console.log(this.$route.params.bookId, this.$route.params.bookTitle)
+    //console.log(this.$route.params.bookId, this.$route.params.bookTitle)
   },
   components: {
     D3Network,

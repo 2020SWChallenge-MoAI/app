@@ -14,7 +14,7 @@
           v-for="link in links"
           :key="link.id"
           :id="link.id"
-          :class="joinClass(link.class)"
+          :class="joinClassOfLink(link)"
           :d="linkPath(link)"
         />
       </g>
@@ -23,7 +23,7 @@
         <g
           v-for="(node, key) in nodes"
           :key="key"
-          :class="joinClass(node.class)"
+          :class="joinClassOfNode(node)"
           :id="'node-' + node.id"
           @click='emit("nodeClick",[$event,node])'
           @touchend.passive='emit("nodeClick",[$event,node])'
@@ -57,9 +57,9 @@
 
     <div class="bottom-line">
       <div class="suggestions">
-        <a v-if="suggestions.length != 0" @click="resetSuggestions();" class="suggestions-close-btn"><i class="fas fa-times"></i></a>
-        <v-chip v-if="suggestions.length >= 1" class="suggestion suggestion-1" :label="true">{{ suggestions[0] }}</v-chip>
-        <v-chip v-if="suggestions.length >= 2" class="suggestion suggestion-2" :label="true">{{ suggestions[1] }}</v-chip>
+        <a v-if="suggestions != undefined" @click="resetSuggestions();" class="suggestions-close-btn"><i class="fas fa-times"></i></a>
+        <v-chip v-if="suggestions != undefined && suggestions.length >= 1" class="suggestion suggestion-1" :label="true">{{ suggestions[0] }}</v-chip>
+        <v-chip v-if="suggestions != undefined && suggestions.length >= 2" class="suggestion suggestion-2" :label="true">{{ suggestions[1] }}</v-chip>
       </div>
       <div class="btns">
         <v-dialog v-model="addDialog" persistent max-width="600px">
@@ -138,19 +138,24 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   name: "svg-renderer",
   props: ["mindmapData", "size", "nodes", "links", "textSize", "selected", "selectedNode"],
   data: function() {
     return {
+      addBtnActive: false,
+      editBtnActive: false,
+      deleteBtnActive: false,
+      suggestionBtnActive: false,
       addDialog: false,
       editDialog: false,
       deleteDialog: false,
       modalAddText: "",
       modalEditText: "",
       isSuggestionBtnLoading: false,
-      suggestions: [],
-      debug: "null"
+      suggestions: undefined,
     };
   },
   updated: function() {
@@ -166,53 +171,109 @@ export default {
   },
   watch: {
     selectedNode() {
-      if (this.selected === true) {
-        this.activateBtn("add");
+      if (this.selected) {
+        this.addBtnActive = true;
         
         if(this.selectedNode.id != 0) { //처음 노드(최고 노드)는 편집하면 안됨(책 제목) -> 처음 노드가 선택되면 아예 버튼 활성화를 안 시킴
-          this.activateBtn("edit");
+          this.editBtnActive = true;
         } else {
-          this.deactivateBtn("edit");
+          this.editBtnActive = false;
         }
 
         //delete btn
         if(this.selectedNode.id != 0) { //처음 노드(최고 노드)는 제거하면 안됨 -> 처음 노드가 선택되면 아예 버튼 활성화를 안 시킴
-          this.activateBtn("delete");
+          this.deleteBtnActive = true;
         } else {
-          this.deactivateBtn("delete");
+          this.deleteBtnActive = false;
         }
         
         //suggestion btn
-        this.activateBtn("suggestion");
+        this.suggestionBtnActive = true;
         
       } else {
-        this.deactivateBtn("add");
-        this.deactivateBtn("edit");
-        this.deactivateBtn("delete");
-        this.deactivateBtn("suggestion");
-
-
+        this.addBtnActive = false;
+        this.editBtnActive = false;
+        this.deleteBtnActive = false;
+        this.suggestionBtnActive = false;
       }
 
       this.modalEditText = this.selectedNode.text;
     },
     isSuggestionBtnLoading() {
       if(this.isSuggestionBtnLoading) {
-        this.deactivateBtn("add");
-        this.deactivateBtn("edit");
-        this.deactivateBtn("delete");
-        this.deactivateBtn("suggestion");
+        this.addBtnActive = false;
+        this.editBtnActive = false;
+        this.deleteBtnActive = false;
+        this.suggestionBtnActive = false;
       } else {
-        this.updateBtnActivationByData();
+        if (this.selected) {
+          this.addBtnActive = true;
+          
+          if(this.selectedNode.id != 0) { //처음 노드(최고 노드)는 편집하면 안됨(책 제목) -> 처음 노드가 선택되면 아예 버튼 활성화를 안 시킴
+            this.editBtnActive = true;
+          } else {
+            this.editBtnActive = false;
+          }
+
+          //delete btn
+          if(this.selectedNode.id != 0) { //처음 노드(최고 노드)는 제거하면 안됨 -> 처음 노드가 선택되면 아예 버튼 활성화를 안 시킴
+            this.deleteBtnActive = true;
+          } else {
+            this.deleteBtnActive = false;
+          }
+          
+          //suggestion btn
+          this.suggestionBtnActive = true;
+          
+        } else {
+          this.addBtnActive = false;
+          this.editBtnActive = false;
+          this.deleteBtnActive = false;
+          this.suggestionBtnActive = false;
+        }
+      }
+    },
+    addBtnActive() {
+      if(this.addBtnActive) {
+        this.activateBtn("add");
+      } else {
+        this.deactivateBtn("add");
+      }
+    },
+    editBtnActive() {
+      if(this.editBtnActive) {
+        this.activateBtn("edit");
+      } else {
+        this.deactivateBtn("edit");
+      }
+    },
+    deleteBtnActive() {
+      if(this.deleteBtnActive) {
+        this.activateBtn("delete");
+      } else {
+        this.deactivateBtn("delete");
+      }
+    },
+    suggestionBtnActive() {
+      if(this.suggestionBtnActive) {
+        this.activateBtn("suggestion");
+      } else {
+        this.deactivateBtn("suggestion");
       }
     }
   },
   methods: {
-    debugFunc() {
-      return this.debug;
+    joinClassOfLink(link) {
+      var arr = link.class;
+      return arr.join(" ");
     },
-    joinClass(classList) {
-      var arr = Array.prototype.slice.call(classList);
+    joinClassOfNode(node) {
+      var arr = node.class;
+
+      if(this.selected && node.id == this.selectedNode.id) {
+        if(!arr.includes("selected")) arr.push("selected");
+      }
+
       return arr.join(" ");
     },
     emit(e, args) {
@@ -229,41 +290,16 @@ export default {
       return "M " + d.M + " Q " + d.Q.join(" ") + " " + d.X;
     },
     activateBtn(target) {
+      if(target === "suggestion") console.log("activateBtn(" + target + ")");
       var targetObj = this.$el.querySelector(".btns .btn." + target);
       targetObj.removeAttribute("disabled");
       if(targetObj.classList.contains("v-btn--disabled")) targetObj.classList.remove("v-btn--disabled");
     },
     deactivateBtn(target) {
+      if(target === "suggestion") console.log("deactivateBtn(" + target + ")");
       var targetObj = this.$el.querySelector(".btns .btn." + target);
       targetObj.setAttribute("disabled", true);
       if(!targetObj.classList.contains("v-btn--disabled")) targetObj.classList.add("v-btn--disabled");
-    },
-    updateBtnActivationByData() {
-      if (this.selected === true) {
-        this.activateBtn("add");
-        
-        if(this.selectedNode.id != 0) { //처음 노드(최고 노드)는 편집하면 안됨(책 제목) -> 처음 노드가 선택되면 아예 버튼 활성화를 안 시킴
-          this.activateBtn("edit");
-        } else {
-          this.deactivateBtn("edit");
-        }
-
-        //delete btn
-        if(this.selectedNode.id != 0) { //처음 노드(최고 노드)는 제거하면 안됨 -> 처음 노드가 선택되면 아예 버튼 활성화를 안 시킴
-          this.activateBtn("delete");
-        } else {
-          this.deactivateBtn("delete");
-        }
-        
-        //suggestion btn
-        this.activateBtn("suggestion");
-        
-      } else {
-        this.deactivateBtn("add");
-        this.deactivateBtn("edit");
-        this.deactivateBtn("delete");
-        this.deactivateBtn("suggestion");
-      }
     },
     getSelectedNodeAncestors() {
       var ancestors = [];
@@ -406,37 +442,40 @@ export default {
     },
     suggestionBtnClicked() {
       this.isSuggestionBtnLoading = true;
-      this.resetSuggestions;
+      this.resetSuggestions();
 
       var ancestors = this.getSelectedNodeAncestors().map( item => item.text );
-      
-      /*
-      fetch("http://server-url/api/suggestion", {
+
+      var body = {
+        "ancestors": ancestors
+      }
+
+      axios({
+        url: "http://172.26.0.1:8888/api/mind-map/suggestion/",
         method: "POST",
-        body: ancestors
-      }).then(function(res) {
+        data: {
+          "ancestors": ancestors
+        }
+      }).then(this.fetch_then.bind(this));
+    },
+    resetSuggestions() {
+      this.suggestions = undefined;
+    },
+    fetch_then(res) {
+      try {
         if(res.status === 200) { //Success
-          res.json().then(function(json) {
-            this.suggestions.push(json[0]);
-            this.suggestions.push(json[1]);
-          });
+          this.suggestions = [];
+          var suggestions = res.data.suggestions;
+          this.suggestions.push(suggestions[0]);
+          this.suggestions.push(suggestions[1]);
         } else { //Fail
           console.log(res.statusText);
         }
-      }).catch( function(e){
+      } catch(e) {
         console.log(e);
-      }).finally(function() {
+      } finally {
         this.isSuggestionBtnLoading = false;
-      });*/
-
-      //testing
-      this.suggestions.push("Suggestion 0");
-      this.suggestions.push("Suggestion 1");
-
-      this.isSuggestionBtnLoading = false;
-    },
-    resetSuggestions() {
-      this.suggestions = [];
+      }
     }
   }
 };
@@ -460,7 +499,7 @@ export default {
 
 .mindmap .bottom-line .suggestions {
   display: grid;
-  grid-template-columns: auto 1fr 1fr;
+  grid-template-columns: auto auto auto;
   column-gap: 20px;
   align-items: center;
 }

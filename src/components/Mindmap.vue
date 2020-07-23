@@ -265,8 +265,8 @@ export default {
       return classList.filter((item) => item != 'selected');
     },
     addSelectedFromClassList(classList) {
-      var arr = this.removeSelectedFromClassList(classList);
-      arr.push("selected");
+      var arr = Array.prototype.slice.call(classList);
+      if(!arr.includes("selected")) arr.push("selected");
       return arr;
     },
     resetSelection() {
