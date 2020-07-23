@@ -33,14 +33,14 @@
     <div v-if="Ftype == 1" class="solveProblem">
         <center><div class="solveprob">문제 : {{ EnPQ }}</div></center>
         <div v-if="EnPtype == 1">
-            <label><div class="enpex"><input v-model="ENPA" type="radio" name="one" value="1">  {{ EnPEList[0] }}</div></label>
-            <label><div class="enpex"><input v-model="ENPA" type="radio" name="one" value="2">  {{ EnPEList[1] }}</div><br></label>
-            <label><div class="enpex"><input v-model="ENPA" type="radio" name="one" value="3" style="margin-top: 5%;">  {{ EnPEList[2] }}</div></label>
-            <label><div class="enpex"><input v-model="ENPA" type="radio" name="one" value="4">  {{ EnPEList[3] }}</div></label>
+            <label><div class="enpex"><input v-model="EnPA" type="radio" name="one" value="1">  {{ EnPEList[0] }}</div></label>
+            <label><div class="enpex"><input v-model="EnPA" type="radio" name="one" value="2">  {{ EnPEList[1] }}</div><br></label>
+            <label><div class="enpex"><input v-model="EnPA" type="radio" name="one" value="3" style="margin-top: 5%;">  {{ EnPEList[2] }}</div></label>
+            <label><div class="enpex"><input v-model="EnPA" type="radio" name="one" value="4">  {{ EnPEList[3] }}</div></label>
         </div>
 
         <div v-if="EnPtype == 2">
-            <input v-model="ENPA" class="short_answer" placeholder="정답을 입력해주세요.">
+            <input v-model="EnPA" class="short_answer" placeholder="정답을 입력해주세요.">
         </div>
 
         <v-btn class="submitbtn" color="success" @click="answerSubmitClicked" style="margin-top: 5%;">제출하기</v-btn>
@@ -57,6 +57,7 @@
 
 <script>
 import Dialog from '../components/Dialog.vue';
+import axios from 'axios'
 
 export default {
     components: {
@@ -81,10 +82,12 @@ export default {
             gameFinish: false,
 
             QOK: false,
-            AOK: false,
+            AOK: true,
 
             message: '',
             dialog: false,
+
+            idididid: -1,
         }
     },
     created() {
@@ -183,6 +186,21 @@ export default {
                         this.dialog = true
                     }
                     else {
+                        axios
+                            .post('https://reqres.in/api/register', {
+                                "email": "eve.holt@reqres.in",
+                                "password": "pistol"
+                            })
+                            .then(res => {
+                                console.log(this.idididid)
+                                this.idididid = res["data"].id
+                                console.log(this.idididid)
+                                console.log(res)
+                            })
+                            .catch(err => {
+                                console.log(err)
+                            })
+
                         this.Ftype = (this.Ftype + 1) % 2
                         this.ifSubmitProb = true
                         this.curAction = (this.curAction + 1) % 2
@@ -242,8 +260,6 @@ export default {
     width: 90%;
     margin-left: 5%;
     border:2px solid blue;
-}
-.selectType {
 }
 .selectbtn {
     margin-top: 3%;
