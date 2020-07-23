@@ -1,0 +1,191 @@
+<template>
+  <div>
+        <div class="selectType">
+            <center><v-btn class="selectbtn" color="primary" @click="type1">객관식 문제</v-btn>
+            <v-btn class="selectbtn" color="primary" @click="type2">주관식 문제</v-btn></center>
+        </div>
+        <div class="Problem">
+            <div v-if="Ptype == 1">
+                <div><textarea v-model="MPQ" class="prob" placeholder="  질문을 입력해주세요."></textarea> 
+                <v-btn class="checkbtn" color="error" @click="checkQuestion">검사하기</v-btn></div>
+
+                <label><div class="ex"><input v-model="MPA" type="radio" name="one" value="1"><input v-model="MPEList[0]" class="multi_ex" placeholder="1번 보기를 입력해주세요."></div></label>
+                <label><div class="ex"><input v-model="MPA" type="radio" name="one" value="2"><input v-model="MPEList[1]" class="multi_ex" placeholder="2번 보기를 입력해주세요."></div><br></label>
+                <label><div class="ex"><input v-model="MPA" type="radio" name="one" value="3"><input v-model="MPEList[2]" class="multi_ex" placeholder="3번 보기를 입력해주세요."></div></label>
+                <label><div class="ex"><input v-model="MPA" type="radio" name="one" value="4"><input v-model="MPEList[3]" class="multi_ex" placeholder="4번 보기를 입력해주세요."></div></label>
+            </div>
+
+            <div v-if="Ptype == 2">
+                <textarea v-model="MPQ" class="prob" placeholder="  질문을 입력해주세요."></textarea> <v-btn class="checkbtn" color="error" @click="checkQuestion">검사하기</v-btn>
+                <input v-model="MPA" class="short_answer" placeholder="정답을 입력해주세요.">
+            </div>
+        </div>
+
+        <v-btn class="submitbtn" color="success" @click="questionSubmitClicked()">제출하기</v-btn>
+        <Dialog :messageOfChild="message" :dialogOfChild="dialog" @dialogChangedValue="dialogChange"/>
+    </div>
+</template>
+
+<script>
+import Dialog from '../components/Dialog.vue';
+import axios from 'axios';
+export default {
+    components: {
+        Dialog,
+    },
+    data () {
+        return {
+            Ptype: 0,
+            Ftype: 0,
+            MPQ: '',
+            MPA: '',
+            MPEList: ['', '', '', ''],
+
+            ifSubmitProb: false,
+
+            QOK: false,
+            AOK: true,
+
+            message: '',
+            dialog: false,
+
+            idididid: -1,
+        }
+    },
+    methods: {
+        type1() {
+            this.Ptype = 1
+        },
+        type2() {
+            this.Ptype = 2
+        },
+        questionSubmitClicked() {
+            if (this.MPQ == '') {
+                this.message = '문제를 입력해주세요.'
+                this.dialog = true
+            }
+            else if (this.Ptype == 1){
+                if (this.MPEList[0] == '' || this.MPEList[1] == '' || this.MPEList[2] == '' || this.MPEList[3] == '') {
+                    this.message = '보기를 입력해주세요.'
+                    this.dialog = true
+                }
+                else if (this.MPA == '') {
+                    this.message = '정답을 선택해주세요.'
+                    this.dialog = true
+                }
+                else {
+                    if (!this.QOK) {
+                        this.message = '문제를 다시 생각해보세요.'
+                        this.dialog = true
+                    }
+                    else if (!this.AOK) {
+                        this.message = '정답을 다시 생각해보세요.'
+                        this.dialog = true
+                    }
+                    else {
+                        this.Ftype = (this.Ftype + 1) % 2
+                        this.ifSubmitProb = true
+                        this.curAction = (this.curAction + 1) % 2
+                        this.$emit('childFtype', this.Ftype)
+                        this.$emit('parentTimeStop')
+                    }
+                }
+            }
+            else if (this.Ptype == 2) {
+                if (this.MPA == '') {
+                    this.message = '정답을 입력해주세요.'
+                    this.dialog = true
+                }
+                else {
+                    if (!this.QOK) {
+                        this.message = '문제를 다시 생각해보세요.'
+                        this.dialog = true
+                    }
+                    else if (!this.AOK) {
+                        this.message = '정답을 다시 생각해보세요.'
+                        this.dialog = true
+                    }
+                    else {
+                        axios
+                            .post('https://reqres.in/api/register', {
+                                "email": "eve.holt@reqres.in",
+                                "password": "pistol"
+                            })
+                            .then(res => {
+                                console.log(this.idididid)
+                                this.idididid = res["data"].id
+                                console.log(this.idididid)
+                                console.log(res)
+                            })
+                            .catch(err => {
+                                console.log(err)
+                            })
+
+                        this.Ftype = (this.Ftype + 1) % 2
+                        this.ifSubmitProb = true
+                        this.curAction = (this.curAction + 1) % 2
+                        this.$emit('childFtype', this.Ftype)
+                        this.$emit('parentTimeStop')
+                    }
+                }
+            }
+        },
+        dialogChange(dialog) {
+            this.dialog = dialog
+        },
+        checkQuestion() {
+            this.QOK = !this.QOK
+        },
+    },
+}
+</script>
+
+<style scoped>
+.Problem {
+    height: 60%;
+    width: 90%;
+    margin-left: 5%;
+    border:2px solid blue;
+}
+.selectbtn {
+    margin-top: 3%;
+    margin-bottom: 3%;
+    margin-left: 10%;
+    margin-right: 10%;
+    width: 20%;
+}
+.prob{
+    width: 60%;
+    border:1px solid black;
+    margin-left: 10%;
+    margin-top: 3%;
+}
+.checkbtn{
+    margin-left: 10%;
+    vertical-align: middle;
+    margin-bottom: 5%;
+}
+.multi_ex{
+    width: 38%;
+    border: 1px solid black;
+    margin-left: 2%;
+    margin-right: 5%;
+    margin-top: 2%;
+}
+.ex {
+    display:inline;
+    margin-left: 2%;
+}
+.short_answer {
+    width: 80%;
+    border: 1px solid black;
+    margin-left: 10%;
+    margin-top: 2%;
+    height:50px;
+}
+.submitbtn {
+    width: 60%;
+    margin-top: 1%;
+    margin-left: 20%;
+}
+</style>

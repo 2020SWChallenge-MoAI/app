@@ -19,7 +19,7 @@ export default {
   methods: {
     mindmapClicked() {
       var router = this.$router;
-      router.replace({ name: 'MindMap' , params: { bookId: this.$route.params.bookId}});
+      router.replace({ name: 'MindMap' , params: { bookId: this.$route.params.bookId, bookTitle: this.$route.params.bookTitle}});
     },
     quizClicked() {
       this.clicked = !this.clicked;

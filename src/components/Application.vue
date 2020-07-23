@@ -42,7 +42,6 @@ import Navigation from './Navigation.vue';
 }
 
 .main {
-  border:1px solid red;
   padding-top: 64px;
   height:100%;
   width:100%;

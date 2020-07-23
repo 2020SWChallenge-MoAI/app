@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-container class="d-flex justify-center mb-6">
+    <v-container class="d-flex justify-space-around mb-6">
         <v-col cols="12">
           <v-row>
             <v-card
@@ -11,7 +11,7 @@
               outlined
               width=240px
               height="200px"
-              @click="bookClicked(book.id)"
+              @click="bookClicked(book.id, book.title)"
             >
             {{ book.title }}
             </v-card>
@@ -40,9 +40,10 @@ export default {
     }
   },
   methods: {
-    bookClicked(b) {
+    bookClicked(bid, btitle) {
       var router = this.$router;
-      router.push({ name: 'ActivityChoose' , params: { bookId: b }});
+      router.push({ name: 'ActivityChoose' , params: { bookId: bid, bookTitle: btitle }});
+      console.log(btitle)
     }
   },
 }

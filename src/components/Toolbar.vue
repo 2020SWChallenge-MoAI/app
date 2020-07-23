@@ -5,7 +5,7 @@
       <v-toolbar-title>Title</v-toolbar-title>
       <v-spacer></v-spacer>
       <v-btn icon>
-        <v-icon>mdi-magnify</v-icon>
+        <v-icon @click="gotoBack">mdi-keyboard-backspace</v-icon>
       </v-btn>
       <v-btn icon>
         <v-icon @click="gotoHome">mdi-home</v-icon>
@@ -34,7 +34,11 @@
         gotoHome() {
           var router = this.$router;
           router.replace({ name: 'Home'});
-        }
+        },
+        gotoBack() {
+          var router = this.$router;
+          router.go(-1);
+        },
     },
   }
 </script>
