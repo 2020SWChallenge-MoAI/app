@@ -1,8 +1,6 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
-import Activity from '../views/Activity.vue'
-import ActivityList from '../views/ActivityList.vue'
 
 Vue.use(VueRouter)
 
@@ -15,7 +13,7 @@ Vue.use(VueRouter)
   {
     path: '/book',
     name: 'Book',
-    component: () => import(/* webpackChunkName: "about" */ '../views/Book.vue')
+    component: () => import('../views/Book.vue')
   },
   {
     path: '/activity',
@@ -56,6 +54,11 @@ Vue.use(VueRouter)
     path: '/game',
     name: 'Game',
     component: () => import('../views/Game.vue')
+  },
+  {
+    path: '/reading',
+    name: 'Reading',
+    component: () => import('../views/Reading.vue')
   },
 ]
 

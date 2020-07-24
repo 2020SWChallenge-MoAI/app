@@ -75,6 +75,17 @@ export default {
             this.dialog = dialog
         },
     },
+    created() {
+        axios
+            .get('api/qna/random/'+this.bookId, {
+            })
+            .then(res => {
+                console.log(this.res)
+            })
+            .catch(err => {
+                console.log(err)
+        })
+    }
 }
 </script>
 

@@ -28,7 +28,7 @@ export default {
     },
     data () {
         return {
-            time: 10,
+            time: 30,
             Ftype: 0,
             bookId: this.$route.params.bookId,
 

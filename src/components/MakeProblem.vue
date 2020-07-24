@@ -27,7 +27,7 @@
 </template>
 
 <script>
-import Dialog from '../components/Dialog.vue';
+import Dialog from './Dialog.vue';
 import axios from 'axios';
 export default {
     props: ['bookId'],
@@ -45,7 +45,7 @@ export default {
             ifSubmitProb: false,
 
             QOK: false,
-            AOK: true,
+            AOK: false,
 
             message: '',
             dialog: false,
@@ -82,31 +82,33 @@ export default {
                     }
                     else {
                         axios
-                            .post('', {
-                                "email": "eve.holt@reqres.in",
-                                "password": "pistol"
+                            .post('api/qna/verify-answer/', {
+                                "book_id": this.bookId,
+                                "question": this.MPQ,
+                                "question_type": this.Ptype,
+                                "user_options": this.MPEList,
+                                "user_answer": this.MPA,
                             })
                             .then(res => {
-                                console.log(this.idididid)
-                                this.idididid = res["data"].id
-                                console.log(this.idididid)
-                                console.log(res)
+                                this.AOK = res.data.valid
+                                console.log(res.data.valid)
+
+                                if (!this.AOK) {
+                                    this.message = '정답을 다시 생각해보세요.'
+                                    this.dialog = true
+                                }
+
+                                else {
+                                    this.Ftype = (this.Ftype + 1) % 2
+                                    this.ifSubmitProb = true
+                                    this.curAction = (this.curAction + 1) % 2
+                                    this.$emit('childFtype', this.Ftype)
+                                    this.$emit('parentTimeStop')
+                                }
                             })
                             .catch(err => {
                                 console.log(err)
                             })
-
-                        if (!this.AOK) {
-                        
-                        }
-                        this.message = '정답을 다시 생각해보세요.'
-                        this.dialog = true
-
-                        this.Ftype = (this.Ftype + 1) % 2
-                        this.ifSubmitProb = true
-                        this.curAction = (this.curAction + 1) % 2
-                        this.$emit('childFtype', this.Ftype)
-                        this.$emit('parentTimeStop')
                     }
                 }
             }
@@ -126,25 +128,31 @@ export default {
                     }
                     else {
                         axios
-                            .post('', {
-                                "email": "eve.holt@reqres.in",
-                                "password": "pistol"
+                            .post('api/qna/verify-answer/', {
+                                "book_id": this.bookId,
+                                "question": this.MPQ,
+                                "question_type": this.Ptype,
+                                "user_options": [],
+                                "user_answer": this.MPA,
                             })
                             .then(res => {
-                                console.log(this.idididid)
-                                this.idididid = res["data"].id
-                                console.log(this.idididid)
-                                console.log(res)
+                                this.AOK = res.data.valid
+                                console.log(res.data.valid)
+                                if (!this.AOK) {
+                                    this.message = '정답을 다시 생각해보세요.'
+                                    this.dialog = true
+                                }
+                                else {
+                                    this.Ftype = (this.Ftype + 1) % 2
+                                    this.ifSubmitProb = true
+                                    this.curAction = (this.curAction + 1) % 2
+                                    this.$emit('childFtype', this.Ftype)
+                                    this.$emit('parentTimeStop')
+                                }
                             })
                             .catch(err => {
                                 console.log(err)
                             })
-
-                        this.Ftype = (this.Ftype + 1) % 2
-                        this.ifSubmitProb = true
-                        this.curAction = (this.curAction + 1) % 2
-                        this.$emit('childFtype', this.Ftype)
-                        this.$emit('parentTimeStop')
                     }
                 }
             }
@@ -153,18 +161,14 @@ export default {
             this.dialog = dialog
         },
         checkQuestion() {
-            this.btnColor = 'success'
-            this.QOK = !this.QOK
             axios
-                .post('', {
-                    "bookId": this.bookId,
-                    "problem": this.MPQ,
+                .post('/api/qna/valid-check/', {
+                    "book_id": this.bookId,
+                    "question": this.MPQ,
                 })
                 .then(res => {
-                    console.log(this.idididid)
-                    this.idididid = res["data"].id
-                    console.log(this.idididid)
-                    console.log(res)
+                    this.QOK = res.data.valid
+                    if (this.QOK == true) this.btnColor = 'success';
                 })
                 .catch(err => {
                     console.log(err)
