@@ -110,6 +110,7 @@ figure.front {
   border: 1px solid black;
   position: absolute;
   text-align: center;
+  opacity: 1.0;
 }
 
 figure.back {
@@ -117,5 +118,6 @@ figure.back {
   transform: rotateY(180deg);
   position: absolute;
   text-align: center;
+  opacity: 1.0;
 }
 </style>
