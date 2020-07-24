@@ -1,15 +1,15 @@
 <template>
   <div>
         <center><div class="solveprob">문제 : {{ EnPQ }}</div></center>
-        <div v-if="EnPtype == 1">
-            <label><div class="enpex"><input v-model="EnPA" type="radio" name="one" value="1">  {{ EnPEList[0] }}</div></label>
-            <label><div class="enpex"><input v-model="EnPA" type="radio" name="one" value="2">  {{ EnPEList[1] }}</div><br></label>
-            <label><div class="enpex"><input v-model="EnPA" type="radio" name="one" value="3" style="margin-top: 5%;">  {{ EnPEList[2] }}</div></label>
-            <label><div class="enpex"><input v-model="EnPA" type="radio" name="one" value="4">  {{ EnPEList[3] }}</div></label>
+        <div v-if="EnPtype == 0">
+            <label><div class="enpex"><input v-model="MyA" type="radio" name="one" value="1">  {{ EnPEList[0] }}</div></label>
+            <label><div class="enpex"><input v-model="MyA" type="radio" name="one" value="2">  {{ EnPEList[1] }}</div><br></label>
+            <label><div class="enpex"><input v-model="MyA" type="radio" name="one" value="3" style="margin-top: 5%;">  {{ EnPEList[2] }}</div></label>
+            <label><div class="enpex"><input v-model="MyA" type="radio" name="one" value="4" style="margin-top: 5%;">  {{ EnPEList[3] }}</div></label>
         </div>
 
-        <div v-if="EnPtype == 2">
-            <input v-model="EnPA" class="short_answer" placeholder="정답을 입력해주세요.">
+        <div v-if="EnPtype == 1">
+            <input v-model="MyA" class="short_answer" placeholder="정답을 입력해주세요.">
         </div>
 
         <v-btn class="submitbtn" color="success" @click="answerSubmitClicked" style="margin-top: 5%;">제출하기</v-btn>
@@ -30,45 +30,47 @@ export default {
         return {
             Ftype: 0,
             EnPtype: 1,
-            EnPQ: '예시 문제입니다.',
-            EnPEList: ['example1', 'example2', 'example3', 'example4'],
+            EnPQ: '',
+            EnPEList: ['', '', '', ''],
             EnPA: '',
+            MyA: '',
 
             message: '',
             dialog: false,
 
-            idididid: -1,
+            mypoint: false,
         }
     },
     methods: {
         answerSubmitClicked() {
-            if (this.EnPA == '') {
+            if (this.MyA == '') {
                 this.message = '정답을 입력해주세요.'
                 this.dialog = true
             }
             else {
 
-                axios
-                .post('', {
-                    "bookId": this.bookId,
-                    "problem": this.MPQ,
-                })
-                .then(res => {
-                    console.log(this.idididid)
-                    this.idididid = res["data"].id
-                    console.log(this.idididid)
-                    console.log(res)
-                })
-                .catch(err => {
-                    console.log(err)
-                })
+                    // axios
+                    // .post('', {
+                    //     "bookId": this.bookId,
+                    //     "problem": this.MPQ,
+                    // })
+                    // .then(res => {
+                    //     console.log(this.idididid)
+                    //     this.idididid = res["data"].id
+                    //     console.log(this.idididid)
+                    //     console.log(res)
+                    // })
+                    // .catch(err => {
+                    //     console.log(err)
+                    // })
 
                 this.Ftype = 2
                 this.ifSubmitAnsw = true
-                //this.timeStop()
+                if (this.MyA == this.EnPA) this.mypoint = true;
+                else this.mypoint = false;
                 this.$emit('childFtype', this.Ftype)
+                this.$emit('myPoint', this.mypoint)
                 this.$emit('parentTimeStop')
-                this.$emit('myPoint', true)
             }
         },
         dialogChange(dialog) {
@@ -77,10 +79,13 @@ export default {
     },
     created() {
         axios
-            .get('api/qna/random/'+this.bookId, {
+            .get('api/qna/random/'+this.bookId+'/1/', {
             })
             .then(res => {
-                console.log(this.res)
+                this.EnPtype = 1
+                this.EnPQ = res.data.question
+                this.EnPA = res.data.answer
+                this.EnPEList = res.data.options.split('|^|')
             })
             .catch(err => {
                 console.log(err)

@@ -2,11 +2,9 @@
     <div class="pageContainer">
         <div v-for="article of articles" :style="setZindex(article)"
         :key="article.id" :class="{pageClicked: article.clicked, cover: !article.clicked}" @click="pageClick(article.id)">
-            <figure class="front"> {{ article.text }} </figure>
-            <figure class="back">{{ article.text }}</figure>
+            <figure class="front"> <div>{{ article.text }}</div> </figure>
+            <figure class="back"> <div>{{ article.text }}</div> </figure>
         </div>
-
-        {{ book.content }}
     </div>
 </template>
 
@@ -18,10 +16,6 @@ export default {
     data() {
         return {
             articles: [
-                {id: 1, text:"1111111111111111111111", clicked: false,},
-                {id: 2, text:"2222222222222222222222", clicked: false,},
-                {id: 3, text:"3333333333333333333333", clicked: false,},
-                {id: 4, text:"4444444444444444444444", clicked: false,},
             ],
             book: {},
         }
@@ -31,7 +25,6 @@ export default {
             this.articles[id - 1].clicked = !this.articles[id - 1].clicked;
             this.polling = setInterval(() => {
                 this.page1reset()
-                console.log('test')
             }, 1000);
         },
         page1reset() {
@@ -47,12 +40,28 @@ export default {
         }
     },
     created() {
-        console.log(this.bookId)
         axios
             .get('/api/books/'+this.bookId, {
             })
             .then(res => {
                 this.book = res.data;
+                console.log(this.book.content)
+                var text_list = this.book.content.split('')
+                var index = 0
+                var sentence = ''
+                var i = 0
+                for (i; i < text_list.length; i++) {
+                    if (i % 100 == 0 || i == text_list.length - 1) {
+                        sentence = sentence + text_list[i]
+                        this.articles.push({id: index + 1, text: sentence, clicked: false})
+                        sentence = ''
+                        index = index + 1
+                    }
+                    else{
+                        sentence = sentence + text_list[i]
+                    }
+                }
+                console.log(this.articles)
             })
             .catch(err => {
                 console.log(err)
@@ -99,20 +108,20 @@ figure {
   width: 100%;
   height: 100%;
   backface-visibility: hidden;
+  padding: 5%;
+  padding-top: 30%;
 }
 
 figure.front {
-  background: red;
-  position: absolute;;
+  border: 1px solid black;
+  position: absolute;
+  text-align: center;
 }
 
 figure.back {
-  background: green;
+  border: 1px solid black;
   transform: rotateY(180deg);
-  position: absolute;;
-}
-
-figure.another {
-    background: purple;
+  position: absolute;
+  text-align: center;
 }
 </style>

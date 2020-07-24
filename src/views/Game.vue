@@ -28,7 +28,7 @@ export default {
     },
     data () {
         return {
-            time: 30,
+            time: 100,
             Ftype: 0,
             bookId: this.$route.params.bookId,
 
@@ -75,7 +75,7 @@ export default {
         },
         timeStop() {
             clearInterval(this.polling)
-            this.time = 10
+            this.time = 100
             this.start()
         },
         backbtnClicked(b) {

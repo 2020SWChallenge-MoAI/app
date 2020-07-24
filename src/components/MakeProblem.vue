@@ -162,7 +162,7 @@ export default {
         },
         checkQuestion() {
             axios
-                .post('/api/qna/valid-check/', {
+                .post('/api/qna/verify-question/', {
                     "book_id": this.bookId,
                     "question": this.MPQ,
                 })

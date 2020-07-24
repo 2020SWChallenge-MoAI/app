@@ -14,8 +14,8 @@ export default {
     props: ['myPoint'],
     data() {
         return {
-            my: '',
-            computer: '',
+            my: '오답',
+            computer: '정답',
         }
     },
     methods: {
