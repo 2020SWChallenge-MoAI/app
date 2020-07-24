@@ -155,8 +155,7 @@ export default {
       modalAddText: "",
       modalEditText: "",
       isSuggestionBtnLoading: false,
-      suggestions: undefined,
-      debug: null
+      suggestions: undefined
     };
   },
   updated: function() {
@@ -409,7 +408,6 @@ export default {
 
       var ancestors = this.getSelectedNodeAncestors().map( item => item.text );
 
-      /*
       axios({
         url: "api/mind-map/suggestion/",
         method: "POST",
@@ -421,21 +419,6 @@ export default {
           "Access-Control-Allow-Origin": "*"
         }
       }).then(this.fetch_then.bind(this));
-      */
-
-      this.debug = setInterval( () => {
-        axios({
-          url: "api/mind-map/suggestion/",
-          method: "POST",
-          data: {
-            book_id: this.bookId,
-            ancestors: ancestors
-          },
-          headers: {
-            "Access-Control-Allow-Origin": "*"
-          }
-        }).then(this.fetch_then.bind(this));
-      }, 3000);
       
     },
     resetSuggestions() {
@@ -455,7 +438,6 @@ export default {
         console.log(e);
       } finally {
         this.isSuggestionBtnLoading = false;
-        clearInterval(this.debug);
       }
     },
     clickSuggestion(suggestion_id) {
