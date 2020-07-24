@@ -64,7 +64,7 @@
       <div class="btns">
         <v-dialog v-model="addDialog" persistent max-width="600px">
           <template v-slot:activator="{ on, attrs }">
-            <v-btn class="btn add" :icon="true" :disabled="true" :block="true" v-bind="attrs" v-on="on">
+            <v-btn class="btn add" :icon="true" :disabled="!addBtnActive" :block="true" v-bind="attrs" v-on="on">
               <i class="fas fa-plus-circle"></i>
             </v-btn>
           </template>
@@ -87,7 +87,7 @@
 
         <v-dialog v-model="editDialog" persistent max-width="600px">
           <template v-slot:activator="{ on, attrs }">
-            <v-btn class="btn edit" :icon="true" :disabled="true" :block="true" v-bind="attrs" v-on="on">
+            <v-btn class="btn edit" :icon="true" :disabled="!editBtnActive" :block="true" v-bind="attrs" v-on="on">
               <i class="fas fa-pen"></i>
             </v-btn>
           </template>
@@ -110,7 +110,7 @@
 
         <v-dialog v-model="deleteDialog" persistent max-width="600px">
           <template v-slot:activator="{ on, attrs }">
-            <v-btn class="btn delete" :icon="true" :disabled="true" :block="true" v-bind="attrs" v-on="on">
+            <v-btn class="btn delete" :icon="true" :disabled="!deleteBtnActive" :block="true" v-bind="attrs" v-on="on">
               <i class="fas fa-trash-alt"></i>
             </v-btn>
           </template>
@@ -129,7 +129,7 @@
           </v-card>
         </v-dialog>
 
-        <v-btn class="btn suggestion" :icon="true" :disabled="true" :block="true" :loading="isSuggestionBtnLoading" @click="suggestionBtnClicked()"><i class="fas fa-lightbulb"></i></v-btn>
+        <v-btn class="btn suggestion" :icon="true" :disabled="!suggestionBtnActive" :block="true" :loading="isSuggestionBtnLoading" @click="suggestionBtnClicked()"><i class="fas fa-lightbulb"></i></v-btn>
 
       </div>
     </div>
@@ -156,6 +156,7 @@ export default {
       modalEditText: "",
       isSuggestionBtnLoading: false,
       suggestions: undefined,
+      debug: null
     };
   },
   updated: function() {
@@ -235,34 +236,6 @@ export default {
         }
       }
     },
-    addBtnActive() {
-      if(this.addBtnActive) {
-        this.activateBtn("add");
-      } else {
-        this.deactivateBtn("add");
-      }
-    },
-    editBtnActive() {
-      if(this.editBtnActive) {
-        this.activateBtn("edit");
-      } else {
-        this.deactivateBtn("edit");
-      }
-    },
-    deleteBtnActive() {
-      if(this.deleteBtnActive) {
-        this.activateBtn("delete");
-      } else {
-        this.deactivateBtn("delete");
-      }
-    },
-    suggestionBtnActive() {
-      if(this.suggestionBtnActive) {
-        this.activateBtn("suggestion");
-      } else {
-        this.deactivateBtn("suggestion");
-      }
-    }
   },
   methods: {
     joinClassOfLink(link) {
@@ -290,18 +263,6 @@ export default {
       d.Q = [link.source.x, link.target.y];
 
       return "M " + d.M + " Q " + d.Q.join(" ") + " " + d.X;
-    },
-    activateBtn(target) {
-      if(target === "suggestion") console.log("activateBtn(" + target + ")");
-      var targetObj = this.$el.querySelector(".btns .btn." + target);
-      targetObj.removeAttribute("disabled");
-      if(targetObj.classList.contains("v-btn--disabled")) targetObj.classList.remove("v-btn--disabled");
-    },
-    deactivateBtn(target) {
-      if(target === "suggestion") console.log("deactivateBtn(" + target + ")");
-      var targetObj = this.$el.querySelector(".btns .btn." + target);
-      targetObj.setAttribute("disabled", true);
-      if(!targetObj.classList.contains("v-btn--disabled")) targetObj.classList.add("v-btn--disabled");
     },
     getSelectedNodeAncestors() {
       var ancestors = [];
@@ -448,6 +409,7 @@ export default {
 
       var ancestors = this.getSelectedNodeAncestors().map( item => item.text );
 
+      /*
       axios({
         url: "api/mind-map/suggestion/",
         method: "POST",
@@ -459,12 +421,27 @@ export default {
           "Access-Control-Allow-Origin": "*"
         }
       }).then(this.fetch_then.bind(this));
+      */
+
+      this.debug = setInterval( () => {
+        axios({
+          url: "api/mind-map/suggestion/",
+          method: "POST",
+          data: {
+            book_id: this.bookId,
+            ancestors: ancestors
+          },
+          headers: {
+            "Access-Control-Allow-Origin": "*"
+          }
+        }).then(this.fetch_then.bind(this));
+      }, 3000);
+      
     },
     resetSuggestions() {
       this.suggestions = undefined;
     },
     fetch_then(res) {
-      console.log(res);
       try {
         if(res.status === 200) { //Success
           this.suggestions = [];
@@ -478,6 +455,7 @@ export default {
         console.log(e);
       } finally {
         this.isSuggestionBtnLoading = false;
+        clearInterval(this.debug);
       }
     },
     clickSuggestion(suggestion_id) {
