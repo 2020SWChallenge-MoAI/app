@@ -78,7 +78,7 @@ export default {
   width: 60%;
   height: 100%;
   position: absolute;
-  background-color: hsl(120, 60%, 70%, 1);
+  background-color: rgba(100,200,100,1.0);
   transform: rotateY(0deg);
   transform-style: preserve-3d;
   transform-origin: left;
@@ -89,7 +89,7 @@ export default {
   width: 60%;
   height: 100%;
   position: absolute;
-  background-color: hsl(120, 60%, 70%, 1);
+  background-color: rgba(50,200,100,1.0);
   transform: rotateY(-180deg);
   transform-style: preserve-3d;
   transform-origin: left;

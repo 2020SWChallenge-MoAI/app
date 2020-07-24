@@ -122,10 +122,6 @@ export default {
                         this.message = '문제를 다시 생각해보세요.'
                         this.dialog = true
                     }
-                    else if (!this.AOK) {
-                        this.message = '정답을 다시 생각해보세요.'
-                        this.dialog = true
-                    }
                     else {
                         axios
                             .post('api/qna/verify-answer/', {
