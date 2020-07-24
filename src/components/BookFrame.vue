@@ -23,13 +23,6 @@ export default {
     methods: {
         pageClick(id) {
             this.articles[id - 1].clicked = !this.articles[id - 1].clicked;
-            this.polling = setInterval(() => {
-                this.page1reset()
-            }, 1000);
-        },
-        page1reset() {
-            
-            clearInterval(this.polling)
         },
         setZindex(article) {
             if(article.clicked) {
@@ -45,20 +38,21 @@ export default {
             })
             .then(res => {
                 this.book = res.data;
-                console.log(this.book.content)
+                console.log(this.book)
                 var text_list = this.book.content.split('')
-                var index = 0
+                var index = 1
                 var sentence = ''
-                var i = 0
-                for (i; i < text_list.length; i++) {
-                    if (i % 100 == 0 || i == text_list.length - 1) {
-                        sentence = sentence + text_list[i]
+                var i = 1
+                this.articles.push({id: 1, text: this.book.title, clicked: false})
+                for (i; i < text_list.length + 1; i++) {
+                    if (i % 100 == 0 || i == text_list.length) {
+                        sentence = sentence + text_list[i - 1]
                         this.articles.push({id: index + 1, text: sentence, clicked: false})
                         sentence = ''
                         index = index + 1
                     }
                     else{
-                        sentence = sentence + text_list[i]
+                        sentence = sentence + text_list[i - 1]
                     }
                 }
                 console.log(this.articles)
@@ -84,7 +78,7 @@ export default {
   width: 60%;
   height: 100%;
   position: absolute;
-  background-color: #34b58c;
+  background-color: hsl(120, 60%, 70%, 1);
   transform: rotateY(0deg);
   transform-style: preserve-3d;
   transform-origin: left;
@@ -95,7 +89,7 @@ export default {
   width: 60%;
   height: 100%;
   position: absolute;
-  background-color: #34b58c;
+  background-color: hsl(120, 60%, 70%, 1);
   transform: rotateY(-180deg);
   transform-style: preserve-3d;
   transform-origin: left;
