@@ -58,8 +58,8 @@
     <div class="bottom-line">
       <div class="suggestions">
         <a v-if="suggestions != undefined" @click="resetSuggestions();" class="suggestions-close-btn"><i class="fas fa-times"></i></a>
-        <v-chip v-if="suggestions != undefined && suggestions.length >= 1" class="suggestion suggestion-1" :label="true">{{ suggestions[0] }}</v-chip>
-        <v-chip v-if="suggestions != undefined && suggestions.length >= 2" class="suggestion suggestion-2" :label="true">{{ suggestions[1] }}</v-chip>
+        <v-chip v-if="suggestions != undefined && suggestions.length >= 1" class="suggestion suggestion-1" :label="true" @click="clickSuggestion(0)">{{ suggestions[0] }}</v-chip>
+        <v-chip v-if="suggestions != undefined && suggestions.length >= 2" class="suggestion suggestion-2" :label="true" @click="clickSuggestion(1)">{{ suggestions[1] }}</v-chip>
       </div>
       <div class="btns">
         <v-dialog v-model="addDialog" persistent max-width="600px">
@@ -171,6 +171,8 @@ export default {
   },
   watch: {
     selectedNode() {
+      this.resetSuggestions();
+
       if (this.selected) {
         this.addBtnActive = true;
         
@@ -467,8 +469,8 @@ export default {
         if(res.status === 200) { //Success
           this.suggestions = [];
           var suggestions = res.data.suggestions;
-          this.suggestions.push(suggestions[0]);
-          this.suggestions.push(suggestions[1]);
+          if(suggestions.length >= 1) this.suggestions.push(suggestions[0]);
+          if(suggestions.length >= 2) this.suggestions.push(suggestions[1]);
         } else { //Fail
           console.log(res.statusText);
         }
@@ -477,6 +479,42 @@ export default {
       } finally {
         this.isSuggestionBtnLoading = false;
       }
+    },
+    clickSuggestion(suggestion_id) {
+      //선택된 node가 없으면 종료
+      if(this.selected === false) return;
+
+      // this.suggestions가 존재하지 않거나, suggestion_id가 유효하지 않으면 종료
+      if(this.suggestions === undefined || this.suggestions.length <= suggestion_id) return;
+
+      var ancestors = this.getSelectedNodeAncestors().reverse(); //최고 노드부터 나오게 역순으로 정렬
+      ancestors.shift();  //처음 노드(최고 노드) 제거
+
+      //새 노드를 위한 id 발급 : 전체 노드들의 아이디 중 최고값 + 1
+      var newNodeId = this.getNewMindmapNodeId();
+
+      //현재 노드(새 노드의 부모) 찾기
+      var current = this.mindmapData;
+      for (var ancestor of ancestors) {
+        var id = ancestor.id;
+
+        for(var child of current.children) {
+          if(child.id === id) {
+            current = child;
+            break;
+          }
+        }
+      }
+
+      //현재 노드에 새 노드 추가하기
+      current.children.push({
+        id: newNodeId,
+        text: this.suggestions[suggestion_id],
+        children: []
+      });
+
+      //update
+      this.$emit("mindmapDataUpdated", this.mindmapData);
     }
   }
 };
