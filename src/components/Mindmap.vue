@@ -21,7 +21,7 @@ export default {
         w: 0,
         h: 0
       },
-      textSize: 15,
+      textSize: 30,
       forces: {
         force: 10000,
         X: 0.5,

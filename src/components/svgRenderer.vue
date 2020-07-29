@@ -6,7 +6,6 @@
       class="net-svg"
       @mouseup='emit("dragEnd",[$event])'
       @touchend.passive='emit("dragEnd",[$event])'
-      @touchstart.passive=""
     >
       <rect class="background" :width="size.w" :height="size.h" @click='emit("resetSelection")' />
       <g class="links" id="l-links">
@@ -56,15 +55,18 @@
     </svg>
 
     <div class="bottom-line">
-      <div class="suggestions">
-        <a v-if="suggestions != undefined" @click="resetSuggestions();" class="suggestions-close-btn"><i class="fas fa-times"></i></a>
-        <v-chip v-if="suggestions != undefined && suggestions.length >= 1" class="suggestion suggestion-1" :label="true" @click="clickSuggestion(0)">{{ suggestions[0] }}</v-chip>
-        <v-chip v-if="suggestions != undefined && suggestions.length >= 2" class="suggestion suggestion-2" :label="true" @click="clickSuggestion(1)">{{ suggestions[1] }}</v-chip>
+      <div class="suggestions float-left" v-show="suggestions.length">
+        <a @click="suggestions = []" class="suggestions-close-btn"><i class="fas fa-times"></i></a>
+        <v-chip large class="suggestion"
+          v-for="(suggestion, idx) of suggestions"
+          :key="idx" 
+          @click="clickSuggestion(idx)"
+        >{{ suggestion }}</v-chip>
       </div>
-      <div class="btns">
+      <div class="btns float-right">
         <v-dialog v-model="addDialog" persistent max-width="600px">
           <template v-slot:activator="{ on, attrs }">
-            <v-btn class="btn add" :icon="true" :disabled="!addBtnActive" :block="true" v-bind="attrs" v-on="on">
+            <v-btn icon block class="btn add" :disabled="!addBtnActive" v-bind="attrs" v-on="on">
               <i class="fas fa-plus-circle"></i>
             </v-btn>
           </template>
@@ -87,7 +89,7 @@
 
         <v-dialog v-model="editDialog" persistent max-width="600px">
           <template v-slot:activator="{ on, attrs }">
-            <v-btn class="btn edit" :icon="true" :disabled="!editBtnActive" :block="true" v-bind="attrs" v-on="on">
+            <v-btn class="btn edit" icon :disabled="!editBtnActive" v-bind="attrs" v-on="on">
               <i class="fas fa-pen"></i>
             </v-btn>
           </template>
@@ -110,7 +112,7 @@
 
         <v-dialog v-model="deleteDialog" persistent max-width="600px">
           <template v-slot:activator="{ on, attrs }">
-            <v-btn class="btn delete" :icon="true" :disabled="!deleteBtnActive" :block="true" v-bind="attrs" v-on="on">
+            <v-btn icon block class="btn delete" :disabled="!deleteBtnActive"  v-bind="attrs" v-on="on">
               <i class="fas fa-trash-alt"></i>
             </v-btn>
           </template>
@@ -129,7 +131,7 @@
           </v-card>
         </v-dialog>
 
-        <v-btn class="btn suggestion" :icon="true" :disabled="!suggestionBtnActive" :block="true" :loading="isSuggestionBtnLoading" @click="suggestionBtnClicked()"><i class="fas fa-lightbulb"></i></v-btn>
+        <v-btn icon block class="btn suggestion" :disabled="!suggestionBtnActive" :loading="isSuggestionBtnLoading" @click="suggestionBtnClicked()"><i class="fas fa-lightbulb"></i></v-btn>
 
       </div>
     </div>
@@ -155,7 +157,7 @@ export default {
       modalAddText: "",
       modalEditText: "",
       isSuggestionBtnLoading: false,
-      suggestions: undefined
+      suggestions: []
     };
   },
   updated: function() {
@@ -171,7 +173,7 @@ export default {
   },
   watch: {
     selectedNode() {
-      this.resetSuggestions();
+      this.suggestions = []
 
       if (this.selected) {
         this.addBtnActive = true;
@@ -404,7 +406,7 @@ export default {
     },
     suggestionBtnClicked() {
       this.isSuggestionBtnLoading = true;
-      this.resetSuggestions();
+      this.suggestions = []
 
       var ancestors = this.getSelectedNodeAncestors().map( item => item.text );
 
@@ -418,34 +420,24 @@ export default {
         headers: {
           "Access-Control-Allow-Origin": "*"
         }
-      }).then(this.fetch_then.bind(this));
-      
-    },
-    resetSuggestions() {
-      this.suggestions = undefined;
-    },
-    fetch_then(res) {
-      try {
+      }).then(res => {
         if(res.status === 200) { //Success
-          this.suggestions = [];
-          var suggestions = res.data.suggestions;
-          if(suggestions.length >= 1) this.suggestions.push(suggestions[0]);
-          if(suggestions.length >= 2) this.suggestions.push(suggestions[1]);
+          if(Array.isArray(res.data.suggestions))
+            this.suggestions = res.data.suggestions;
         } else { //Fail
           console.log(res.statusText);
         }
-      } catch(e) {
-        console.log(e);
-      } finally {
+        
         this.isSuggestionBtnLoading = false;
-      }
+      });
+      
     },
     clickSuggestion(suggestion_id) {
       //선택된 node가 없으면 종료
       if(this.selected === false) return;
 
-      // this.suggestions가 존재하지 않거나, suggestion_id가 유효하지 않으면 종료
-      if(this.suggestions === undefined || this.suggestions.length <= suggestion_id) return;
+      // suggestion_id가 유효하지 않으면 종료
+      if(this.suggestions.length <= suggestion_id) return;
 
       var ancestors = this.getSelectedNodeAncestors().reverse(); //최고 노드부터 나오게 역순으로 정렬
       ancestors.shift();  //처음 노드(최고 노드) 제거
@@ -480,7 +472,7 @@ export default {
 };
 </script>
 
-<style>
+<style lang="scss">
 @import url("https://fonts.googleapis.com/css2?family=Gaegu&display=swap");
 
 .mindmap {
@@ -489,11 +481,9 @@ export default {
 
 .mindmap .bottom-line {
   position: absolute;
-  bottom: 10px;
+  top: 10px;
   left: 10px;
   right: 10px;
-  display: flex;
-  justify-content: space-between;
 }
 
 .mindmap .bottom-line .suggestions {
@@ -588,38 +578,16 @@ export default {
   stroke: gray;
 }
 
-.mindmap svg .link.depth-0 {
-  /*stroke: darkgray;*/
-  stroke-width: 20px;
+$link_widths: 20, 15, 10, 5, 2, 1, 1;
+
+@for $i from 1 through 7 {
+  .mindmap svg .link.depth-#{$i - 1} {
+    stroke-width: #{nth($link_widths, $i)}px;
+  }
 }
 
-.mindmap svg .link.depth-1 {
-  /*stroke: orange;*/
-  stroke-width: 15px;
-}
-
-.mindmap svg .link.depth-2 {
-  /*stroke: yellow;*/
-  stroke-width: 10px;
-}
-
-.mindmap svg .link.depth-3 {
-  /*stroke: green;*/
-  stroke-width: 5px;
-}
-
-.mindmap svg .link.depth-4 {
-  /*stroke: blue;*/
-  stroke-width: 2px;
-}
-
-.mindmap svg .link.depth-5 {
-  /*stroke: navy;*/
-  stroke-width: 1px;
-}
-
-.mindmap svg .link.depth-6 {
-  /*stroke: purple;*/
-  stroke-width: 1px;
+.v-chip span {
+  font-family: "Gaegu", cursive;
+  font-size: x-large;
 }
 </style>
