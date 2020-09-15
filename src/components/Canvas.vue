@@ -8,6 +8,7 @@ export default {
     return {
       canvas: document.getElementById(''),
       ctx: [],
+      scroll: 1,
       pos: {
         drawable: false,
         x: -1,
@@ -19,13 +20,9 @@ export default {
       },
 
       nodes: [
-        {
-          id: 1, label: '', T: -1, B: -1, L: -1, R: -1,
-        },
       ],
 
       edges: [
-        { from: 1, to: 2 },
       ],
     };
   },
@@ -37,6 +34,8 @@ export default {
       this.canvas.width = this.canvas.clientWidth;
       this.canvas.height = this.canvas.clientHeight;
 
+      this.ctx[0].scale(1, 1);
+
       this.canvas.addEventListener('touchstart', (e) => {
         this.initDraw(e);
       }, false);
@@ -47,18 +46,35 @@ export default {
       this.canvas.addEventListener('touchend', (e) => {
         this.finishDraw(e);
       }, false);
+      this.canvas.addEventListener('mousewheel', (e) => {
+        if (e.deltaY < 0) this.scroll = Math.min(this.scroll + 0.1, 3);
+        else this.scroll = Math.max(this.scroll - 0.1, 0.1);
+        // this.reDraw();
+      });
 
       this.ctx[0].beginPath();
-      this.ctx[0].arc(this.canvas.width / 2, this.canvas.height / 2, 40, 0, Math.PI * 2);
+      this.ctx[0].arc(this.canvas.width / 2, this.canvas.height / 2, 50, 0, Math.PI * 2);
       this.ctx[0].stroke();
       const bookText = '흥부와 놀부';
+      this.ctx.font = '20px Calibri';
       const labelLength = bookText.length;
       // eslint-disable-next-line max-len
       this.ctx[0].fillText(bookText, this.canvas.width / 2 - labelLength * 5, this.canvas.height / 2);
+      this.nodes.push({
+        id: 1, label: '흥부와 놀부', T: this.canvas.height + 50, B: this.canvas.height + 50, L: this.canvas.width / 2 - 50, R: this.canvas.width / 2 + 50,
+      });
     };
   },
 
   methods: {
+    reDraw() {
+      this.ctx[0].save();
+      this.ctx[0].clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+      this.ctx[0].restore();
+      this.ctx[0].scale(this.scroll, this.scroll);
+    },
+
     initDraw(event) {
       this.ctx[0].beginPath();
       this.pos.drawable = true;
@@ -133,15 +149,15 @@ export default {
       this.maxPos.B = -1;
       this.maxPos.L = -1;
       this.maxPos.R = -1;
-      console.log(this.nodes);
-      console.log(this.edges);
+      console.log('nodes: ', this.nodes);
+      console.log('edges: ', this.edges);
     },
 
     getPosition(event) {
       const touches = event.changedTouches;
-      const x = touches[0].screenX - this.canvas.offsetLeft;
-      console.log(this.canvas.offsetLeft, this.canvas.offsetTop);
-      const y = touches[0].screenY - this.canvas.offsetTop;
+      const x = (touches[0].screenX - this.canvas.offsetLeft);
+      // console.log(this.canvas.offsetLeft, this.canvas.offsetTop);
+      const y = (touches[0].screenY - this.canvas.offsetTop);
       return { X: x, Y: y };
     },
   },
