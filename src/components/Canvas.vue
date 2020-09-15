@@ -36,7 +36,6 @@ export default {
 
       this.canvas.width = this.canvas.clientWidth;
       this.canvas.height = this.canvas.clientHeight;
-      this.ctx[0].scale(window.devicePixelRatio, window.devicePixelRatio);
 
       this.canvas.addEventListener('touchstart', (e) => {
         this.initDraw(e);
@@ -152,8 +151,13 @@ export default {
 
 <style scoped>
 #canvas {
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   margin: 0;
+  min-width: 100%;
+  min-height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
 }
 </style>
