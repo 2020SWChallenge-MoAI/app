@@ -36,17 +36,26 @@ export default {
 
       this.canvas.width = this.canvas.clientWidth;
       this.canvas.height = this.canvas.clientHeight;
+      this.ctx[0].scale(window.devicePixelRatio, window.devicePixelRatio);
 
       this.canvas.addEventListener('touchstart', (e) => {
         this.initDraw(e);
-      });
+      }, false);
       this.canvas.addEventListener('touchmove', (e) => {
         if (this.pos.drawable) this.draw(e);
-      });
+      }, false);
       // eslint-disable-next-line no-unused-vars
       this.canvas.addEventListener('touchend', (e) => {
         this.finishDraw(e);
-      });
+      }, false);
+
+      this.ctx[0].beginPath();
+      this.ctx[0].arc(this.canvas.width / 2, this.canvas.height / 2, 40, 0, Math.PI * 2);
+      this.ctx[0].stroke();
+      const bookText = '흥부와 놀부';
+      const labelLength = bookText.length;
+      // eslint-disable-next-line max-len
+      this.ctx[0].fillText(bookText, this.canvas.width / 2 - labelLength * 5, this.canvas.height / 2);
     };
   },
 
@@ -131,10 +140,9 @@ export default {
 
     getPosition(event) {
       const touches = event.changedTouches;
-      // eslint-disable-next-line no-var
-      var x = touches[0].screenX - this.canvas.offsetLeft;
-      // eslint-disable-next-line no-var
-      var y = touches[0].screenY - this.canvas.offsetTop;
+      const x = touches[0].screenX - this.canvas.offsetLeft;
+      console.log(this.canvas.offsetLeft, this.canvas.offsetTop);
+      const y = touches[0].screenY - this.canvas.offsetTop;
       return { X: x, Y: y };
     },
   },
@@ -144,8 +152,8 @@ export default {
 
 <style scoped>
 #canvas {
-  border: 4px solid black;
   width: 100vw;
   height: 100vh;
+  margin: 0;
 }
 </style>

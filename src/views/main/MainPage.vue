@@ -16,5 +16,9 @@ export default {
 </script>
 
 <style scoped>
-
+div {
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+}
 </style>
