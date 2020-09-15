@@ -37,21 +37,20 @@ export default {
       this.canvas.width = this.canvas.clientWidth;
       this.canvas.height = this.canvas.clientHeight;
 
-      this.canvas.addEventListener('mousedown', (e) => {
+      this.canvas.addEventListener('touchstart', (e) => {
         this.initDraw(e);
       });
-      this.canvas.addEventListener('mousemove', (e) => {
+      this.canvas.addEventListener('touchmove', (e) => {
         if (this.pos.drawable) this.draw(e);
       });
       // eslint-disable-next-line no-unused-vars
-      this.canvas.addEventListener('mouseup', (e) => {
+      this.canvas.addEventListener('touchend', (e) => {
         this.finishDraw(e);
       });
     };
   },
 
   methods: {
-
     initDraw(event) {
       this.ctx[0].beginPath();
       this.pos.drawable = true;
@@ -131,10 +130,11 @@ export default {
     },
 
     getPosition(event) {
+      const touches = event.changedTouches;
       // eslint-disable-next-line no-var
-      var x = event.pageX - this.canvas.offsetLeft;
+      var x = touches[0].screenX - this.canvas.offsetLeft;
       // eslint-disable-next-line no-var
-      var y = event.pageY - this.canvas.offsetTop;
+      var y = touches[0].screenY - this.canvas.offsetTop;
       return { X: x, Y: y };
     },
   },
