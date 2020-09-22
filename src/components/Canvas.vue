@@ -69,10 +69,9 @@ export default {
   methods: {
     reDraw() {
       this.ctx[0].save();
-      this.ctx[0].clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.ctx[0].scale(3, 3);
 
       this.ctx[0].restore();
-      this.ctx[0].scale(this.scroll, this.scroll);
     },
 
     initDraw(event) {
