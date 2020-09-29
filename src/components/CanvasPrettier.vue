@@ -130,6 +130,7 @@
           >
             {{ word }}
           </span>
+          <button id="nextBtn">다음</button>
         </div>
       </div>
     </div>
@@ -165,9 +166,14 @@ export default {
       ],
 
       words: [
-        '흥부', '놀부', '제비',
+        '흥부', '놀부', '제비', '박',
+      ],
+      wholeWords: [
+        '흥부', '놀부', '제비', '박', '자식',
       ],
       wordDelay: 0,
+      wordSelected: '',
+      canSelect: true,
     };
   },
   mounted() {
@@ -205,6 +211,7 @@ export default {
       const rectangleBtn = document.querySelector('#rectangle');
       const triangleBtn = document.querySelector('#triangle');
       const recommendWords = document.querySelectorAll('.recommend');
+      const nextBtn = document.querySelector('#nextBtn');
       this.ctx[0].lineWidth = 2.5;
       colors.forEach((color) => {
         color.addEventListener('click', this.handleColorClick);
@@ -251,19 +258,34 @@ export default {
       if (triangleBtn) {
         triangleBtn.addEventListener('click', this.triangleClick);
       }
+      if (nextBtn) {
+        nextBtn.addEventListener('click', this.nextClick);
+      }
       recommendWords.forEach((word) => {
         // eslint-disable-next-line no-unused-vars
-        word.addEventListener('touchstart', (e) => {
-          function check() {
+        word.addEventListener('click', (e) => {
+          if (this.canSelect) {
+          // function check() {
             word.classList.add('recommend-selected');
+            this.canSelect = false;
+          } else {
+            recommendWords.forEach((w) => {
+              w.classList.remove('recommend-selected');
+            });
+            word.classList.add('recommend-selected');
+            this.canSelect = false;
           }
-          this.wordDelay = setTimeout(check, 1000);
+          // }
+          // this.wordDelay = setTimeout(check, 1000);
+          this.touchmode = 'word';
+          this.wordSelected = word.innerText;
         }, true);
 
         // eslint-disable-next-line no-unused-vars
-        word.addEventListener('touchend', (e) => {
-          clearTimeout(this.wordDelay);
-        });
+        // word.addEventListener('touchend', (e) => {
+        //  clearTimeout(this.wordDelay);
+        //  word.classList.remove('recommend-selected');
+        // });
       });
 
       this.nodes.push({
@@ -773,6 +795,52 @@ export default {
             x: this.startPos.x + this.padding.x, y: this.startPos.y + this.padding.y, x2: coors.X + this.padding.x, y2: coors.Y + this.padding.y, size: this.brushSize, color: this.strokeColor, mode: 'triangle', text: 'empty',
           });
         }
+      } else if (this.touchmode === 'word') {
+        const coors = this.getPosition(event);
+
+        this.ctx[0].beginPath();
+        this.ctx[0].strokeStyle = this.strokeColor;
+        this.ctx[0].lineWidth = this.brushSize;
+        // eslint-disable-next-line max-len
+        this.ctx[0].arc(coors.X, coors.Y, 50, 0, Math.PI * 2);
+        this.ctx[0].stroke();
+
+        const inputLabel = this.wordSelected;
+        console.log(inputLabel);
+        this.ctx[0].font = '15px Calibri';
+
+        if (inputLabel != null) {
+          const labelLength = inputLabel.length;
+          this.ctx[0].strokeStyle = 'black';
+          this.ctx[0].fillStyle = 'black';
+          // eslint-disable-next-line max-len
+          this.ctx[0].fillText(inputLabel, coors.X - labelLength * 5, coors.Y);
+          this.commandHistory.push({
+            x: coors.X - labelLength * 5 + this.padding.x, y: coors.Y + this.padding.y, color: 'black', mode: 'text', text: inputLabel, font: this.ctx[0].font,
+          });
+          this.ctx[0].strokeStyle = this.strokeColor;
+          const newid = new Date().getTime();
+          this.nodes.push({
+          // eslint-disable-next-line max-len
+            id: newid, label: inputLabel, T: coors.Y + 50 + this.padding.y, B: coors.Y - 50 + this.padding.y, L: coors.X - 50 + this.padding.x, R: coors.X + 50 + this.padding.x,
+          });
+          this.commandHistory.push({
+            x: coors.X + this.padding.x, y: coors.Y + this.padding.y, r: 50, size: this.brushSize, color: this.strokeColor, mode: 'circle', text: 'node',
+          });
+        } else {
+          this.commandHistory.push({
+            x: coors.X + this.padding.x, y: coors.Y + this.padding.y, r: 50, size: this.brushSize, color: this.strokeColor, mode: 'circle', text: 'empty',
+          });
+        }
+        const recommendWords = document.querySelectorAll('.recommend');
+        recommendWords.forEach((word) => {
+          if (word.innerText === this.wordSelected) {
+            word.classList.remove('recommend-selected');
+          }
+        }, true);
+        this.wordSelected = '';
+        this.touchmode = '';
+        this.canSelect = true;
       }
     },
 
@@ -987,6 +1055,19 @@ export default {
 
     triangleClick() {
       this.touchmode = 'triangle';
+    },
+
+    nextClick() {
+      let i = 0;
+      // eslint-disable-next-line no-plusplus
+      for (i = 0; i < 4; i++) {
+        this.wholeWords.shift();
+      }
+      // eslint-disable-next-line no-plusplus
+      for (i = 0; i < 4; i++) {
+        this.words.shift();
+        this.words.push(this.wholeWords[i]);
+      }
     },
   },
 };
@@ -1240,6 +1321,7 @@ body {
   border-radius: 10px;
   margin-left: 10%;
   display: inline-block;
+  padding-top: 1.5em;
 }
 
 #wordBalloon:after {
@@ -1256,6 +1338,9 @@ body {
 .recommend {
   display: inline;
   font-size: 2em;
+  margin: 1em;
+  border-radius: 10px;
+  padding: 0.5em;
   box-shadow: 3px 3px 3px grey;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
@@ -1265,6 +1350,17 @@ body {
   user-select: none;
 }
 .recommend-selected {
-  border: 1px solid blue;
+  border: 1px solid green;
+}
+
+#nextBtn {
+  border: 1px solid green;
+  border-radius: 10px;
+  color: white;
+  background-color: green;
+  font-size: 1.5em;
+  padding: 0.5em;
+  box-shadow: 3px 3px 3px grey;
+  margin-left: 20%;
 }
 </style>
