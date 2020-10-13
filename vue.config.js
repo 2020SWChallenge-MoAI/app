@@ -1,7 +1,7 @@
 module.exports = {
   transpileDependencies: ['vuetify'],
   pwa: {
-    name: 'Ddokdok',
+    name: 'Ttokdok',
     appleMobileWebAppCapable: 'yes',
     appleMobileWebAppStatusBarStyle: 'black',
   },
@@ -9,8 +9,11 @@ module.exports = {
     disableHostCheck: true,
     proxy: {
       '/api': {
-        target: 'http://34.64.132.130:8080',
+        target: 'http://127.0.0.1:7002/',
         changeOrigin: true,
+        pathRewrite: {
+          //'^/api': ''
+        }
       },
     },
   },
