@@ -25,6 +25,8 @@
         <div style="width: 1vw; height: 2vw;" />
         <div id="left-menu-pen" />
         <div id="left-menu-move" />
+        <div id="left-menu-select" />
+        <div id="left-menu-delete" />
         <div id="left-menu-zoomin" />
         <div id="left-menu-zoomout" />
       </div>
@@ -60,7 +62,48 @@
           <canvas id="center-canvas" />
         </div>
 
-        <div id="center-template">
+        <div id="center-recommend">
+          <div id="ai-background">
+            <div id="ai-img" />
+            <div id="ai-space" />
+            <div id="ai-dotline">
+              <div id="ai-dot" />
+              <div id="ai-dot" />
+              <div id="ai-dot" />
+              <div id="ai-dot" />
+              <div id="ai-dot" />
+              <div id="ai-dot" />
+              <div id="ai-dot" />
+            </div>
+          </div>
+
+          <div id="recommend-words" v-show="recommendClicked && recommendLoaded">
+            <div id="recommend-words-top">
+              <div class="recommend-word" id="recommend1">
+              </div>
+              <div class="recommend-word" id="recommend2">
+              </div>
+              <div class="recommend-word" id="recommend3">
+              </div>
+            </div>
+            <div id="recommend-words-bot">
+              <div class="recommend-word" id="recommend4">
+              </div>
+              <div class="recommend-word" id="recommend5">
+              </div>
+              <div class="recommend-word" id="recommend6">
+              </div>
+            </div>
+          </div>
+
+          <div id="recommend-start" v-if="!recommendClicked">
+            내 도움이 필요하면 버튼을 누르면 돼!
+          </div>
+
+          <div id="recommend-loading" v-if="recommendClicked && !recommendLoaded" />
+
+          <div id="right-btn" v-show="recommendClicked && recommendLoaded">
+          </div>
         </div>
       </div>
 
@@ -83,7 +126,7 @@
 </template>
 
 <script>
-// import axios from 'axios';
+import axios from 'axios';
 
 export default {
   data() {
@@ -110,9 +153,18 @@ export default {
       words: [
       ],
 
-      wordSelected: '',
-      canSelect: true,
       wordIndex: 0,
+      selectedNode: -1,
+      doubleSelectedNode: -1,
+      doubleSelectedTime: false,
+
+      edgePos: { x: 0, y: 0 },
+      edgeId: -1,
+
+      wordSelected: '',
+      wordCanSelect: true,
+      recommendClicked: false,
+      recommendLoaded: false,
     };
   },
 
@@ -136,8 +188,13 @@ export default {
 
     const penBtn = document.querySelector('#left-menu-pen');
     const dragBtn = document.querySelector('#left-menu-move');
+    const selectBtn = document.querySelector('#left-menu-select');
     const zoomin = document.querySelector('#left-menu-zoomin');
     const zoomout = document.querySelector('#left-menu-zoomout');
+    const deleteBtn = document.querySelector('#left-menu-delete');
+    const nextBtn = document.querySelector('#right-btn');
+    const recommendWords = document.querySelectorAll('.recommend-word');
+    const aiSupportBtn = document.querySelector('#ai-background');
 
     if (penBtn) {
       penBtn.addEventListener('click', this.penBtnClicked);
@@ -145,47 +202,83 @@ export default {
     if (dragBtn) {
       dragBtn.addEventListener('click', this.dragBtnClicked);
     }
+    if (selectBtn) {
+      selectBtn.addEventListener('click', this.selectBtnClicked);
+    }
     if (zoomin) {
       zoomin.addEventListener('click', this.zoominClicked);
     }
     if (zoomout) {
       zoomout.addEventListener('click', this.zoomoutClicked);
     }
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', this.deleteBtnClicked);
+    }
+    if (nextBtn) {
+      nextBtn.addEventListener('click', this.nextBtnClicked);
+    }
+    if (aiSupportBtn) {
+      aiSupportBtn.addEventListener('click', this.aiSupportBtnClicked);
+    }
+    recommendWords.forEach((word) => {
+      // eslint-disable-next-line no-unused-vars
+      word.addEventListener('click', (e) => {
+        this.recommendWordClicked(e);
+      });
 
-    this.initSetting(0, 0);
+      this.touchmode = 'word';
+      this.wordSelected = word.innerText;
+    }, true);
+
+    this.ctx[0].scale(0.9, 0.9);
+    this.ctx[0].scale(0.9, 0.9);
+    this.ctx[0].scale(1, 1);
+    this.padding.x = -100;
+    this.padding.y = -95;
+    this.scale = 0.9 * 0.9;
+    this.canvasScale = 0.8;
+
+    this.edges.push({
+      id: 1, from: 0, to: 1,
+    });
+    this.edges.push({
+      id: 1, from: 0, to: 2,
+    });
+    this.edges.push({
+      id: 1, from: 0, to: 3,
+    });
+    this.edges.push({
+      id: 1, from: 0, to: 4,
+    });
+
+    this.nodes.push({
+      id: 0, x: this.canvas.width / 2, y: this.canvas.height / 2, size: 125, type: -1, link: true,
+    });
+
+    this.nodes.push({
+      // eslint-disable-next-line max-len
+      id: 1, label: '등장인물', x: 120, y: 120, size: 80, type: 0, link: true,
+    });
+    this.nodes.push({
+      // eslint-disable-next-line max-len
+      id: 2, label: '줄거리', x: this.canvas.width - 120, y: 120, size: 80, type: 1, link: true,
+    });
+    this.nodes.push({
+      // eslint-disable-next-line max-len
+      id: 3, label: '느낀점', x: 120, y: this.canvas.height - 120, size: 80, type: 2, link: true,
+    });
+    this.nodes.push({
+      // eslint-disable-next-line max-len
+      id: 4, label: '인상장면', x: this.canvas.width - 120, y: this.canvas.height - 120, size: 80, type: 3, link: true,
+    });
+
+    this.reDrawAll();
   },
 
   methods: {
     initSetting(changeX, changeY) {
       const paddingX = changeX + this.padding.x;
       const paddingY = changeY + this.padding.y;
-      // edge 줄기 미리 그리기
-      this.ctx[0].strokeStyle = '#baad93';
-      this.ctx[0].lineWidth = 12;
-      this.ctx[0].beginPath();
-      // eslint-disable-next-line max-len
-      this.ctx[0].moveTo(this.canvas.width / 2 - paddingX, this.canvas.height / 2 - paddingY);
-      this.ctx[0].lineTo(120 - paddingX, 120 - paddingY);
-      this.ctx[0].stroke();
-
-      this.ctx[0].beginPath();
-      // eslint-disable-next-line max-len
-      this.ctx[0].moveTo(this.canvas.width / 2 - paddingX, this.canvas.height / 2 - paddingY);
-      this.ctx[0].lineTo(this.canvas.width - 120 - paddingX, 120 - paddingY);
-      this.ctx[0].stroke();
-
-      this.ctx[0].beginPath();
-      // eslint-disable-next-line max-len
-      this.ctx[0].moveTo(this.canvas.width / 2 - paddingX, this.canvas.height / 2 - paddingY);
-      this.ctx[0].lineTo(120 - paddingX, this.canvas.height - 120 - paddingY);
-      this.ctx[0].stroke();
-
-      this.ctx[0].beginPath();
-      // eslint-disable-next-line max-len
-      this.ctx[0].moveTo(this.canvas.width / 2 - paddingX, this.canvas.height / 2 - paddingY);
-      // eslint-disable-next-line max-len
-      this.ctx[0].lineTo(this.canvas.width - 120 - paddingX, this.canvas.height - 120 - paddingY);
-      this.ctx[0].stroke();
 
       // 템플릿(나무) 그리기
       this.ctx[0].beginPath();
@@ -212,15 +305,21 @@ export default {
       this.ctx[0].arc(this.canvas.width * 0.5 - paddingX, this.canvas.height * 0.4 - paddingY, 130, Math.PI * 0.25, Math.PI * 0.75);
       this.ctx[0].stroke();
 
-      this.makeNode(120 - paddingX, 120 - paddingY, 80, 0, '등장인물');
-      this.makeNode(this.canvas.width - 120 - paddingX, 120 - paddingY, 80, 1, '줄거리');
-      this.makeNode(120 - paddingX, this.canvas.height - 120 - paddingY, 80, 2, '느낀점');
-      this.makeNode(this.canvas.width - 120 - paddingX, this.canvas.height - 120 - paddingY, 80, 3, '인상장면');
+      // 책 이미지 넣기
+      const bookImg = new Image();
+      // eslint-disable-next-line
+      bookImg.src = require('../../assets/left-book-menu/book3.png');
+      // eslint-disable-next-line
+      this.ctx[0].drawImage(bookImg, this.canvas.width / 2 - 80 - paddingX, this.canvas.height / 2 - 150 - paddingY, 150, 200);
     },
 
     startDraw(event) {
       if (this.touchmode === 'pen') {
+        this.reDrawAll();
+        this.selectedNode = -1;
         this.ctx[0].beginPath();
+        this.ctx[0].lineWidth = 12;
+        this.ctx[0].strokeStyle = '836d4b';
         const coors = this.getPosition(event);
         this.ctx[0].moveTo(coors.X, coors.Y);
         this.startPos.x = coors.X;
@@ -234,9 +333,46 @@ export default {
           x: coors.X + this.padding.x, y: coors.Y + this.padding.y, size: this.brushSize, color: this.strokeColor, mode: 'lineStart',
         });
       } else if (this.touchmode === 'drag') {
+        this.selectedNode = -1;
         const coors = this.getPosition(event);
         this.startPos.x = coors.X;
         this.startPos.y = coors.Y;
+      } else if (this.touchmode === 'select') {
+        this.selectedNode = -1;
+        // 노드에 연결 안돼있는 엣지 제거
+        if (this.edgeId !== -1) {
+          const index = this.edges.findIndex((element) => element.id === this.edgeId);
+          this.edges.splice(index, 1);
+          this.edgeId = -1;
+        }
+        this.reDrawAll();
+        const coors = this.getPosition(event);
+        this.startPos.x = coors.X;
+        this.startPos.y = coors.Y;
+
+        for (let i = 1; i < this.nodes.length; i += 1) {
+          // eslint-disable-next-line max-len
+          if ((this.nodes[i].x - this.nodes[i].size - this.padding.x < coors.X && coors.X < this.nodes[i].x + this.nodes[i].size - this.padding.x) && (this.nodes[i].y - this.nodes[i].size - this.padding.y < coors.Y && coors.Y < this.nodes[i].y + this.nodes[i].size - this.padding.y)) {
+            if (this.selectedNode !== -1) {
+              // eslint-disable-next-line max-len
+              const loc1 = (Math.abs(this.nodes[i].x - this.padding.x - coors.X)) / 2 + (Math.abs(this.nodes[i].y - this.padding.y - coors.Y)) / 2;
+              // eslint-disable-next-line max-len
+              const loc2 = (Math.abs(this.nodes[this.selectedNode].x - this.padding.x - coors.X)) / 2 + Math.abs((this.nodes[this.selectedNode].y - this.padding.y - coors.Y)) / 2;
+              if (loc1 < loc2) {
+                this.selectedNode = this.nodes[i].id;
+                this.doubleSelectedNode = this.selectedNode;
+              }
+            }
+            this.selectedNode = this.nodes[i].id;
+            this.doubleSelectedNode = this.selectedNode;
+          }
+        }
+        if (this.selectedNode !== -1) {
+          const node = this.nodes.find((element) => element.id === this.selectedNode);
+          this.reDrawAll();
+          // eslint-disable-next-line max-len
+          this.highlightNode(node.x - this.padding.x, node.y - this.padding.y, node.size, node.type);
+        }
       }
     },
 
@@ -258,33 +394,65 @@ export default {
         const changeX = this.startPos.x - coors.X;
         const changeY = this.startPos.y - coors.Y;
 
-        let i = 0;
         this.ctx[0].clearRect(0, 0, 100000, 100000);
+        this.ctx[0].beginPath();
 
+        // edge 먼저 그리기
+        // eslint-disable-next-line no-plusplus
+        for (let i = 0; i < this.edges.length; i++) {
+          let from = this.nodes.find((element) => element.id === this.edges[i].from);
+          let to = this.nodes.find((element) => element.id === this.edges[i].to);
+          if (this.edges[i].from === -1) from = { x: this.edgePos.x, y: this.edgePos.y };
+          else if (this.edges[i].to === -1) to = { x: this.edgePos.x, y: this.edgePos.y };
+          // eslint-disable-next-line max-len
+          this.drawEdge(from.x - this.padding.x - changeX, from.y - this.padding.y - changeY, to.x - this.padding.x - changeX, to.y - this.padding.y - changeY);
+        }
+
+        // 템플릿 그리기
         this.initSetting(changeX, changeY);
 
+        // node 그리기
         // eslint-disable-next-line no-plusplus
-        for (i; i < this.commandHistory.length; i++) {
-          const point = this.commandHistory[i];
-
-          if (point.mode === 'lineStart') {
-            this.ctx[0].beginPath();
-            // eslint-disable-next-line max-len
-            this.ctx[0].moveTo(point.x - changeX - this.padding.x, point.y - changeY - this.padding.y);
-          } else if (point.mode === 'line') {
-            // eslint-disable-next-line max-len
-            this.ctx[0].lineTo(point.x - changeX - this.padding.x, point.y - changeY - this.padding.y);
-          } else if (point.mode === 'node' || point.mode === 'edge') {
-            this.ctx[0].stroke();
-          } else if (point.mode === 'text') {
-            this.ctx[0].font = point.font;
-            // eslint-disable-next-line max-len
-            this.ctx[0].fillText(point.text, point.x - changeX - this.padding.x, point.y - changeY - this.padding.y);
-          } else if (point.mode === 'lineFinish') {
-            this.ctx[0].stroke();
-          }
+        for (let i = 0; i < this.nodes.length; i++) {
+          // eslint-disable-next-line max-len
+          this.makeNode(this.nodes[i].x - this.padding.x - changeX, this.nodes[i].y - this.padding.y - changeY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
         }
-        this.ctx[0].stroke();
+      } else if (this.touchmode === 'select') {
+        if (this.selectedNode !== -1) {
+          const coors = this.getPosition(event);
+          const index = this.nodes.findIndex((element) => element.id === this.selectedNode);
+          const node = this.nodes.find((element) => element.id === this.selectedNode);
+
+          this.nodes[index].x = coors.X + this.padding.x;
+          this.nodes[index].y = coors.Y + this.padding.y;
+
+          this.ctx[0].clearRect(0, 0, 100000, 100000);
+          this.ctx[0].beginPath();
+
+          // edge 먼저 그리기
+          // eslint-disable-next-line no-plusplus
+          for (let i = 0; i < this.edges.length; i++) {
+            let from = this.nodes.find((element) => element.id === this.edges[i].from);
+            let to = this.nodes.find((element) => element.id === this.edges[i].to);
+            if (this.edges[i].from === -1) from = { x: this.edgePos.x, y: this.edgePos.y };
+            else if (this.edges[i].to === -1) to = { x: this.edgePos.x, y: this.edgePos.y };
+            // eslint-disable-next-line max-len
+            this.drawEdge(from.x - this.padding.x, from.y - this.padding.y, to.x - this.padding.x, to.y - this.padding.y);
+          }
+
+          // 템플릿 그리기
+          this.initSetting(0, 0);
+
+          // node 그리기
+          // eslint-disable-next-line no-plusplus
+          for (let i = 0; i < this.nodes.length; i++) {
+            // eslint-disable-next-line max-len
+            this.makeNode(this.nodes[i].x - this.padding.x, this.nodes[i].y - this.padding.y, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+          }
+
+          // eslint-disable-next-line max-len
+          this.highlightNode(node.x - this.padding.x, node.y - this.padding.y, node.size, node.type);
+        }
       }
     },
 
@@ -297,79 +465,156 @@ export default {
         if (thresh > 800) {
           let edgeFrom = -1;
           let edgeTo = -1;
+
+          // 노드에 연결 안돼있는 엣지 제거
+          if (this.edgeId !== -1) {
+            const index = this.edges.findIndex((element) => element.id === this.edgeId);
+            this.edges.splice(index, 1);
+            this.edgeId = -1;
+          }
+
+          // edgeFrom 검사
           // eslint-disable-next-line no-plusplus
           for (let i = 0; i < this.nodes.length; i++) {
-          // eslint-disable-next-line max-len
-            if ((this.nodes[i].T + 100 > this.startPos.y + this.padding.y && this.nodes[i].B - 100 < this.startPos.y + this.padding.y) && (this.nodes[i].L - 100 < this.startPos.x + this.padding.x && this.nodes[i].R + 100 > this.startPos.x + this.padding.x)) {
+            const nodesize = this.nodes[i].size;
+            // eslint-disable-next-line max-len
+            if ((this.nodes[i].y + nodesize > this.startPos.y + this.padding.y && this.nodes[i].y - nodesize < this.startPos.y + this.padding.y) && (this.nodes[i].x - nodesize < this.startPos.x + this.padding.x && this.nodes[i].x + nodesize > this.startPos.x + this.padding.x)) {
               edgeFrom = this.nodes[i].id;
             }
           }
 
+          // edgeTo 검사
           // eslint-disable-next-line no-plusplus
           for (let i = 0; i < this.nodes.length; i++) {
-          // eslint-disable-next-line max-len
-            if ((this.nodes[i].T + 100 > coors.Y + this.padding.y && this.nodes[i].B - 100 < coors.Y + this.padding.y) && (this.nodes[i].L - 100 < coors.X + this.padding.x && this.nodes[i].R + 100 > coors.X + this.padding.x)) {
+            const nodesize = this.nodes[i].size;
+            // eslint-disable-next-line max-len
+            if ((this.nodes[i].y + nodesize > coors.Y + this.padding.y && this.nodes[i].y - nodesize < coors.Y + this.padding.y) && (this.nodes[i].x - nodesize < coors.X + this.padding.x && this.nodes[i].x + nodesize > coors.X + this.padding.x)) {
               edgeTo = this.nodes[i].id;
             }
           }
-          console.log(edgeFrom, edgeTo);
 
-          if (edgeFrom === -1 || edgeTo === -1) {
+          // edge가 아닐때
+          if (edgeFrom === -1 && edgeTo === -1) {
             this.commandHistory.push({
               x: coors.X + this.padding.x, y: coors.Y + this.padding.y, size: this.brushSize, color: this.strokeColor, mode: 'lineFinish',
             });
+            let lastPoint = this.commandHistory.pop();
+            while (lastPoint.mode !== 'lineStart') {
+              lastPoint = this.commandHistory.pop();
+            }
+            this.reDrawAll();
+
+            // 하나만 연결된 edge일 때
+          } else if (edgeFrom === -1 || edgeTo === -1) {
+            const newid = new Date().getTime();
+            this.edges.push({ id: newid, from: edgeFrom, to: edgeTo });
+            this.edgeId = newid;
+            this.edgePos.x = coors.X + this.padding.x;
+            this.edgePos.y = coors.Y + this.padding.y;
+            this.reDrawAll();
+            // edge일 때
           } else {
             const newid = new Date().getTime();
             this.edges.push({ id: newid, from: edgeFrom, to: edgeTo });
             this.commandHistory.push({
               x: coors.X + this.padding.x, y: coors.Y + this.padding.y, size: this.brushSize, color: this.strokeColor, mode: 'edge', id: newid,
             });
+            const nodeindex1 = this.nodes.findIndex((element) => element.id === edgeFrom);
+            const nodeindex2 = this.nodes.findIndex((element) => element.id === edgeTo);
+            this.nodes[nodeindex1].link = true;
+            this.nodes[nodeindex2].link = true;
+            this.reDrawAll();
           }
+
+          // edge 없는 노드 삭제
+          for (let i = 1; i < this.nodes.length; i += 1) {
+            if (this.nodes[i].link === false) {
+              // 노드 삭제
+              const deleteNodeid = this.nodes[i].id;
+              this.nodes.splice(i, 1);
+
+              for (let j = 0; j < this.edges.length; j += 1) {
+                if (this.edges[j].to === deleteNodeid || this.edges[j].from === deleteNodeid) {
+                  this.edges.splice(j, 1);
+                  j -= 1;
+                }
+              }
+              i -= 1;
+            }
+          }
+          this.reDrawAll();
         } else {
           const inputLabel = prompt('단어를 입력하세요.');
-          if (this.maxPos.R - this.maxPos.L < 100) {
-            this.ctx[0].font = '10px Calibri';
-          } else if (this.maxPos.R - this.maxPos.L >= 100 && this.maxPos.R - this.maxPos.L < 400) {
-            this.ctx[0].font = '30px Calibri';
-          } else if (this.maxPos.R - this.maxPos.L >= 400 && this.maxPos.R - this.maxPos.L < 1000) {
-            this.ctx[0].font = '80px Calibri';
-          }
-          if (inputLabel != null) {
-            const labelLength = inputLabel.length;
-            this.ctx[0].strokeStyle = 'black';
-            this.ctx[0].fillStyle = 'black';
-            if (this.ctx[0].font === '10px Calibri') {
-            // eslint-disable-next-line max-len
-              this.ctx[0].fillText(inputLabel, (this.maxPos.L + this.maxPos.R) / 2 - labelLength * 5, (this.maxPos.T + this.maxPos.B) / 2);
-              this.commandHistory.push({
-                x: (this.maxPos.L + this.maxPos.R) / 2 - labelLength * 5 + this.padding.x, y: (this.maxPos.T + this.maxPos.B) / 2 + this.padding.y, color: 'black', mode: 'text', text: inputLabel, font: this.ctx[0].font,
-              });
-            } else if (this.ctx[0].font === '30px Calibri') {
-            // eslint-disable-next-line max-len
-              this.ctx[0].fillText(inputLabel, (this.maxPos.L + this.maxPos.R) / 2 - labelLength * 10, (this.maxPos.T + this.maxPos.B) / 2);
-              this.commandHistory.push({
-                x: (this.maxPos.L + this.maxPos.R) / 2 - labelLength * 10 + this.padding.x, y: (this.maxPos.T + this.maxPos.B) / 2 + this.padding.y, color: 'black', mode: 'text', text: inputLabel, font: this.ctx[0].font,
-              });
-            } else {
-            // eslint-disable-next-line max-len
-              this.ctx[0].fillText(inputLabel, (this.maxPos.L + this.maxPos.R) / 2 - labelLength * 20, (this.maxPos.T + this.maxPos.B) / 2);
-              this.commandHistory.push({
-                x: (this.maxPos.L + this.maxPos.R) / 2 - labelLength * 20 + this.padding.x, y: (this.maxPos.T + this.maxPos.B) / 2 + this.padding.y, color: 'black', mode: 'text', text: inputLabel, font: this.ctx[0].font,
-              });
+          let nodesize = 50;
+          const size = (this.maxPos.R - this.maxPos.L) / 2 + (this.maxPos.T - this.maxPos.B) / 2;
+          nodesize = size / 2;
+
+          // edge 없는 노드 삭제
+          for (let i = 1; i < this.nodes.length; i += 1) {
+            if (this.nodes[i].link === false) {
+              // 노드 삭제
+              const deleteNodeid = this.nodes[i].id;
+              this.nodes.splice(i, 1);
+
+              for (let j = 0; j < this.edges.length; j += 1) {
+                if (this.edges[j].to === deleteNodeid || this.edges[j].from === deleteNodeid) {
+                  this.edges.splice(j, 1);
+                  j -= 1;
+                }
+              }
+              i -= 1;
             }
-            this.ctx[0].strokeStyle = this.strokeColor;
+          }
+
+          if (inputLabel != null) {
             const newid = new Date().getTime();
             this.nodes.push({
             // eslint-disable-next-line max-len
-              id: newid, label: inputLabel, T: this.maxPos.T + this.padding.y, B: this.maxPos.B + this.padding.y, L: this.maxPos.L + this.padding.x, R: this.maxPos.R + this.padding.x,
+              id: newid, label: inputLabel, x: (this.maxPos.L + this.maxPos.R) / 2 + this.padding.x, y: (this.maxPos.T + this.maxPos.B) / 2 + this.padding.y, size: nodesize, type: newid % 4, link: false,
             });
-            this.commandHistory.push({
-              x: coors.X + this.padding.x, y: coors.Y + this.padding.y, size: this.brushSize, color: this.strokeColor, mode: 'node', id: newid,
-            });
+
+            // 노드에 연결 안돼있는 엣지 제거
+            if (this.edgeId !== -1) {
+              // eslint-disable-next-line max-len
+              if (((this.maxPos.L + this.maxPos.R) / 2 + this.padding.x - nodesize < this.edgePos.x && this.edgePos.x < (this.maxPos.L + this.maxPos.R) / 2 + this.padding.x + nodesize) && ((this.maxPos.T + this.maxPos.B) / 2 + this.padding.y - nodesize < this.edgePos.y && this.edgePos.y < (this.maxPos.T + this.maxPos.B) / 2 + this.padding.y + nodesize)) {
+                const index = this.edges.findIndex((element) => element.id === this.edgeId);
+                if (this.edges[index].to === -1) this.edges[index].to = newid;
+                else this.edges[index].from = newid;
+                const nodeindex = this.nodes.findIndex((element) => element.id === newid);
+                this.nodes[nodeindex].link = true;
+              } else {
+                const index = this.edges.findIndex((element) => element.id === this.edgeId);
+                this.edges.splice(index, 1);
+              }
+            }
+
+            this.edgeId = -1;
+            this.reDrawAll();
           } else {
             this.commandHistory.push({
               x: coors.X + this.padding.x, y: coors.Y + this.padding.y, size: this.brushSize, color: this.strokeColor, mode: 'lineFinish',
             });
+            let lastPoint = this.commandHistory.pop();
+            while (lastPoint.mode !== 'lineStart') {
+              lastPoint = this.commandHistory.pop();
+            }
+            // edge 없는 노드 삭제
+            for (let i = 1; i < this.nodes.length; i += 1) {
+              if (this.nodes[i].link === false) {
+                // 노드 삭제
+                const deleteNodeid = this.nodes[i].id;
+                this.nodes.splice(i, 1);
+
+                for (let j = 0; j < this.edges.length; j += 1) {
+                  if (this.edges[j].to === deleteNodeid || this.edges[j].from === deleteNodeid) {
+                    this.edges.splice(j, 1);
+                    j -= 1;
+                  }
+                }
+                i -= 1;
+              }
+            }
+            this.reDrawAll();
           }
         }
         this.startPos.x = -1;
@@ -378,6 +623,8 @@ export default {
         this.maxPos.B = -1;
         this.maxPos.L = -1;
         this.maxPos.R = -1;
+        this.ctx[0].strokeStyle = '#836d4b';
+        this.ctx[0].lineWidth = 12;
         console.log('nodes: ', this.nodes);
         console.log('edges: ', this.edges);
       } else if (this.touchmode === 'drag') {
@@ -395,7 +642,6 @@ export default {
         this.ctx[0].stroke();
 
         const inputLabel = this.wordSelected;
-        console.log(inputLabel);
         this.ctx[0].font = '15px Calibri';
 
         if (inputLabel != null) {
@@ -429,38 +675,57 @@ export default {
         }, true);
         this.wordSelected = '';
         this.touchmode = '';
-        this.canSelect = true;
+        this.wordCanSelect = true;
+      } else if (this.touchmode === 'select') {
+        if (this.doubleSelectedNode === this.selectedNode) {
+          if (this.doubleSelectedTime) {
+            const index = this.nodes.findIndex((element) => element.id === this.selectedNode);
+            const inputLabel = prompt('단어를 입력하세요.', this.nodes[index].label);
+
+            if (inputLabel != null) {
+              this.nodes[index].label = inputLabel;
+              this.reDrawAll();
+              this.doubleSelectedTime = false;
+            }
+          } else {
+            this.doubleSelectedTime = true;
+            setTimeout(() => {
+              this.doubleSelectedTime = false;
+            }, 200);
+          }
+        } else {
+          this.doubleSelectedTime = true;
+          setTimeout(() => {
+            this.doubleSelectedTime = false;
+          }, 200);
+        }
       }
     },
 
     reDrawAll() {
-      let i = 0;
       this.ctx[0].clearRect(0, 0, 100000, 100000);
+      this.ctx[0].beginPath();
 
+      // edge 먼저 그리기
+      // eslint-disable-next-line no-plusplus
+      for (let i = 0; i < this.edges.length; i++) {
+        let from = this.nodes.find((element) => element.id === this.edges[i].from);
+        let to = this.nodes.find((element) => element.id === this.edges[i].to);
+        if (this.edges[i].from === -1) from = { x: this.edgePos.x, y: this.edgePos.y };
+        else if (this.edges[i].to === -1) to = { x: this.edgePos.x, y: this.edgePos.y };
+        // eslint-disable-next-line max-len
+        this.drawEdge(from.x - this.padding.x, from.y - this.padding.y, to.x - this.padding.x, to.y - this.padding.y);
+      }
+
+      // 템플릿 그리기
       this.initSetting(0, 0);
 
+      // node 그리기
       // eslint-disable-next-line no-plusplus
-      for (i; i < this.commandHistory.length; i++) {
-        const point = this.commandHistory[i];
-
-        this.ctx[0].lineWidth = point.size;
-        this.ctx[0].strokeStyle = point.color;
-
-        if (point.mode === 'lineStart') {
-          this.ctx[0].beginPath();
-          this.ctx[0].moveTo(point.x - this.padding.x, point.y - this.padding.y);
-        } else if (point.mode === 'line') {
-          this.ctx[0].lineTo(point.x - this.padding.x, point.y - this.padding.y);
-        } else if (point.mode === 'node' || point.mode === 'edge') {
-          this.ctx[0].stroke();
-        } else if (point.mode === 'text') {
-          this.ctx[0].font = point.font;
-          this.ctx[0].fillText(point.text, point.x - this.padding.x, point.y - this.padding.y);
-        } else if (point.mode === 'lineFinish') {
-          this.ctx[0].stroke();
-        }
+      for (let i = 0; i < this.nodes.length; i++) {
+        // eslint-disable-next-line max-len
+        this.makeNode(this.nodes[i].x - this.padding.x, this.nodes[i].y - this.padding.y, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
       }
-      this.ctx[0].stroke();
     },
 
     getPosition(event) {
@@ -472,6 +737,14 @@ export default {
     },
 
     makeNode(x, y, size, type, text) {
+      let fontsize = size / 4;
+      let linesize = 1;
+      if (text !== undefined) {
+        if (text.length > 8) fontsize /= 2;
+        else if (text.length > 5) fontsize = size / (text.length - 1);
+        linesize = Math.floor(text.length / 10) + 1;
+        if (text.length % 10 === 0) linesize -= 1;
+      }
       if (type === 0) {
         // 나뭇잎1 그리기
         this.ctx[0].beginPath();
@@ -491,10 +764,15 @@ export default {
         // eslint-disable-next-line max-len
         this.ctx[0].bezierCurveTo(x + size, y - size * 0.8, x, y - size * 0.8, x, y - size * 0.6);
         this.ctx[0].fill();
-        // eslint-disable-next-line prefer-template
-        this.ctx[0].font = 'bold ' + size / 4 + 'px Calibri';
-        this.ctx[0].fillStyle = 'white';
-        this.ctx[0].fillText(text, x - (size / 4) * (text.length / 2), y);
+        let textloc = ((linesize - 1) / 2) * -1;
+        for (let i = 0; i < linesize; i += 1) {
+          // eslint-disable-next-line prefer-template
+          this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
+          this.ctx[0].fillStyle = 'white';
+          // eslint-disable-next-line max-len
+          this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
+          textloc += 1;
+        }
       } else if (type === 1) {
         // 나뭇잎2 그리기
         this.ctx[0].beginPath();
@@ -514,10 +792,15 @@ export default {
         // eslint-disable-next-line max-len
         this.ctx[0].bezierCurveTo(x + size, y - size / 2, x + size * 0.2, y - size * 0.9, x, y - size / 2);
         this.ctx[0].fill();
-        // eslint-disable-next-line prefer-template
-        this.ctx[0].font = 'bold ' + size / 4 + 'px Calibri';
-        this.ctx[0].fillStyle = 'white';
-        this.ctx[0].fillText(text, x - (size / 4) * (text.length / 2), y);
+        let textloc = ((linesize - 1) / 2) * -1;
+        for (let i = 0; i < linesize; i += 1) {
+          // eslint-disable-next-line prefer-template
+          this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
+          this.ctx[0].fillStyle = 'white';
+          // eslint-disable-next-line max-len
+          this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
+          textloc += 1;
+        }
       } else if (type === 2) {
         // 나뭇잎3 그리기
         this.ctx[0].beginPath();
@@ -540,10 +823,15 @@ export default {
         // eslint-disable-next-line max-len
         this.ctx[0].bezierCurveTo(x + size * 1.1, y - size * 0.3, x + size * 0.35, y - size * 0.9, x + size * 0.2, y - size * 0.6);
         this.ctx[0].fill();
-        // eslint-disable-next-line prefer-template
-        this.ctx[0].font = 'bold ' + size / 4 + 'px Calibri';
-        this.ctx[0].fillStyle = 'white';
-        this.ctx[0].fillText(text, x - (size / 4) * (text.length / 2), y);
+        let textloc = ((linesize - 1) / 2) * -1;
+        for (let i = 0; i < linesize; i += 1) {
+          // eslint-disable-next-line prefer-template
+          this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
+          this.ctx[0].fillStyle = 'white';
+          // eslint-disable-next-line max-len
+          this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
+          textloc += 1;
+        }
       } else if (type === 3) {
         // 나뭇잎4 그리기
         this.ctx[0].beginPath();
@@ -569,19 +857,162 @@ export default {
         // eslint-disable-next-line max-len
         this.ctx[0].bezierCurveTo(x + size * 1.0, y - size * 0.8, x + size * 0.2, y - size * 0.7, x + size * 0.3, y - size * 0.6);
         this.ctx[0].fill();
-        // eslint-disable-next-line prefer-template
-        this.ctx[0].font = 'bold ' + size / 4 + 'px Calibri';
-        this.ctx[0].fillStyle = 'white';
-        this.ctx[0].fillText(text, x - (size / 4) * (text.length / 2), y);
+        let textloc = ((linesize - 1) / 2) * -1;
+        for (let i = 0; i < linesize; i += 1) {
+          // eslint-disable-next-line prefer-template
+          this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
+          this.ctx[0].fillStyle = 'white';
+          // eslint-disable-next-line max-len
+          this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2 - 0.2), y + textloc * (fontsize + (fontsize / 3)));
+          textloc += 1;
+        }
       }
+    },
+
+    highlightNode(x, y, size, type) {
+      if (type === 0) {
+        // 나뭇잎1 그리기
+        this.ctx[0].beginPath();
+        // 기본 세팅
+        this.ctx[0].strokeStyle = '#649a28';
+        this.ctx[0].lineWidth = 8;
+
+        this.ctx[0].moveTo(x, y - size * 0.6);
+        // eslint-disable-next-line max-len
+        this.ctx[0].bezierCurveTo(x - size / 2, y - size * 0.9, x - size * 1.2, y - size * 0.7, x - size * 0.8, y);
+
+        // eslint-disable-next-line max-len
+        this.ctx[0].bezierCurveTo(x - size * 1.2, y + size * 0.6, x, y + size * 0.8, x + size / 4, y + size * 0.4);
+
+        // eslint-disable-next-line max-len
+        this.ctx[0].bezierCurveTo(x + size * 0.8, y + size * 0.6, x + size * 0.9, y + size / 8, x + size * 0.75, y);
+
+        // eslint-disable-next-line max-len
+        this.ctx[0].bezierCurveTo(x + size, y - size * 0.8, x, y - size * 0.8, x, y - size * 0.6);
+        this.ctx[0].stroke();
+      } else if (type === 1) {
+        // 나뭇잎2 그리기
+        this.ctx[0].beginPath();
+        // 기본 세팅
+        this.ctx[0].strokeStyle = '#649a28';
+        this.ctx[0].lineWidth = 8;
+
+        this.ctx[0].moveTo(x, y - size / 2);
+        // eslint-disable-next-line max-len
+        this.ctx[0].bezierCurveTo(x - size / 4, y - size * 0.9, x - size, y - size * 0.6, x - size * 0.8, y - size * 0.2);
+
+        // eslint-disable-next-line max-len
+        this.ctx[0].bezierCurveTo(x - size * 1.3, y + size / 4, x - size / 2, y + size * 0.8, x - size / 4, y + size / 2);
+
+        // eslint-disable-next-line max-len
+        this.ctx[0].bezierCurveTo(x + size / 2, y + size * 0.9, x + size * 1, y + size * 0.3, x + size * 0.75, y - 5);
+
+        // eslint-disable-next-line max-len
+        this.ctx[0].bezierCurveTo(x + size, y - size / 2, x + size * 0.2, y - size * 0.9, x, y - size / 2);
+        this.ctx[0].stroke();
+      } else if (type === 2) {
+        // 나뭇잎3 그리기
+        this.ctx[0].beginPath();
+        // 기본 세팅
+        this.ctx[0].strokeStyle = '#649a28';
+        this.ctx[0].lineWidth = 8;
+
+        this.ctx[0].moveTo(x + size * 0.2, y - size * 0.6);
+        // eslint-disable-next-line max-len
+        this.ctx[0].bezierCurveTo(x, y - size * 0.8, x - size * 0.4, y - size * 0.8, x - size * 0.5, y - size * 0.6);
+
+        // eslint-disable-next-line max-len
+        this.ctx[0].bezierCurveTo(x - size * 1, y - size * 0.7, x - size * 1.2, y, x - size * 0.7, y + size * 0.1);
+
+        // eslint-disable-next-line max-len
+        this.ctx[0].bezierCurveTo(x - size * 0.9, y + size * 0.6, x - size * 0.2, y + size * 0.8, x, y + size * 0.5);
+
+        // eslint-disable-next-line max-len
+        this.ctx[0].bezierCurveTo(x + size * 0.7, y + size * 0.7, x + size * 0.9, y + size * 0.2, x + size * 0.7, y);
+
+        // eslint-disable-next-line max-len
+        this.ctx[0].bezierCurveTo(x + size * 1.1, y - size * 0.3, x + size * 0.35, y - size * 0.9, x + size * 0.2, y - size * 0.6);
+        this.ctx[0].stroke();
+      } else if (type === 3) {
+        // 나뭇잎4 그리기
+        this.ctx[0].beginPath();
+        // 기본 세팅
+        this.ctx[0].strokeStyle = '#649a28';
+        this.ctx[0].lineWidth = 8;
+
+        this.ctx[0].moveTo(x + size * 0.3, y - size * 0.6);
+        // eslint-disable-next-line max-len
+        this.ctx[0].bezierCurveTo(x + size * 0.1, y - size * 0.75, x - size * 0.2, y - size * 0.75, x - size * 0.4, y - size * 0.5);
+
+        // eslint-disable-next-line max-len
+        this.ctx[0].bezierCurveTo(x - size * 0.8, y - size * 0.7, x - size * 1, y - size * 0.2, x - size * 0.7, y);
+
+        // eslint-disable-next-line max-len
+        this.ctx[0].bezierCurveTo(x - size * 1.1, y + size * 0.4, x - size * 0.3, y + size * 0.8, x - size * 0.1, y + size * 0.5);
+
+        // eslint-disable-next-line max-len
+        this.ctx[0].bezierCurveTo(x + size * 0.15, y + size * 0.65, x + size * 0.3, y + size * 0.55, x + size * 0.4, y + size * 0.5);
+
+        // eslint-disable-next-line max-len
+        this.ctx[0].bezierCurveTo(x + size * 0.9, y + size * 0.7, x + size * 1.2, y, x + size * 0.8, y - size * 0.1);
+
+        // eslint-disable-next-line max-len
+        this.ctx[0].bezierCurveTo(x + size * 1.0, y - size * 0.8, x + size * 0.2, y - size * 0.7, x + size * 0.3, y - size * 0.6);
+        this.ctx[0].stroke();
+      }
+    },
+
+    drawEdge(x1, y1, x2, y2) {
+      this.ctx[0].beginPath();
+      this.ctx[0].moveTo(x1, y1);
+      this.ctx[0].lineWidth = 12;
+      this.ctx[0].strokeStyle = '#baad93';
+      this.ctx[0].lineTo(x2, y2);
+      this.ctx[0].stroke();
     },
 
     penBtnClicked() {
       this.touchmode = 'pen';
+      this.ctx[0].lineWidth = 12;
+      this.ctx[0].strokeStyle = '836d4b';
     },
 
     dragBtnClicked() {
       this.touchmode = 'drag';
+    },
+
+    selectBtnClicked() {
+      this.touchmode = 'select';
+    },
+
+    deleteBtnClicked() {
+      if (this.selectedNode !== -1 && this.selectedNode !== 0) {
+        const index = this.nodes.findIndex((element) => element.id === this.selectedNode);
+        this.nodes.splice(index, 1);
+      }
+
+      for (let i = 0; i < this.edges.length; i += 1) {
+        if (this.edges[i].to === this.selectedNode || this.edges[i].from === this.selectedNode) {
+          this.edges.splice(i, 1);
+          i -= 1;
+        }
+      }
+
+      // 모든 노드 link false로 바꾸기
+      for (let i = 0; i < this.nodes.length; i += 1) {
+        this.nodes[i].link = false;
+      }
+
+      // 연결 안돼있는 노드 link 검사
+      for (let i = 0; i < this.edges.length; i += 1) {
+        const toindex = this.nodes.findIndex((element) => element.id === this.edges[i].to);
+        const fromindex = this.nodes.findIndex((element) => element.id === this.edges[i].from);
+        this.nodes[toindex].link = true;
+        this.nodes[fromindex].link = true;
+      }
+
+      this.reDrawAll();
+      this.selectedNode = -1;
     },
 
     zoominClicked() {
@@ -599,6 +1030,179 @@ export default {
         this.scale *= 0.9;
         this.ctx[0].scale(0.9, 0.9);
         this.reDrawAll();
+      }
+    },
+
+    nextBtnClicked() {
+      this.wordIndex += 6;
+      this.wordIndex %= 60;
+      const word1 = document.querySelector('#recommend1');
+      const word2 = document.querySelector('#recommend2');
+      const word3 = document.querySelector('#recommend3');
+      const word4 = document.querySelector('#recommend4');
+      const word5 = document.querySelector('#recommend5');
+      const word6 = document.querySelector('#recommend6');
+
+      word1.innerHTML = this.words[this.wordIndex].word;
+      word2.innerHTML = this.words[this.wordIndex + 1].word;
+      word3.innerHTML = this.words[this.wordIndex + 2].word;
+      word4.innerHTML = this.words[this.wordIndex + 3].word;
+      word5.innerHTML = this.words[this.wordIndex + 4].word;
+      word6.innerHTML = this.words[this.wordIndex + 5].word;
+
+      this.wordCanSelect = false;
+      this.wordSelected = '';
+      word1.style.background = '#F0EBD7';
+      word2.style.background = '#F0EBD7';
+      word3.style.background = '#F0EBD7';
+      word4.style.background = '#F0EBD7';
+      word5.style.background = '#F0EBD7';
+      word6.style.background = '#F0EBD7';
+
+      word1.style.fontSize = '2.5vw'; word1.style.paddingTop = '1vw';
+      word2.style.fontSize = '2.5vw'; word2.style.paddingTop = '1vw';
+      word3.style.fontSize = '2.5vw'; word3.style.paddingTop = '1vw';
+      word4.style.fontSize = '2.5vw'; word4.style.paddingTop = '1vw';
+      word5.style.fontSize = '2.5vw'; word5.style.paddingTop = '1vw';
+      word6.style.fontSize = '2.5vw'; word6.style.paddingTop = '1vw';
+
+      // eslint-disable-next-line brace-style
+      if (word1.innerHTML.length > 5) { word1.style.fontSize = '1.5vw'; word1.style.paddingTop = '1.5vw'; }
+      // eslint-disable-next-line brace-style
+      else if (word2.innerHTML.length > 5) { word2.style.fontSize = '1.5vw'; word2.style.paddingTop = '1.5vw'; }
+      // eslint-disable-next-line brace-style
+      else if (word3.innerHTML.length > 5) { word3.style.fontSize = '1.5vw'; word3.style.paddingTop = '1.5vw'; }
+      // eslint-disable-next-line brace-style
+      else if (word4.innerHTML.length > 5) { word4.style.fontSize = '1.5vw'; word4.style.paddingTop = '1.5vw'; }
+      // eslint-disable-next-line brace-style
+      else if (word5.innerHTML.length > 5) { word5.style.fontSize = '1.5vw'; word5.style.paddingTop = '1.5vw'; }
+      // eslint-disable-next-line brace-style
+      else if (word6.innerHTML.length > 5) { word6.style.fontSize = '1.5vw'; word6.style.paddingTop = '1.5vw'; }
+      // eslint-disable-next-line brace-style
+    },
+
+    aiSupportBtnClicked() {
+      this.recommendClicked = true;
+      this.recommendLoaded = false;
+
+      axios.get('/api/book/3/keyword', {
+        params: {
+          num: 60, anc: [this.wordSelected],
+        },
+        headers: {
+          'x-access-token': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1aWQiOjEsImV4cCI6MTYzMjA1MzYyMX0.Qj4k0qGouoYABTAGF_WWJLSfmxrDw9i87ZB2HM-ZiGU',
+        },
+      }).then((res) => {
+        this.words = res.data.keywords;
+        this.wordIndex = 0;
+
+        const word1 = document.querySelector('#recommend1');
+        const word2 = document.querySelector('#recommend2');
+        const word3 = document.querySelector('#recommend3');
+        const word4 = document.querySelector('#recommend4');
+        const word5 = document.querySelector('#recommend5');
+        const word6 = document.querySelector('#recommend6');
+
+        word1.innerHTML = this.words[0].word;
+        word2.innerHTML = this.words[1].word;
+        word3.innerHTML = this.words[2].word;
+        word4.innerHTML = this.words[3].word;
+        word5.innerHTML = this.words[4].word;
+        word6.innerHTML = this.words[5].word;
+
+        // eslint-disable-next-line brace-style
+        if (word1.innerHTML.length > 5) { word1.style.fontSize = '1.5vw'; word1.style.paddingTop = '1.5vw'; }
+        // eslint-disable-next-line brace-style
+        else if (word2.innerHTML.length > 5) { word2.style.fontSize = '1.5vw'; word2.style.paddingTop = '1.5vw'; }
+        // eslint-disable-next-line brace-style
+        else if (word3.innerHTML.length > 5) { word3.style.fontSize = '1.5vw'; word3.style.paddingTop = '1.5vw'; }
+        // eslint-disable-next-line brace-style
+        else if (word4.innerHTML.length > 5) { word4.style.fontSize = '1.5vw'; word4.style.paddingTop = '1.5vw'; }
+        // eslint-disable-next-line brace-style
+        else if (word5.innerHTML.length > 5) { word5.style.fontSize = '1.5vw'; word5.style.paddingTop = '1.5vw'; }
+        // eslint-disable-next-line brace-style
+        else if (word6.innerHTML.length > 5) { word6.style.fontSize = '1.5vw'; word6.style.paddingTop = '1.5vw'; }
+        // eslint-disable-next-line brace-style
+
+        this.recommendLoaded = true;
+      }).catch((err) => {
+        console.warn('ERROR!!!!: ', err);
+      });
+    },
+
+    recommendWordClicked(e) {
+      const word1 = document.querySelector('#recommend1');
+      const word2 = document.querySelector('#recommend2');
+      const word3 = document.querySelector('#recommend3');
+      const word4 = document.querySelector('#recommend4');
+      const word5 = document.querySelector('#recommend5');
+      const word6 = document.querySelector('#recommend6');
+
+      if (this.wordCanSelect) {
+        // eslint-disable-next-line brace-style
+        if (e.target.id === 'recommend1') { word1.style.background = '#b6b6b6'; this.wordSelected = word1.innerHTML; }
+        // eslint-disable-next-line brace-style
+        else if (e.target.id === 'recommend2') { word2.style.background = '#b6b6b6'; this.wordSelected = word2.innerHTML; }
+        // eslint-disable-next-line brace-style
+        else if (e.target.id === 'recommend3') { word3.style.background = '#b6b6b6'; this.wordSelected = word3.innerHTML; }
+        // eslint-disable-next-line brace-style
+        else if (e.target.id === 'recommend4') { word4.style.background = '#b6b6b6'; this.wordSelected = word4.innerHTML; }
+        // eslint-disable-next-line brace-style
+        else if (e.target.id === 'recommend5') { word5.style.background = '#b6b6b6'; this.wordSelected = word5.innerHTML; }
+        // eslint-disable-next-line brace-style
+        else if (e.target.id === 'recommend6') { word6.style.background = '#b6b6b6'; this.wordSelected = word6.innerHTML; }
+        this.wordCanSelect = false;
+      } else {
+        // eslint-disable-next-line no-lonely-if
+        if (e.target.id === 'recommend1') {
+          word1.style.background = '#b6b6b6';
+          this.wordSelected = word1.innerHTML;
+          word2.style.background = '#F0EBD7';
+          word3.style.background = '#F0EBD7';
+          word4.style.background = '#F0EBD7';
+          word5.style.background = '#F0EBD7';
+          word6.style.background = '#F0EBD7';
+        } else if (e.target.id === 'recommend2') {
+          word2.style.background = '#b6b6b6';
+          this.wordSelected = word2.innerHTML;
+          word1.style.background = '#F0EBD7';
+          word3.style.background = '#F0EBD7';
+          word4.style.background = '#F0EBD7';
+          word5.style.background = '#F0EBD7';
+          word6.style.background = '#F0EBD7';
+        } else if (e.target.id === 'recommend3') {
+          word3.style.background = '#b6b6b6';
+          this.wordSelected = word3.innerHTML;
+          word1.style.background = '#F0EBD7';
+          word2.style.background = '#F0EBD7';
+          word4.style.background = '#F0EBD7';
+          word5.style.background = '#F0EBD7';
+          word6.style.background = '#F0EBD7';
+        } else if (e.target.id === 'recommend4') {
+          word4.style.background = '#b6b6b6';
+          this.wordSelected = word4.innerHTML;
+          word1.style.background = '#F0EBD7';
+          word2.style.background = '#F0EBD7';
+          word3.style.background = '#F0EBD7';
+          word5.style.background = '#F0EBD7';
+          word6.style.background = '#F0EBD7';
+        } else if (e.target.id === 'recommend5') {
+          word5.style.background = '#b6b6b6';
+          this.wordSelected = word5.innerHTML;
+          word1.style.background = '#F0EBD7';
+          word2.style.background = '#F0EBD7';
+          word3.style.background = '#F0EBD7';
+          word4.style.background = '#F0EBD7';
+          word6.style.background = '#F0EBD7';
+        } else if (e.target.id === 'recommend6') {
+          word6.style.background = '#b6b6b6';
+          this.wordSelected = word6.innerHTML;
+          word1.style.background = '#F0EBD7';
+          word2.style.background = '#F0EBD7';
+          word3.style.background = '#F0EBD7';
+          word4.style.background = '#F0EBD7';
+          word5.style.background = '#F0EBD7';
+        }
       }
     },
   },
@@ -696,7 +1300,7 @@ export default {
   padding-top: 0.8vw;
 }
 
-#center-template {
+#center-recommend {
   position: relative;
   width: 95%;
   height: 22%;
@@ -705,6 +1309,204 @@ export default {
   z-index: 15;
   top: 74%;
   left: 2.5%;
+}
+#ai-img {
+  position: absolute;
+  background-image: url('../../assets/mindmap/ai-recommend.png');
+  background-size: cover;
+  width: 14vw;
+  height: 14vw;
+  z-index: 18;
+  display: inline-block
+}
+#ai-background {
+  position: absolute;
+  width: 12vw;
+  height: 100%;
+  border-radius: 20px;
+  background: #FFAE00;
+  display: inline-block
+}
+#ai-space {
+  position: absolute;
+  width: 2vw;
+  height: 100%;
+  left: 10.5vw;
+  background: #FFAE00;
+  display: inline-block
+}
+#ai-dotline {
+  position: absolute;
+  width: 0.5vw;
+  height: 100%;
+  left: 12.5vw;
+}
+#ai-dot {
+  width: 100%;
+  height: 1.5vw;
+  background: #8BA9A3;
+  margin-bottom: 0.72vw;
+}
+
+#recommend-words {
+  position: absolute;
+  width: 65%;
+  height: 100%;
+  margin-left: 20%;
+}
+#recommend-start {
+  position: absolute;
+  width: 80%;
+  height: 100%;
+  margin-left: 18%;
+  font-size: 3vw;
+  font-family: BM HANNA_TTF;
+  font-style: normal;
+  font-weight: 900;
+  text-align: center;
+  padding-top: 4vw;
+  color: black;
+}
+#recommend-loading {
+  position: absolute;
+  margin-left: 50%;
+  margin-top: 5%;
+  width: 7vw;
+  height: 7vw;
+  border: 10px solid rgba(255,174,0,.3);
+  border-radius: 50%;
+  border-top-color: #FFAE00;
+  animation: spin 1s ease-in-out infinite;
+  -webkit-animation: spin 1s ease-in-out infinite;
+}
+@keyframes spin {
+  to { -webkit-transform: rotate(360deg); }
+}
+@-webkit-keyframes spin {
+  to { -webkit-transform: rotate(360deg); }
+}
+
+#recommend-words-top {
+  position: absolute;
+  width: 100%;
+  height: 50%;
+}
+#recommend-words-bot {
+  position: absolute;
+  width: 100%;
+  height: 50%;
+  margin-top: 15%;
+}
+#recommend1 {
+  position: absolute;
+  width: 12vw;
+  height: 5.5vw;
+  background: #F0EBD7;
+  border-radius: 10px;
+  margin-top: 0.6vw;
+  text-align: center;
+  font-size: 2.5vw;
+  padding-top: 1vw;
+  font-family: BM HANNA_TTF;
+  font-style: normal;
+  font-weight: 900;
+  display: inline-block;
+  margin-left: 2vw;
+  margin-right: 2vw;
+}
+#recommend2 {
+  position: absolute;
+  width: 12vw;
+  height: 5.5vw;
+  background: #F0EBD7;
+  border-radius: 10px;
+  margin-top: 0.6vw;
+  text-align: center;
+  font-size: 2.5vw;
+  padding-top: 1vw;
+  font-family: BM HANNA_TTF;
+  font-style: normal;
+  font-weight: 900;
+  display: inline-block;
+  margin-left: 18vw;
+  margin-right: 2vw;
+}
+#recommend3 {
+  position: absolute;
+  width: 12vw;
+  height: 5.5vw;
+  background: #F0EBD7;
+  border-radius: 10px;
+  margin-top: 0.6vw;
+  text-align: center;
+  font-size: 2.5vw;
+  padding-top: 1vw;
+  font-family: BM HANNA_TTF;
+  font-style: normal;
+  font-weight: 900;
+  display: inline-block;
+  margin-left: 34vw;
+  margin-right: 2vw;
+}
+#recommend4 {
+  position: absolute;
+  width: 12vw;
+  height: 5.5vw;
+  background: #F0EBD7;
+  border-radius: 10px;
+  margin-top: 0.6vw;
+  text-align: center;
+  font-size: 2.5vw;
+  padding-top: 1vw;
+  font-family: BM HANNA_TTF;
+  font-style: normal;
+  font-weight: 900;
+  display: inline-block;
+  margin-left: 2vw;
+  margin-right: 2vw;
+}
+#recommend5 {
+  position: absolute;
+  width: 12vw;
+  height: 5.5vw;
+  background: #F0EBD7;
+  border-radius: 10px;
+  margin-top: 0.6vw;
+  text-align: center;
+  font-size: 2.5vw;
+  padding-top: 1vw;
+  font-family: BM HANNA_TTF;
+  font-style: normal;
+  font-weight: 900;
+  display: inline-block;
+  margin-left: 18vw;
+  margin-right: 2vw;
+}
+#recommend6 {
+  position: absolute;
+  width: 12vw;
+  height: 5.5vw;
+  background: #F0EBD7;
+  border-radius: 10px;
+  margin-top: 0.6vw;
+  text-align: center;
+  font-size: 2.5vw;
+  padding-top: 1vw;
+  font-family: BM HANNA_TTF;
+  font-style: normal;
+  font-weight: 900;
+  display: inline-block;
+  margin-left: 34vw;
+  margin-right: 2vw;
+}
+#right-btn {
+  position: absolute;
+  width: 13vw;
+  height: 100%;
+  margin-left: 82%;
+  padding: 0;
+  background-image: url('../../assets/mindmap/next.png');
+  background-size: cover;
 }
 
 #center-note {
@@ -814,42 +1616,62 @@ export default {
 }
 #left-menu-pen {
   position: relative;
-  width: 5vw;
-  height: 5vw;
-  background: url('../../assets/pen.svg');
+  width: 4vw;
+  height: 4vw;
+  background: url('../../assets/drawing-tool/pen.svg');
   background-size: cover;
   border-radius: 15px;
-  margin-left: 1.5vw;
+  margin-left: 2vw;
 }
 #left-menu-move {
   position: relative;
-  width: 5vw;
-  height: 5vw;
-  background: url('../../assets/drag.svg');
+  width: 4vw;
+  height: 4vw;
+  background: url('../../assets/drawing-tool/drag.svg');
   background-size: cover;
   border-radius: 15px;
   margin-top: 2vw;
-  margin-left: 1.5vw;
+  margin-left: 2vw;
+}
+#left-menu-select {
+  position: relative;
+  width: 4vw;
+  height: 4vw;
+  background: url('../../assets/drawing-tool/select.png');
+  background-size: cover;
+  border-radius: 15px;
+  margin-top: 2vw;
+  margin-left: 2vw;
 }
 #left-menu-zoomin {
   position: relative;
-  width: 5vw;
-  height: 5vw;
-  background: url('../../assets/zoomin.svg');
+  width: 4vw;
+  height: 4vw;
+  background: url('../../assets/drawing-tool/zoomin.svg');
   background-size: cover;
   border-radius: 15px;
   margin-top: 2vw;
-  margin-left: 1.5vw;
+  margin-left: 2vw;
 }
 #left-menu-zoomout {
   position: relative;
-  width: 5.5vw;
-  height: 5.5vw;
-  background: url('../../assets/zoomout.svg');
+  width: 4vw;
+  height: 4vw;
+  background: url('../../assets/drawing-tool/zoomout.svg');
   background-size: cover;
   border-radius: 15px;
   margin-top: 2vw;
-  margin-left: 1.25vw;
+  margin-left: 2vw;
+}
+#left-menu-delete {
+  position: relative;
+  width: 4vw;
+  height: 4vw;
+  background: url('../../assets/drawing-tool/delete.png');
+  background-size: cover;
+  border-radius: 15px;
+  margin-top: 2vw;
+  margin-left: 2vw;
 }
 
 #top-bar {

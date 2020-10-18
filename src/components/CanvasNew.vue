@@ -72,24 +72,24 @@
           <div class="materials1">
             <img
               id="pen"
-              src="../assets/pen.svg"
+              src="../assets/drawing-tool/pen.svg"
               alt="pen"
             >
             <img
               id="drag"
-              src="../assets/drag.svg"
+              src="../assets/drawing-tool/drag.svg"
               alt="drag"
             >
           </div>
           <div class="materials2">
             <img
               id="zoomin"
-              src="../assets/zoomin.svg"
+              src="../assets/drawing-tool/zoomin.svg"
               alt="zoomin"
             >
             <img
               id="zoomout"
-              src="../assets/zoomout.svg"
+              src="../assets/drawing-tool/zoomout.svg"
               alt="zoomout"
             >
           </div>
@@ -98,17 +98,17 @@
         <div class="kits">
           <img
             id="undo"
-            src="../assets/undo.svg"
+            src="../assets/drawing-tool/undo.svg"
             alt="undo"
           >
           <img
             id="reset"
-            src="../assets/reset.svg"
+            src="../assets/drawing-tool/reset.svg"
             alt="reset"
           >
           <img
             id="save"
-            src="../assets/save.svg"
+            src="../assets/drawing-tool/save.svg"
             alt="save"
           >
         </div>

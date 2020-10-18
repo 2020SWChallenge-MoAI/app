@@ -141,7 +141,7 @@ export default {
   position: relative;
   width: 5.5vw;
   height: 4.5vw;
-  background: url('../../assets/btn-back.svg');
+  background: url('../../assets/left-btn/btn-back.svg');
   background-size: cover;
 }
 #btn-back-string {
