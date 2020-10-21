@@ -17,7 +17,7 @@
   justify-content: center;
   align-items: center;
   background: linear-gradient(180deg, #a6d6cd 0%, rgba(166, 214, 205, 0) 100%),
-    url('../../../assets/background-forest.svg') center bottom/contain no-repeat;
+    url('../../../assets/img/layouts/background.svg') center bottom/contain no-repeat;
   background-size: contain;
 }
 

@@ -32,7 +32,7 @@ export default new Vuex.Store({
       title: '책제목',
       thumbnail: 'samples/book-thumbnail.svg',
     })),
-    getRecentBooks: (ctx) => ctx.books.slice(0, 3).map((m) => ({
+    getRecentBooks: (ctx) => ctx.books.map((m) => ({
       // TODO: 유저별 최근 읽은 책 구현하기
       bid: m,
       title: '',
