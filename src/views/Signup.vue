@@ -14,7 +14,7 @@
         확인
       </v-btn>
     </template>
-    <h1>회원가입</h1>
+    <h1 id="title">회원가입</h1>
     <v-form v-model="valid" ref="form">
       <v-text-field
         rounded
@@ -129,3 +129,9 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+#title {
+  margin-bottom: 3vw;
+}
+</style>

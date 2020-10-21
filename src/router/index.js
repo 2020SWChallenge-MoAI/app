@@ -2,12 +2,16 @@ import Vue from 'vue';
 import VueRouter from 'vue-router';
 
 /* Router Views */
-import Login from '../views/auth/Login.vue';
-import Signup from '../views/auth/Signup.vue';
-import Main from '../views/main/Main.vue';
-import Read from '../views/main/book/reading/ReadBook.vue';
+import Login from '../views/Login.vue';
+import Signup from '../views/Signup.vue';
+import Main from '../views/Main.vue';
+import MyPage from '../views/MyPage.vue';
+import Read from '../views/Read.vue';
+import QuizGame from '../views/activity/QuizGame.vue';
+import Writing from '../views/activity/Writing.vue';
+import Drawing from '../views/activity/Drawing.vue';
 import MindMap from '../views/main/MindMap.vue';
-import MindMapS from '../views/main/StartMindMap.vue';
+import StartMindMap from '../views/main/StartMindMap.vue';
 
 Vue.use(VueRouter);
 
@@ -30,6 +34,12 @@ const routes = [
     meta: { auth: true },
   },
   {
+    path: '/mypage',
+    name: 'MyPage',
+    component: MyPage,
+    meta: { auth: true },
+  },
+  {
     path: '/read/:bid',
     name: 'Read',
     component: Read,
@@ -44,18 +54,26 @@ const routes = [
   {
     path: '/activity/mindmap/start',
     name: 'StartMindMap',
-    component: MindMapS,
+    component: StartMindMap,
     meta: { auth: true },
   },
   {
-    path: '/mindmap',
-    name: 'MindMap',
-    component: MindMap,
+    path: '/activity/quiz-game',
+    name: 'QuizGame',
+    component: QuizGame,
+    meta: { auth: true },
   },
   {
-    path: '/mindmap/start',
-    name: 'StartMindMap',
-    component: MindMapS,
+    path: '/activity/writing',
+    name: 'Writing',
+    component: Writing,
+    meta: { auth: true },
+  },
+  {
+    path: '/activity/drawing',
+    name: 'Drawing',
+    component: Drawing,
+    meta: { auth: true },
   },
 ];
 

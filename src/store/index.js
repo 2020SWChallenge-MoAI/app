@@ -7,7 +7,7 @@ import axios from 'axios';
 Vue.use(Vuex);
 
 const apiServer = axios.create({
-  baseURL: 'http://localhost:7002/api',
+  baseURL: '/api',
   headers: {
     'Access-Control-Allow-Origin': '*',
   },
@@ -21,7 +21,9 @@ if (localAccessToken) {
 export default new Vuex.Store({
   state: {
     accessToken: localStorage.getItem('access-token'),
-    books: [],
+    books: JSON.parse(localStorage.getItem('books')) || [],
+    loading: false,
+    currentBook: null,
   },
   getters: {
     getBook: (ctx, getters) => (bid) => getters.getBooks.filter((b) => b.bid === bid)[0],
@@ -50,6 +52,13 @@ export default new Vuex.Store({
     },
     setBooks(ctx, books) {
       ctx.books = books;
+      localStorage.setItem('books', JSON.stringify(books));
+    },
+    loadFinish(ctx) {
+      ctx.loading = false;
+    },
+    loadStart(ctx) {
+      ctx.loading = true;
     },
   },
   actions: {
@@ -94,7 +103,10 @@ export default new Vuex.Store({
       });
     },
     getBooks({ commit }) {
-      return apiServer.get('/book/').then(({ data }) => commit('setBooks', data.bids));
+      return new Promise((resolve, reject) => {
+        commit('setBooks', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+        resolve();
+      });
     },
   },
   modules: {},

@@ -1,12 +1,16 @@
 <template>
   <div id="container">
-    <div id="left-column">
+    <v-overlay :value="loading">
+      <v-progress-circular indeterminate size="64"></v-progress-circular>
+    </v-overlay>
+    <div id="left-column" class="column">
       <slot name="left" />
+      <recent-book-items v-if="recentBooks" />
     </div>
-    <div id="mid-column">
+    <div id="mid-column" class="column">
       <slot />
     </div>
-    <div id="right-column">
+    <div id="right-column" class="column">
       <div id="menu-title">MENU</div>
       <div id="menu-items">
         <slot name="right" />
@@ -14,6 +18,22 @@
     </div>
   </div>
 </template>
+
+<script>
+export default {
+  props: {
+    recentBooks: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  computed: {
+    loading() {
+      return this.$store.state.loading;
+    },
+  },
+};
+</script>
 
 <style scoped>
 #container {
@@ -24,10 +44,9 @@
   background: linear-gradient(180deg, #a6d6cd 0%, rgba(166, 214, 205, 0) 100%),
     url('../../../assets/background-forest.svg') center bottom/contain no-repeat;
   background-size: contain;
-  box-sizing:border-box;
 }
 
-#container > *:not(:last-child) {
+#container > .column:not(:last-child) {
   margin-right: 2vw;
 }
 
@@ -36,6 +55,10 @@
   position: relative;
   flex-flow: column;
   width: 6vw;
+}
+
+#left-column > *:not(:last-child) {
+  margin-bottom: 1vh;
 }
 
 #mid-column {

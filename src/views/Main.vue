@@ -6,7 +6,6 @@
         icon="mdi-logout"
         @click.native="logout"
       />
-      <recent-book-items />
     </template>
     <template v-slot:right>
       <right-menu-items />
@@ -81,20 +80,22 @@ export default {
     books() {
       return this.$store.getters.getBooks;
     },
-    totalPageCount() {
+    totalPages() {
       return Math.ceil(this.books.length / booksPerPage);
     },
     pages() {
       const pages = [];
-      for (let i = 0; i < this.totalPageCount; i += 1) {
+      for (let i = 0; i < this.totalPages; i += 1) {
         pages.push(this.books.slice(i * booksPerPage, (i + 1) * booksPerPage));
       }
 
       return pages;
     },
   },
-  created() {
-    this.$store.dispatch('getBooks');
+  async created() {
+    this.$store.commit('loadStart');
+    await this.$store.dispatch('getBooks');
+    this.$store.commit('loadFinish');
   },
   methods: {
     logout() {
@@ -195,7 +196,7 @@ export default {
   margin-top: 8vh;
   margin-right: calc((78vw - 18vh * 4 - 16vw) / 3);
 }
-.books > *:nth-child(4n+0) {
+.books > *:nth-child(4n + 0) {
   margin-right: 0;
 }
 
@@ -205,9 +206,9 @@ export default {
 
 /* change v-carousel navigator button color */
 /deep/ .v-carousel__controls .v-btn .v-icon {
-    color: #24b1a1 !important;
+  color: #24b1a1 !important;
 }
-/deep/ .v-carousel__controls__item{
-  color: #24b1a1 !important
+/deep/ .v-carousel__controls__item {
+  color: #24b1a1 !important;
 }
 </style>
