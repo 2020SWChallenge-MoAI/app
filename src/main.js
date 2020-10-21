@@ -8,10 +8,12 @@ import './registerServiceWorker';
 import router from './router';
 import store from './store';
 import vuetify from './plugins/vuetify';
+import Josa from './plugins/josa';
 
 import './assets/css/main.css';
 
 Vue.config.productionTip = false;
+Vue.use(Josa);
 
 const requireComponent = require.context('./components', true, /[A-Z]\w+\.(vue|js)$/);
 
