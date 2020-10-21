@@ -40,13 +40,13 @@ const routes = [
     meta: { auth: true },
   },
   {
-    path: '/read/:bid',
+    path: '/read',
     name: 'Read',
     component: Read,
     meta: { auth: true },
   },
   {
-    path: '/activity/mindmap/view/:bid',
+    path: '/activity/mindmap/view',
     name: 'MindMap',
     component: MindMap,
     meta: { auth: true },

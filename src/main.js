@@ -1,4 +1,5 @@
 import Vue from 'vue';
+import VueAuthImage from 'vue-auth-image';
 
 import upperFirst from 'lodash/upperFirst';
 import camelCase from 'lodash/camelCase';
@@ -14,8 +15,9 @@ import './assets/css/main.css';
 
 Vue.config.productionTip = false;
 Vue.use(Josa);
+Vue.use(VueAuthImage);
 
-const requireComponent = require.context('./components', true, /[A-Z]\w+\.(vue|js)$/);
+const requireComponent = require.context('./components/layouts', true, /[A-Z]\w+\.(vue|js)$/);
 
 requireComponent.keys().forEach((fileName) => {
   const componentConfig = requireComponent(fileName);
@@ -41,5 +43,8 @@ new Vue({
   router,
   store,
   vuetify,
+  plugins: [
+    '@/plugins/vue-auth-image.js',
+  ],
   render: (h) => h(App),
 }).$mount('#app');

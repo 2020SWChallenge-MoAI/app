@@ -9,10 +9,9 @@
         class="recent-book"
         v-for="(book, index) in currentBooks"
         :key="index"
+        @click="selectBook(book)"
       >
-        <book-menu-button
-          :image="require(`@/assets/img/${book.thumbnail}`)"
-        />
+        <book-menu-button :image="book.thumbnail" />
       </li>
       <li class="recent-book-more down" v-if="isPaginationNeeded && !isEnd" @click="nextPage">
         <img :src="require('@/assets/img/layouts/base/left/more.svg')" />
@@ -22,7 +21,7 @@
 </template>
 
 <script>
-const booksPerPage = 3;
+const booksPerPage = 2;
 
 export default {
   data() {
@@ -59,6 +58,9 @@ export default {
     },
     nextPage() {
       this.currentPage += 1;
+    },
+    selectBook(book) {
+      this.$store.commit('setCurrentBook', book);
     },
   },
 };

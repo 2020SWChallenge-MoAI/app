@@ -1,6 +1,6 @@
 <template>
   <div class="book">
-    <img :src="require(`@/assets/img/${book.thumbnail}`)" />
+    <img v-auth-image="book.thumbnail">
     <div class="book-click-overlay" v-if="clicked" @click="$emit('read')">
       <div class="book-click-overlay-icon">
         <v-icon>mdi-book-open-page-variant</v-icon>

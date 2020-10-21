@@ -6,48 +6,47 @@ import axios from 'axios';
 
 Vue.use(Vuex);
 
-const apiServer = axios.create({
-  baseURL: '/api',
-  headers: {
-    'Access-Control-Allow-Origin': '*',
-  },
-});
-
 const localAccessToken = localStorage.getItem('access-token');
 if (localAccessToken) {
-  apiServer.defaults.headers['x-access-token'] = localAccessToken;
+  axios.defaults.headers['x-access-token'] = localAccessToken;
 }
 
 export default new Vuex.Store({
   state: {
     accessToken: localStorage.getItem('access-token'),
     books: JSON.parse(localStorage.getItem('books')) || [],
+    recentBookIds: [],
     loading: false,
     currentBook: null,
   },
   getters: {
     getBook: (ctx, getters) => (bid) => getters.getBooks.filter((b) => b.bid === bid)[0],
-    getBooks: (ctx) => ctx.books.slice(0, 20).map((m) => ({
-      bid: m,
-      title: '책제목',
-      thumbnail: 'samples/book-thumbnail.svg',
+    getBooks: (ctx) => ctx.books.map((b) => ({
+      bid: b.bid,
+      title: b.title,
+      author: b.author,
+      category: b.category,
+      thumbnail: `/api/book/${b.bid}/cover`,
     })),
-    getRecentBooks: (ctx) => ctx.books.map((m) => ({
-      // TODO: 유저별 최근 읽은 책 구현하기
-      bid: m,
-      title: '',
-      thumbnail: 'samples/book-thumbnail.svg',
-    })),
+    getCategories: (ctx, getters) => [...new Set(getters.getBooks.map((b) => b.category))],
+    // eslint-disable-next-line max-len
+    // eslint-disable-next-line arrow-body-style
+    getCategoryBooks: (ctx, getters) => {
+      return (category) => getters.getBooks.filter((b) => b.category === category);
+    },
+    // eslint-disable-next-line max-len
+    getRecentBooks: (ctx, getters) => ctx.recentBookIds.map((b) => getters.getBook(b)),
+    getCurrentBook: (ctx) => ctx.currentBook,
   },
   mutations: {
     login(ctx, accessToken) {
       ctx.accessToken = accessToken;
-      apiServer.defaults.headers['x-access-token'] = ctx.accessToken;
+      axios.defaults.headers['x-access-token'] = ctx.accessToken;
       localStorage.setItem('access-token', accessToken);
     },
     logout(ctx) {
       ctx.accessToken = null;
-      apiServer.defaults.headers['x-access-token'] = null;
+      axios.defaults.headers['x-access-token'] = null;
       localStorage.removeItem('access-token');
     },
     setBooks(ctx, books) {
@@ -60,12 +59,18 @@ export default new Vuex.Store({
     loadStart(ctx) {
       ctx.loading = true;
     },
+    setCurrentBook(ctx, book) {
+      ctx.currentBook = book;
+      const index = ctx.recentBookIds.indexOf(book.bid);
+      if (index > -1) ctx.recentBookIds.splice(index, 1);
+      ctx.recentBookIds.unshift(book.bid);
+    },
   },
   actions: {
     login({ commit }, { id, pw }) {
       return new Promise((resolve, reject) => {
-        apiServer
-          .post('/auth/signin', { id, pw })
+        axios
+          .post('/api/auth/signin', { id, pw })
           .then(({ data }) => {
             commit('login', data['access-token']);
             resolve();
@@ -80,8 +85,8 @@ export default new Vuex.Store({
     },
     signup({ commit }, { id, pw, nickname, email, age }) {
       return new Promise((resolve, reject) => {
-        apiServer
-          .post('/auth/signup', { id, pw, nickname, email, age })
+        axios
+          .post('/api/auth/signup', { id, pw, nickname, email, age })
           .then(() => {
             resolve();
           })
@@ -92,8 +97,8 @@ export default new Vuex.Store({
     },
     checkId({ commit }, id) {
       return new Promise((resolve, reject) => {
-        apiServer
-          .get(`/auth/id-duplicate-check?id=${id}`)
+        axios
+          .get(`/api/auth/id-duplicate-check?id=${id}`)
           .then(() => {
             resolve();
           })
@@ -106,6 +111,15 @@ export default new Vuex.Store({
       return new Promise((resolve, reject) => {
         commit('setBooks', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
         resolve();
+        axios
+          .get('/api/book')
+          .then(({ data }) => {
+            commit('setBooks', data.books);
+            resolve();
+          })
+          .catch(() => {
+            reject();
+          });
       });
     },
   },

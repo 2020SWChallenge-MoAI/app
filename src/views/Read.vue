@@ -1,19 +1,10 @@
 <template>
-  <sub-layout
-    title="독서하기"
-    :tooltip="`${josa.r(book.title, '을/를')} 재미있게 읽어 보자!`"
-  >
+  <sub-layout title="독서하기" :tooltip="book.title">
     <v-overlay absolute opacity="0.5" :value="finished">
       <div class="finish-overlay">
         <v-icon x-large>mdi-book-open-page-variant</v-icon>
         <h1>다 읽었어요</h1>
-        <v-btn
-          dark
-          rounded
-          depressed
-          x-large
-          color="#668d8d"
-        >
+        <v-btn dark rounded depressed x-large color="#668d8d">
           독서 완료하기
         </v-btn>
         <v-btn
@@ -70,8 +61,6 @@ export default {
   },
   data() {
     return {
-      bid: parseInt(this.$route.params.bid, 10),
-      book: null,
       pages: [
         null,
         '/img/sample/0_bomul.pdf.jpg',
@@ -104,10 +93,12 @@ export default {
       finished: false,
     };
   },
+  computed: {
+    book() {
+      return this.$store.getters.getCurrentBook;
+    },
+  },
   created() {
-    // eslint-disable-next-line prefer-destructuring
-    this.book = this.$store.getters.getBook(this.bid);
-
     this.delayedFlipLeft = _.debounce(this.flipLeft, this.flipDuration);
     this.delayedFlipRight = _.debounce(this.flipRight, this.flipDuration);
 

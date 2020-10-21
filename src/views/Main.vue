@@ -47,7 +47,7 @@
               :book="book"
               :clicked="book.bid === currentBook"
               @click.native="currentBook = book.bid"
-              @read="$router.push(`/read/${book.bid}`)"
+              @read="read(book)"
             />
           </div>
         </v-carousel-item>
@@ -57,28 +57,24 @@
 </template>
 
 <script>
+import Book from '../components/views/main/Book.vue';
+
 const booksPerPage = 8;
 
 export default {
+  components: {
+    Book,
+  },
   data() {
     return {
-      categories: [
-        '전래동화',
-        '과학/환경',
-        '문화/예술',
-        '동요/동시',
-        '학습일반',
-        '학습일반',
-        '학습일반',
-      ],
       currentPage: 0,
       currentCategory: 0,
       currentBook: null,
     };
   },
   computed: {
-    books() {
-      return this.$store.getters.getBooks;
+    categories() {
+      return this.$store.getters.getCategories;
     },
     totalPages() {
       return Math.ceil(this.books.length / booksPerPage);
@@ -91,16 +87,26 @@ export default {
 
       return pages;
     },
+    books() {
+      return this.$store.getters.getCategoryBooks(this.categories[this.currentCategory]);
+    },
   },
-  async created() {
-    this.$store.commit('loadStart');
-    await this.$store.dispatch('getBooks');
-    this.$store.commit('loadFinish');
+  watch: {
+    currentCategory() {
+      this.currentPage = 0;
+    },
+  },
+  created() {
+    this.$store.dispatch('getBooks');
   },
   methods: {
     logout() {
       this.$store.dispatch('logout');
       this.$router.replace('/login');
+    },
+    read(book) {
+      this.$store.commit('setCurrentBook', book);
+      this.$router.push('/read');
     },
   },
 };

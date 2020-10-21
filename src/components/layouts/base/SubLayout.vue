@@ -94,7 +94,7 @@ export default {
 
 #tooltip {
   background: #ffffff;
-  padding: 1vh;
+  padding: 1vh 1vw 1vh 1vw;
   margin-bottom: 1vw;
   font-size: 2vh;
   border-radius: 1vw;

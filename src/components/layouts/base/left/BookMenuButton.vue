@@ -2,7 +2,7 @@
   <div class="btn-book-menu" v-ripple>
     <img
       class="btn-image"
-      :src="image"
+      v-auth-image="image"
     >
     <span class="btn-text">{{ text }}</span>
   </div>
