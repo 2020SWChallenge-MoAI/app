@@ -146,7 +146,7 @@ export default {
 
       if (this.doubleTabTimer) {
         // 페이지 이동
-        this.$router.push('/mindmap/start');
+        this.$router.push('StartMindMap');
       } else {
         // eslint-disable-next-line no-lonely-if
         if (event.target.id === 'template1') {
@@ -205,7 +205,7 @@ export default {
       this.doubleTabTimer = true;
       setTimeout(() => {
         this.doubleTabTimer = false;
-      }, 500);
+      }, 200);
     },
 
     makeNode(x, y, size, type, text) {
