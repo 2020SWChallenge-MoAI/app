@@ -47,6 +47,16 @@ const routes = [
     component: MindMapS,
     meta: { auth: true },
   },
+  {
+    path: '/mindmap',
+    name: 'MindMap',
+    component: MindMap,
+  },
+  {
+    path: '/mindmap/start',
+    name: 'StartMindMap',
+    component: MindMapS,
+  },
 ];
 
 const router = new VueRouter({
