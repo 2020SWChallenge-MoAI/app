@@ -6,7 +6,6 @@
         icon="mdi-logout"
         @click.native="logout"
       />
-      <recent-book-items />
     </template>
     <template v-slot:right>
       <right-menu-items />
@@ -48,7 +47,7 @@
               :book="book"
               :clicked="book.bid === currentBook"
               @click.native="currentBook = book.bid"
-              @read="$router.push(`/read/${book.bid}`)"
+              @read="read(book)"
             />
           </div>
         </v-carousel-item>
@@ -58,39 +57,43 @@
 </template>
 
 <script>
+import Book from '../components/views/main/Book.vue';
+
 const booksPerPage = 8;
 
 export default {
+  components: {
+    Book,
+  },
   data() {
     return {
-      categories: [
-        '전래동화',
-        '과학/환경',
-        '문화/예술',
-        '동요/동시',
-        '학습일반',
-        '학습일반',
-        '학습일반',
-      ],
       currentPage: 0,
       currentCategory: 0,
       currentBook: null,
     };
   },
   computed: {
-    books() {
-      return this.$store.getters.getBooks;
+    categories() {
+      return this.$store.getters.getCategories;
     },
-    totalPageCount() {
+    totalPages() {
       return Math.ceil(this.books.length / booksPerPage);
     },
     pages() {
       const pages = [];
-      for (let i = 0; i < this.totalPageCount; i += 1) {
+      for (let i = 0; i < this.totalPages; i += 1) {
         pages.push(this.books.slice(i * booksPerPage, (i + 1) * booksPerPage));
       }
 
       return pages;
+    },
+    books() {
+      return this.$store.getters.getCategoryBooks(this.categories[this.currentCategory]);
+    },
+  },
+  watch: {
+    currentCategory() {
+      this.currentPage = 0;
     },
   },
   created() {
@@ -100,6 +103,10 @@ export default {
     logout() {
       this.$store.dispatch('logout');
       this.$router.replace('/login');
+    },
+    read(book) {
+      this.$store.commit('setCurrentBook', book);
+      this.$router.push('/read');
     },
   },
 };
@@ -195,7 +202,7 @@ export default {
   margin-top: 8vh;
   margin-right: calc((78vw - 18vh * 4 - 16vw) / 3);
 }
-.books > *:nth-child(4n+0) {
+.books > *:nth-child(4n + 0) {
   margin-right: 0;
 }
 
@@ -205,9 +212,9 @@ export default {
 
 /* change v-carousel navigator button color */
 /deep/ .v-carousel__controls .v-btn .v-icon {
-    color: #24b1a1 !important;
+  color: #24b1a1 !important;
 }
-/deep/ .v-carousel__controls__item{
-  color: #24b1a1 !important
+/deep/ .v-carousel__controls__item {
+  color: #24b1a1 !important;
 }
 </style>

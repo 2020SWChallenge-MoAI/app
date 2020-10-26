@@ -72,40 +72,24 @@
           <div class="materials1">
             <img
               id="pen"
-<<<<<<< HEAD
               src="../assets/drawing-tool/pen.svg"
-=======
-              src="../assets/pen.svg"
->>>>>>> origin/junbread
               alt="pen"
             >
             <img
               id="drag"
-<<<<<<< HEAD
               src="../assets/drawing-tool/drag.svg"
-=======
-              src="../assets/drag.svg"
->>>>>>> origin/junbread
               alt="drag"
             >
           </div>
           <div class="materials2">
             <img
               id="zoomin"
-<<<<<<< HEAD
               src="../assets/drawing-tool/zoomin.svg"
-=======
-              src="../assets/zoomin.svg"
->>>>>>> origin/junbread
               alt="zoomin"
             >
             <img
               id="zoomout"
-<<<<<<< HEAD
               src="../assets/drawing-tool/zoomout.svg"
-=======
-              src="../assets/zoomout.svg"
->>>>>>> origin/junbread
               alt="zoomout"
             >
           </div>
@@ -114,29 +98,17 @@
         <div class="kits">
           <img
             id="undo"
-<<<<<<< HEAD
             src="../assets/drawing-tool/undo.svg"
-=======
-            src="../assets/undo.svg"
->>>>>>> origin/junbread
             alt="undo"
           >
           <img
             id="reset"
-<<<<<<< HEAD
             src="../assets/drawing-tool/reset.svg"
-=======
-            src="../assets/reset.svg"
->>>>>>> origin/junbread
             alt="reset"
           >
           <img
             id="save"
-<<<<<<< HEAD
             src="../assets/drawing-tool/save.svg"
-=======
-            src="../assets/save.svg"
->>>>>>> origin/junbread
             alt="save"
           >
         </div>

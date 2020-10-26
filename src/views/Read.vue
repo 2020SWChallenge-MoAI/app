@@ -1,8 +1,24 @@
 <template>
-  <sub-layout>
-    <div class="book-title">
-      {{ book.title }}
-    </div>
+  <sub-layout title="독서하기" :tooltip="book.title">
+    <v-overlay absolute opacity="0.5" :value="finished">
+      <div class="finish-overlay">
+        <v-icon x-large>mdi-book-open-page-variant</v-icon>
+        <h1>다 읽었어요</h1>
+        <v-btn dark rounded depressed x-large color="#668d8d">
+          독서 완료하기
+        </v-btn>
+        <v-btn
+          dark
+          rounded
+          depressed
+          x-large
+          color="#668d8d"
+          @click="finished = false"
+        >
+          더 읽기
+        </v-btn>
+      </div>
+    </v-overlay>
     <flip-book
       ref="viewer"
       v-slot="viewer"
@@ -10,6 +26,8 @@
       :pages="pages"
       :zooms="null"
       :flip-duration="flipDuration"
+      @flip-left-end="onFlip"
+      @flip-right-end="onFlip"
     >
       <div class="book-viewer-control">
         <v-btn light icon @click="delayedFlipLeft">
@@ -22,7 +40,7 @@
             dense
             readonly
             color="#668d8d"
-            :value="`${viewer.page} / ${viewer.numPages}`"
+            :value="`${viewer.page} / ${viewer.numPages - 1}`"
           />
         </div>
         <v-btn light icon @click="delayedFlipRight">
@@ -43,8 +61,6 @@ export default {
   },
   data() {
     return {
-      bid: parseInt(this.$route.params.bid, 10),
-      book: null,
       pages: [
         null,
         '/img/sample/0_bomul.pdf.jpg',
@@ -74,7 +90,20 @@ export default {
         null,
       ],
       flipDuration: 300,
+      finished: false,
     };
+  },
+  computed: {
+    book() {
+      return this.$store.getters.getCurrentBook;
+    },
+  },
+  created() {
+    this.delayedFlipLeft = _.debounce(this.flipLeft, this.flipDuration);
+    this.delayedFlipRight = _.debounce(this.flipRight, this.flipDuration);
+
+    // eslint-disable-next-line global-require
+    this.audio = new Audio(require('../assets/wav/page-flip.wav'));
   },
   methods: {
     flipLeft() {
@@ -83,42 +112,29 @@ export default {
     flipRight() {
       this.$refs.viewer.flipRight();
     },
-  },
-  created() {
-    // eslint-disable-next-line prefer-destructuring
-    this.book = this.$store.getters.getBook(this.bid);
+    onFlip(page) {
+      this.audio.play();
 
-    this.delayedFlipLeft = _.debounce(this.flipLeft, this.flipDuration);
-    this.delayedFlipRight = _.debounce(this.flipRight, this.flipDuration);
+      if (page >= this.$refs.viewer.numPages - 1) {
+        this.finished = true;
+      } else {
+        this.finished = false;
+      }
+    },
   },
 };
 </script>
 
 <style scoped>
-.book-title {
-  padding: 2vh;
-  margin: 2vh;
-  border-radius: 1vw;
-  background: #ffffff;
-  text-align: center;
-  font-size: 3vh;
-}
-
 .book-viewer {
-  width: 78vw !important;
-}
-
-/deep/ .book-viewer .viewport {
-  width: 78vw !important;
-  height: calc(100vh - 6vw - 11vh - 10vh) !important;
+  width: 100% !important;
+  flex: 1;
+  display: flex;
+  flex-flow: column-reverse;
 }
 
 /deep/ .book-viewer .viewport .container {
   padding: 0 !important;
-}
-
-/deep/ .container {
-  max-width: 100%;
 }
 
 .book-viewer-control {
@@ -127,8 +143,6 @@ export default {
   padding: 2vh;
   align-items: flex-start;
   justify-content: center;
-  position: absolute;
-  bottom: 0;
   width: 100%;
 }
 
@@ -142,5 +156,15 @@ export default {
 
 /deep/ .page-input input {
   text-align: center;
+}
+
+.finish-overlay {
+  display: flex;
+  flex-flow: column;
+  text-align: center;
+}
+
+.finish-overlay > *:not(:last-child) {
+  margin-bottom: 2vh;
 }
 </style>

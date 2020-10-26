@@ -37,6 +37,9 @@
   .right-menu-items {
     display: flex;
     flex-flow: column;
-    gap: 1vh;
+  }
+
+  .right-menu-items > *:not(:last-child) {
+    margin-bottom: 1vh;
   }
 </style>
