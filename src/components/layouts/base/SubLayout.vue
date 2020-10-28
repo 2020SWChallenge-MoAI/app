@@ -121,6 +121,7 @@ export default {
   justify-content: center;
   align-items: center;
   margin-bottom: 1vw;
+  z-index: 10;
 }
 
 #holes > .hole:not(:last-child) {

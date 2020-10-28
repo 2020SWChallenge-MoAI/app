@@ -1,132 +1,74 @@
 <template>
-  <div id="main">
-    <div id="background-forest" />
+  <sub-layout title="마인드맵" tooltip="떠오르는 단어를 적어 커다란 나무를 완성해보자!">
+    <template v-slot:left>
+      <!-- 왼쪽 버튼은 이렇게 입력 -->
+      <left-menu-button icon="mdi-thought-bubble-outline" text="불러오기" />
+      <left-menu-button icon="mdi-check-bold" text="완료" id="canvas-finish" />
+      <left-menu-button icon="mdi-pen" text="그리기" id="canvas-pen"
+        class="canvas-tool"
+      />
+      <left-menu-button icon="mdi-cursor-pointer" text="고르기" id="canvas-select"
+        class="canvas-tool"
+      />
+      <left-menu-button icon="mdi-delete" text="지우기" id="canvas-delete"
+        class="canvas-tool"
+      />
+      <left-menu-button icon="mdi-magnify-plus" text="확대" id="canvas-zoomin"
+        class="canvas-tool"
+      />
+      <left-menu-button icon="mdi-magnify-minus" text="축소" id="canvas-zoomout"
+        class="canvas-tool"
+      />
+    </template>
 
-    <div id="first">
-      <div style="position: relative; margin-top: 10%; height: 1vw;" />
-      <div id="left-btn" >
-        <div id="btn-back-img" />
-        <span id="btn-string" >뒤로가기</span>
-      </div>
-      <div id="left-btn" >
-        <div id="btn-save-img" />
-        <span id="btn-string" >저장</span>
-      </div>
-      <div id="left-btn" >
-        <div id="btn-reset-img" />
-        <span id="btn-string" >초기화</span>
-      </div>
-      <div id="left-btn" >
-        <div id="btn-share-img" />
-        <span id="btn-string" >공유하기</span>
+    <!-- 캔버스 -->
+    <canvas id="center-canvas" />
+
+    <!-- TODO: Implementation -->
+    <div id="center-recommend" v-show="!finish && aiHelp">
+      <div id="ai-background">
+        <div id="ai-img" />
+        <div id="ai-space" />
+        <div id="ai-dotline">
+          <div id="ai-dot" />
+          <div id="ai-dot" />
+          <div id="ai-dot" />
+          <div id="ai-dot" />
+          <div id="ai-dot" />
+          <div id="ai-dot" />
+          <div id="ai-dot" />
+        </div>
       </div>
 
-      <div id="left-menu">
-        <div style="width: 1vw; height: 2vw;" />
-        <div id="left-menu-pen" />
-        <div id="left-menu-move" />
-        <div id="left-menu-select" />
-        <div id="left-menu-delete" />
-        <div id="left-menu-zoomin" />
-        <div id="left-menu-zoomout" />
+      <div id="recommend-words" v-show="recommendClicked && recommendLoaded">
+        <div id="recommend-words-top">
+          <div class="recommend-word" id="recommend1">
+          </div>
+          <div class="recommend-word" id="recommend2">
+          </div>
+          <div class="recommend-word" id="recommend3">
+          </div>
+        </div>
+        <div id="recommend-words-bot">
+          <div class="recommend-word" id="recommend4">
+          </div>
+          <div class="recommend-word" id="recommend5">
+          </div>
+          <div class="recommend-word" id="recommend6">
+          </div>
+        </div>
+      </div>
+
+      <div id="recommend-start" v-if="!recommendClicked">
+        내 도움이 필요하면 버튼을 누르면 돼!
+      </div>
+
+      <div id="recommend-loading" v-if="recommendClicked && !recommendLoaded" />
+
+      <div id="right-btn" v-show="recommendClicked && recommendLoaded">
       </div>
     </div>
-
-    <div id="second">
-
-      <div id="center-box">
-
-        <div id="center-tab">
-          생각펼치기
-        </div>
-
-        <div id="center-comment">
-          떠오르는 단어를 적어 커다란 나무를 완성해보자!
-        </div>
-
-        <div id="center-finish">
-          완료!
-        </div>
-
-        <div id="center-note">
-          <div id="punch-holes">
-            <div id="holes" style="left: 0vw;" />
-            <div id="holes" style="left: 6vw;" />
-            <div id="holes" style="left: 12vw;" />
-            <div id="holes" style="left: 18vw;" />
-            <div id="holes" style="left: 24vw;" />
-            <div id="holes" style="left: 30vw;" />
-            <div id="holes" style="left: 36vw;" />
-            <div id="holes" style="left: 42vw;" />
-            <div id="holes" style="left: 48vw;" />
-            <div id="holes" style="left: 54vw;" />
-            <div id="holes" style="left: 60vw;" />
-          </div>
-
-          <canvas id="center-canvas" />
-        </div>
-
-        <div id="center-recommend" v-show="!finish">
-          <div id="ai-background">
-            <div id="ai-img" />
-            <div id="ai-space" />
-            <div id="ai-dotline">
-              <div id="ai-dot" />
-              <div id="ai-dot" />
-              <div id="ai-dot" />
-              <div id="ai-dot" />
-              <div id="ai-dot" />
-              <div id="ai-dot" />
-              <div id="ai-dot" />
-            </div>
-          </div>
-
-          <div id="recommend-words" v-show="recommendClicked && recommendLoaded">
-            <div id="recommend-words-top">
-              <div class="recommend-word" id="recommend1">
-              </div>
-              <div class="recommend-word" id="recommend2">
-              </div>
-              <div class="recommend-word" id="recommend3">
-              </div>
-            </div>
-            <div id="recommend-words-bot">
-              <div class="recommend-word" id="recommend4">
-              </div>
-              <div class="recommend-word" id="recommend5">
-              </div>
-              <div class="recommend-word" id="recommend6">
-              </div>
-            </div>
-          </div>
-
-          <div id="recommend-start" v-if="!recommendClicked">
-            내 도움이 필요하면 버튼을 누르면 돼!
-          </div>
-
-          <div id="recommend-loading" v-if="recommendClicked && !recommendLoaded" />
-
-          <div id="right-btn" v-show="recommendClicked && recommendLoaded">
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <div id="third">
-      <div id="menu-text">
-        MENU
-      </div>
-      <div id="right-menu">
-        <div id="menu-ai" />
-        <div id="menu-mindmap" />
-        <div id="menu-activity" />
-        <div id="menu-quiz" />
-        <div id="menu-filtering" />
-        <div id="menu-mypage" />
-      </div>
-    </div>
-  </div>
+  </sub-layout>
 </template>
 
 <script>
@@ -135,12 +77,13 @@ import axios from 'axios';
 export default {
   data() {
     return {
+      aiHelp: false,
       canvas: document.getElementById(''),
       ctx: [],
-      templateType: 1,
+      templateType: this.$route.params.template,
       scale: 1,
       canvasScale: 1,
-      touchmode: 'pen',
+      touchmode: 'drag',
       padding: { x: 0, y: 0 },
       startPos: { x: -1, y: -1 },
       maxPos: {
@@ -190,43 +133,42 @@ export default {
       this.finishDraw(e);
     }, false);
 
-    const penBtn = document.querySelector('#left-menu-pen');
-    const dragBtn = document.querySelector('#left-menu-move');
-    const selectBtn = document.querySelector('#left-menu-select');
-    const zoomin = document.querySelector('#left-menu-zoomin');
-    const zoomout = document.querySelector('#left-menu-zoomout');
-    const deleteBtn = document.querySelector('#left-menu-delete');
-    const nextBtn = document.querySelector('#right-btn');
-    const recommendWords = document.querySelectorAll('.recommend-word');
+    const penBtn = document.querySelector('#canvas-pen');
+    const selectBtn = document.querySelector('#canvas-select');
+    const zoomin = document.querySelector('#canvas-zoomin');
+    const zoomout = document.querySelector('#canvas-zoomout');
+    const deleteBtn = document.querySelector('#canvas-delete');
+    const finishBtn = document.querySelector('#canvas-finish');
     const aiSupportBtn = document.querySelector('#ai-background');
-    const finishBtn = document.querySelector('#center-finish');
-
+    const aiHelp = document.querySelector('#aiHelp');
+    const recommendWords = document.querySelectorAll('.recommend-word');
+    const nextBtn = document.querySelector('#right-btn');
     if (penBtn) {
-      penBtn.addEventListener('click', this.penBtnClicked);
-    }
-    if (dragBtn) {
-      dragBtn.addEventListener('click', this.dragBtnClicked);
+      penBtn.addEventListener('click', this.modePen);
     }
     if (selectBtn) {
-      selectBtn.addEventListener('click', this.selectBtnClicked);
+      selectBtn.addEventListener('click', this.modeSelect);
     }
     if (zoomin) {
-      zoomin.addEventListener('click', this.zoominClicked);
+      zoomin.addEventListener('click', this.zoomin);
     }
     if (zoomout) {
-      zoomout.addEventListener('click', this.zoomoutClicked);
+      zoomout.addEventListener('click', this.zoomout);
     }
     if (deleteBtn) {
-      deleteBtn.addEventListener('click', this.deleteBtnClicked);
+      deleteBtn.addEventListener('click', this.deleteNode);
     }
-    if (nextBtn) {
-      nextBtn.addEventListener('click', this.nextBtnClicked);
+    if (finishBtn) {
+      finishBtn.addEventListener('click', this.finishBtnClicked);
     }
     if (aiSupportBtn) {
       aiSupportBtn.addEventListener('click', this.aiSupportBtnClicked);
     }
-    if (finishBtn) {
-      finishBtn.addEventListener('click', this.finishBtnClicked);
+    if (aiHelp) {
+      aiHelp.addEventListener('click', this.aiHelpSelected);
+    }
+    if (nextBtn) {
+      nextBtn.addEventListener('click', this.nextBtnClicked);
     }
     recommendWords.forEach((word) => {
       // eslint-disable-next-line no-unused-vars
@@ -241,7 +183,7 @@ export default {
     this.ctx[0].scale(0.9, 0.9);
     this.ctx[0].scale(1, 1);
     this.padding.x = -100;
-    this.padding.y = -95;
+    this.padding.y = -(this.canvas.height) / 3;
     this.scale = 0.9 * 0.9;
     this.canvasScale = 0.8;
 
@@ -343,7 +285,7 @@ export default {
         // 책 이미지 넣기
         const bookImg = new Image();
         // eslint-disable-next-line
-        bookImg.src = require('../../assets/left-book-menu/book3.png');
+        bookImg.src = require('../../../assets/left-book-menu/book3.png');
         // eslint-disable-next-line
         this.ctx[0].drawImage(bookImg, width - 80 - paddingX, height - 150 - paddingY, 150, 200);
         // 우주배경 템플릿
@@ -709,7 +651,13 @@ export default {
         this.edgeId = -1;
         this.wordSelected = false;
         this.wordSelected = '';
-        this.touchmode = 'select';
+        this.touchmode = 'drag';
+        // tool reset
+        const pen = document.querySelector('#canvas-pen');
+        const select = document.querySelector('#canvas-select');
+        pen.style.background = '#83b1b1';
+        select.style.background = '#83b1b1';
+
         this.resetWordBackground();
         this.reDrawAll();
       } else if (this.touchmode === 'select') {
@@ -1089,24 +1037,39 @@ export default {
       }
     },
 
-    penBtnClicked() {
+    modePen() {
       this.resetWordBackground();
-      this.touchmode = 'pen';
       this.ctx[0].lineWidth = 12;
-      this.ctx[0].strokeStyle = '836d4b';
+      this.ctx[0].strokeStyle = '#836d4b';
+
+      const pen = document.querySelector('#canvas-pen');
+      if (this.touchmode === 'pen') {
+        this.touchmode = 'drag';
+        pen.style.background = '#83b1b1';
+      } else {
+        this.touchmode = 'pen';
+        pen.style.background = '#24b1a1';
+        const select = document.querySelector('#canvas-select');
+        select.style.background = '#83b1b1';
+      }
     },
 
-    dragBtnClicked() {
+    modeSelect() {
       this.resetWordBackground();
-      this.touchmode = 'drag';
+
+      const select = document.querySelector('#canvas-select');
+      if (this.touchmode === 'select') {
+        this.touchmode = 'drag';
+        select.style.background = '#83b1b1';
+      } else {
+        this.touchmode = 'select';
+        select.style.background = '#24b1a1';
+        const pen = document.querySelector('#canvas-pen');
+        pen.style.background = '#83b1b1';
+      }
     },
 
-    selectBtnClicked() {
-      this.resetWordBackground();
-      this.touchmode = 'select';
-    },
-
-    deleteBtnClicked() {
+    deleteNode() {
       if (this.selectedNode !== -1 && this.selectedNode !== 0) {
         const index = this.nodes.findIndex((element) => element.id === this.selectedNode);
         this.nodes.splice(index, 1);
@@ -1136,7 +1099,7 @@ export default {
       this.selectedNode = -1;
     },
 
-    zoominClicked() {
+    zoomin() {
       if (this.canvasScale < 3) {
         this.canvasScale += 0.1;
         this.scale *= 1.1;
@@ -1145,7 +1108,7 @@ export default {
       }
     },
 
-    zoomoutClicked() {
+    zoomout() {
       if (this.canvasScale > 0.1) {
         this.canvasScale -= 0.1;
         this.scale *= 0.9;
@@ -1200,16 +1163,20 @@ export default {
     aiSupportBtnClicked() {
       this.recommendClicked = true;
       this.recommendLoaded = false;
+      const node = this.nodes.find((element) => element.id === this.selectedNode);
+      const ancWord = [];
+      if (this.selectedNode >= 5) ancWord.push(node.label);
+
+      console.log(ancWord);
 
       axios.get('/api/book/3/keyword', {
         params: {
-          num: 60, anc: [this.wordSelected],
+          num: 60, anc: JSON.stringify(ancWord),
         },
         headers: {
           'x-access-token': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1aWQiOjEsImV4cCI6MTYzMjA1MzYyMX0.Qj4k0qGouoYABTAGF_WWJLSfmxrDw9i87ZB2HM-ZiGU',
         },
       }).then((res) => {
-        console.log(this.wordSelected);
         this.words = res.data.keywords;
         this.wordIndex = 0;
 
@@ -1245,23 +1212,6 @@ export default {
       }).catch((err) => {
         console.warn('ERROR!!!!: ', err);
       });
-      /*
-
-      this.recommendLoaded = true;
-      const word1 = document.querySelector('#recommend1');
-      const word2 = document.querySelector('#recommend2');
-      const word3 = document.querySelector('#recommend3');
-      const word4 = document.querySelector('#recommend4');
-      const word5 = document.querySelector('#recommend5');
-      const word6 = document.querySelector('#recommend6');
-
-      word1.innerHTML = '흥부';
-      word2.innerHTML = '놀부';
-      word3.innerHTML = '제비';
-      word4.innerHTML = '박';
-      word5.innerHTML = '도깨비';
-      word6.innerHTML = '금은보화';
-      */
     },
 
     recommendWordClicked(e) {
@@ -1333,18 +1283,26 @@ export default {
     },
 
     finishBtnClicked() {
-      this.finish = true;
-      const note = document.querySelector('#center-note');
-      note.style.height = '85%';
+      // 연결 안돼있는 edge 제거
+      for (let i = 0; i < this.edges.length; i += 1) {
+        if (this.edges[i].from === -1 || this.edges[i].to === -1) {
+          this.edges.splice(i, 1);
+          i -= 1;
+        }
+      }
 
-      this.canvas.width = this.canvas.clientWidth;
-      this.canvas.height = this.canvas.clientHeight;
-      this.ctx[0].scale(0.5, 0.5);
-      this.ctx[0].scale(1, 1);
-      this.padding.x = -388;
-      this.padding.y = -577;
+      // 연결 안돼있는 node 제거
+      for (let i = 0; i < this.nodes.length; i += 1) {
+        if (this.nodes[i].link === false) {
+          this.nodes.splice(i, 1);
+          i -= 1;
+        }
+      }
 
-      this.reDrawAll();
+      this.$router.replace({
+        name: 'FinishMindMap',
+        params: { nodes: this.nodes, edges: this.edges },
+      });
     },
 
     drawCloud(x, y, paddingX, paddingY) {
@@ -1418,139 +1376,47 @@ export default {
       this.ctx[0].fill();
     },
 
+    aiHelpSelected() {
+      this.aiHelp = !this.aiHelp;
+      this.recommendClicked = false;
+      this.recommendLoaded = false;
+    },
+
   },
 };
 </script>
 
 <style scoped>
-#main {
+#center-canvas {
+  position: absolute;
   width: 100%;
   height: 100%;
-  background: linear-gradient(180deg, #A6D6CD 0%, rgba(166, 214, 205, 0) 100%);
-}
-
-#first {
-  width: 10%;
-  height: 100%;
-  display: inline-block;
-}
-
-#second {
-  width: 80%;
-  height: 100%;
-  display: inline-block;
-}
-
-#third {
-  width: 10%;
-  height: 100%;
-  display: inline-block;
-}
-
-#background-forest {
-  background-image: url('../../assets/background-forest.svg');
-  background-size: cover;
-  width: 100%;
-  height: 50%;
-  position: absolute;
-  top: 50%;
-  z-index: 1;
-}
-
-#center-box {
-  position: relative;
-  width: 100%;
-  height: 90%;
-  background: rgba(255, 253, 242, 0.6);
-  border-radius: 20px;
-  z-index: 10;
-  margin-top: 5%;
-}
-
-#center-tab {
-  position: absolute;
-  background: #EE8F89;
-  border-radius: 15px;
-  width: 18vw;
-  height: 6vw;
-  z-index: 12;
-  left: 6vw;
-  top: 2vw;
-
-  font-family: BM HANNA_TTF;
-  font-style: normal;
-  font-weight: bold;
-  font-size: 2.5vw;
-  line-height: 30px;
-  letter-spacing: 0.1vw;
-  text-align: center;
-  padding-top: 1vw;
-
-  color: #FFFFFF;
-}
-
-#center-comment {
-  position: absolute;
-  width: 42vw;
-  height: 3.5vw;
-  left: 26vw;
-  top: 2.2vw;
-  z-index: 12;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 10px;
-
-  font-family: BM HANNA_TTF;
-  font-style: normal;
-  font-weight: bold;
-  font-size: 1.5vw;
-  line-height: 20px;
-  letter-spacing: 0.1vw;
-
-  color: #000000;
-
-  padding-left: 3vw;
-  padding-top: 0.8vw;
-}
-#center-finish {
-  position: absolute;
-  width: 6vw;
-  height: 4vw;
-  left: 72vw;
-  top: 1.8vw;
-  z-index: 12;
-  background:  rgba(170, 170, 170, 0.8);
-  border-radius: 10px;
-  text-align: center;
-
-  font-family: BM HANNA_TTF;
-  font-style: normal;
-  font-weight: bold;
-  font-size: 1.5vw;
-  line-height: 20px;
-  letter-spacing: 0.1vw;
-
-  color: white;
-  padding-top: 0.8vw;
+  background: #fffdf2;
+  z-index: 5;
+  border-radius: 1vw;
+  top: 0;
+  left: 0;
 }
 
 #center-recommend {
   position: relative;
   width: 95%;
   height: 22%;
-  background: #FFFDF2;
+  background: lightgray;
   border-radius: 20px;
   z-index: 15;
-  top: 74%;
+  top: 72%;
   left: 2.5%;
 }
 #ai-img {
   position: absolute;
-  background-image: url('../../assets/mindmap/ai-recommend.png');
+  background-image: url('../../../assets/mindmap/ai-recommend.png');
   background-size: cover;
-  width: 14vw;
-  height: 14vw;
+  width: 12vw;
+  height: 18vh;
   z-index: 18;
-  display: inline-block
+  display: inline-block;
+  margin-left: 0.5vw;
 }
 #ai-background {
   position: absolute;
@@ -1558,7 +1424,7 @@ export default {
   height: 100%;
   border-radius: 20px;
   background: #FFAE00;
-  display: inline-block
+  display: inline-block;
 }
 #ai-space {
   position: absolute;
@@ -1576,7 +1442,7 @@ export default {
 }
 #ai-dot {
   width: 100%;
-  height: 1.5vw;
+  height: 1.8vh;
   background: #8BA9A3;
   margin-bottom: 0.72vw;
 }
@@ -1592,7 +1458,7 @@ export default {
   width: 80%;
   height: 100%;
   margin-left: 18%;
-  font-size: 3vw;
+  font-size: 2.8vw;
   font-family: BM HANNA_TTF;
   font-style: normal;
   font-weight: 900;
@@ -1734,265 +1600,15 @@ export default {
 }
 #right-btn {
   position: absolute;
-  width: 13vw;
-  height: 100%;
-  margin-left: 82%;
+  width: 12vw;
+  height: 18vh;
+  margin-left: 83%;
   padding: 0;
-  background-image: url('../../assets/mindmap/next.png');
+  background-image: url('../../../assets/mindmap/next.png');
   background-size: cover;
 }
 
-#center-note {
-  position: absolute;
-  width: 95%;
-  height: 60%;
-  background: #FFFDF2;
-  border-radius: 20px;
-  z-index: 15;
-  top: 10%;
-  left: 2.5%;
-}
-
-#punch-holes {
-  position: absolute;
-  width: 65vw;
-  height: 3vw;
-  top: 2vw;
-  left: 6vw;
-  z-index: 20;
-}
-
-#holes {
-  position: absolute;
-  width: 3vw;
-  height: 3vw;
-  background: #D2EADE;
-  border-radius: 3vw;
-  z-index: 20;
-}
-
-#center-canvas {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background: #FFFDF2;
-  z-index: 15;
-  border-radius: 20px;
-}
-
-#left-btn {
-  position: relative;
-  width: 6vw;
-  height: 6vw;
-  background: rgba(107, 152, 159, 0.6);
-  border-radius: 15px;
-  margin-left: 20%;
-  margin-top: 20%;
-  z-index: 10;
-}
-#btn-back-img {
-  position: relative;
-  width: 5.5vw;
-  height: 4.5vw;
-  background: url('../../assets/left-btn/btn-back.svg');
-  background-size: cover;
-}
-#btn-save-img {
-  position: relative;
-  width: 6vw;
-  height: 4.5vw;
-  background: url('../../assets/left-btn/btn-save.svg');
-  background-size: cover;
-}
-#btn-reset-img {
-  position: relative;
-  width: 6vw;
-  height: 4.5vw;
-  background: url('../../assets/left-btn/btn-reset.svg');
-  background-size: cover;
-}
-#btn-share-img {
-  position: relative;
-  width: 6vw;
-  height: 4.5vw;
-  background: url('../../assets/left-btn/btn-share.svg');
-  background-size: cover;
-}
-#btn-string {
-  position: absolute;
-  width: 5vw;
-  height: 3vw;
-
-  font-family: BM HANNA_TTF;
-  font-style: normal;
-  font-weight: normal;
-  font-size: 0.5em;
-  line-height: 12px;
-
-  text-align: center;
-  letter-spacing: 0.1em;
-
-  text-align: center;
-  margin-left: 0.5vw;
-
-  color: #FFFFFF;
-}
-#left-menu {
-  position: relative;
-  width: 8vw;
-  height: 30vw;
-  background: rgba(255, 253, 242, 0.6);
-  border-radius: 15px;
-  margin-left: 10%;
-  z-index: 10;
-  margin-top: 50%;
-}
-#left-menu-pen {
-  position: relative;
-  width: 4vw;
-  height: 4vw;
-  background: url('../../assets/drawing-tool/pen.svg');
-  background-size: cover;
-  border-radius: 15px;
-  margin-left: 2vw;
-}
-#left-menu-move {
-  position: relative;
-  width: 4vw;
-  height: 4vw;
-  background: url('../../assets/drawing-tool/drag.svg');
-  background-size: cover;
-  border-radius: 15px;
-  margin-top: 2vw;
-  margin-left: 2vw;
-}
-#left-menu-select {
-  position: relative;
-  width: 4vw;
-  height: 4vw;
-  background: url('../../assets/drawing-tool/select.png');
-  background-size: cover;
-  border-radius: 15px;
-  margin-top: 2vw;
-  margin-left: 2vw;
-}
-#left-menu-zoomin {
-  position: relative;
-  width: 4vw;
-  height: 4vw;
-  background: url('../../assets/drawing-tool/zoomin.svg');
-  background-size: cover;
-  border-radius: 15px;
-  margin-top: 2vw;
-  margin-left: 2vw;
-}
-#left-menu-zoomout {
-  position: relative;
-  width: 4vw;
-  height: 4vw;
-  background: url('../../assets/drawing-tool/zoomout.svg');
-  background-size: cover;
-  border-radius: 15px;
-  margin-top: 2vw;
-  margin-left: 2vw;
-}
-#left-menu-delete {
-  position: relative;
-  width: 4vw;
-  height: 4vw;
-  background: url('../../assets/drawing-tool/delete.png');
-  background-size: cover;
-  border-radius: 15px;
-  margin-top: 2vw;
-  margin-left: 2vw;
-}
-
-#top-bar {
-  position: absolute;
-  margin-top: calc(8% - 3.5vw);
-  margin-left: 2%;
-}
-
-#right-menu {
-  position: absolute;
-  width: 8%;
-  height: 75%;
-  z-index: 10;
-  background: rgba(255, 253, 242, 0.6);
-  border-radius: 10px;
-  margin-left: 1%;
-  margin-top: 12%;
-}
-#menu-text {
-  position: absolute;
-  width: 6vw;
-  height: 2vw;
-  margin-left: 1.8vw;
-  margin-top: 9vw;
-
-  font-family: BM HANNA_TTF;
-  font-style: normal;
-  font-weight: bold;
-  font-size: 2vw;
-  line-height: 20px;
-  /* identical to box height */
-
-  text-align: center;
-
-  color: #FFFFFF;
-}
-#menu-ai {
-  position: relative;
-  width: 6vw;
-  height: 8vw;
-  background-image: url('../../assets/right-menu/ai.svg');
-  background-size: cover;
-  margin-left: 1vw;
-  margin-top: 1vw;
-}
-#menu-mindmap {
-  position: relative;
-  width: 6vw;
-  height: 7.8vw;
-  background-image: url('../../assets/right-menu/mindmap.svg');
-  background-size: cover;
-  margin-left: 1vw;
-  margin-top: 3vw;
-}
-#menu-activity {
-  position: relative;
-  width: 6vw;
-  height: 7.7vw;
-  background-image: url('../../assets/right-menu/activity.svg');
-  background-size: cover;
-  margin-left: 1vw;
-  margin-top: 1vw;
-}
-#menu-quiz {
-  position: relative;
-  width: 6vw;
-  height: 7.8vw;
-  background-image: url('../../assets/right-menu/quiz.svg');
-  background-size: cover;
-  margin-left: 1vw;
-  margin-top: 1vw;
-}
-#menu-filtering {
-  position: relative;
-  width: 6.4vw;
-  height: 7.6vw;
-  background-image: url('../../assets/right-menu/filtering.svg');
-  background-size: cover;
-  margin-left: 0.8vw;
-  margin-top: 1vw;
-}
-#menu-mypage {
-  position: relative;
-  width: 6vw;
-  height: 7.8vw;
-  background-image: url('../../assets/right-menu/mypage.svg');
-  background-size: cover;
-  margin-left: 1vw;
-  margin-top: 1vw;
+.canvas-tool {
+  background: #FFAE00 !important;
 }
 </style>
