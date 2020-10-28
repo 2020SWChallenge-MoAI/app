@@ -27,6 +27,7 @@ export default new Vuex.Store({
       author: b.author,
       category: b.category,
       thumbnail: `/api/book/${b.bid}/cover`,
+      pageNum: b.page_num,
     })),
     getCategories: (ctx, getters) => [...new Set(getters.getBooks.map((b) => b.category))],
     // eslint-disable-next-line max-len
@@ -109,8 +110,6 @@ export default new Vuex.Store({
     },
     getBooks({ commit }) {
       return new Promise((resolve, reject) => {
-        commit('setBooks', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-        resolve();
         axios
           .get('/api/book')
           .then(({ data }) => {

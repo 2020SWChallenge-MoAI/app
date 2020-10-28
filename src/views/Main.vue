@@ -10,7 +10,7 @@
     <template v-slot:right>
       <right-menu-items />
     </template>
-    <ul id="tabs-category">
+    <ul v-if="loaded" id="tabs-category">
       <li
         v-for="(category, index) in categories"
         :key="index"
@@ -26,6 +26,7 @@
         함께 읽을 책을 선택해보자!
       </div>
       <v-carousel
+        v-if="loaded"
         v-model="currentPage"
         :show-arrows="false"
         :cycle="false"
@@ -70,6 +71,7 @@ export default {
       currentPage: 0,
       currentCategory: 0,
       currentBook: null,
+      loaded: false,
     };
   },
   computed: {
@@ -96,8 +98,9 @@ export default {
       this.currentPage = 0;
     },
   },
-  created() {
-    this.$store.dispatch('getBooks');
+  async created() {
+    await this.$store.dispatch('getBooks');
+    this.loaded = true;
   },
   methods: {
     logout() {

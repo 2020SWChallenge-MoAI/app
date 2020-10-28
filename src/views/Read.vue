@@ -20,6 +20,7 @@
       </div>
     </v-overlay>
     <flip-book
+      v-if="loaded"
       ref="viewer"
       v-slot="viewer"
       class="book-viewer"
@@ -54,6 +55,7 @@
 <script>
 import FlipBook from 'flipbook-vue';
 import _ from 'lodash';
+import util from '../util';
 
 export default {
   components: {
@@ -61,36 +63,10 @@ export default {
   },
   data() {
     return {
-      pages: [
-        null,
-        '/img/sample/0_bomul.pdf.jpg',
-        '/img/sample/1_bomul.pdf.jpg',
-        '/img/sample/2_bomul.pdf.jpg',
-        '/img/sample/3_bomul.pdf.jpg',
-        '/img/sample/4_bomul.pdf.jpg',
-        '/img/sample/5_bomul.pdf.jpg',
-        '/img/sample/6_bomul.pdf.jpg',
-        '/img/sample/7_bomul.pdf.jpg',
-        '/img/sample/8_bomul.pdf.jpg',
-        '/img/sample/9_bomul.pdf.jpg',
-        '/img/sample/10_bomul.pdf.jpg',
-        '/img/sample/11_bomul.pdf.jpg',
-        '/img/sample/12_bomul.pdf.jpg',
-        '/img/sample/13_bomul.pdf.jpg',
-        '/img/sample/14_bomul.pdf.jpg',
-        '/img/sample/15_bomul.pdf.jpg',
-        '/img/sample/16_bomul.pdf.jpg',
-        '/img/sample/17_bomul.pdf.jpg',
-        '/img/sample/18_bomul.pdf.jpg',
-        '/img/sample/19_bomul.pdf.jpg',
-        '/img/sample/20_bomul.pdf.jpg',
-        '/img/sample/23_bomul.pdf.jpg',
-        '/img/sample/24_bomul.pdf.jpg',
-        '/img/sample/25_bomul.pdf.jpg',
-        null,
-      ],
       flipDuration: 300,
       finished: false,
+      pages: [],
+      loaded: false,
     };
   },
   computed: {
@@ -98,12 +74,39 @@ export default {
       return this.$store.getters.getCurrentBook;
     },
   },
-  created() {
+  watch: {
+    async book() {
+      this.loaded = false;
+
+      const pages = await Promise.all(
+        Array.from(Array(this.book.pageNum).keys())
+          .map((k) => `/api/book/${this.book.bid}/${k + 1}`)
+          .map(async (url) => util.base64(url)),
+      );
+
+      this.pages = [null].concat(pages).concat([null]);
+
+      this.loaded = true;
+    },
+  },
+  async created() {
     this.delayedFlipLeft = _.debounce(this.flipLeft, this.flipDuration);
     this.delayedFlipRight = _.debounce(this.flipRight, this.flipDuration);
 
     // eslint-disable-next-line global-require
     this.audio = new Audio(require('../assets/wav/page-flip.wav'));
+
+    this.loaded = false;
+
+    const pages = await Promise.all(
+      Array.from(Array(this.book.pageNum).keys())
+        .map((k) => `/api/book/${this.book.bid}/${k + 1}`)
+        .map(async (url) => util.base64(url)),
+    );
+
+    this.pages = [null].concat(pages).concat([null]);
+
+    this.loaded = true;
   },
   methods: {
     flipLeft() {
