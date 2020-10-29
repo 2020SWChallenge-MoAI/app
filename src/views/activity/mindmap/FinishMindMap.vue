@@ -1,99 +1,15 @@
 <template>
-  <sub-layout title="마이페이지" tooltip="나의 활동 기록을 살펴보자!" :recent-books="false">
+  <sub-layout title="마인드맵" tooltip="떠오르는 단어를 적어 커다란 나무를 완성해보자!">
+    <template v-slot:left>
+      <left-menu-button icon="mdi-magnify-plus" text="확대" id="canvas-zoomin" />
+      <left-menu-button icon="mdi-magnify-minus" text="축소" id="canvas-zoomout" />
+      <left-menu-button icon="mdi-bookmark-check-outline" text="제출하기" id="canvas-submit" />
+    </template>
 
-    <div id="mypage-top">
-      <div id="mypage-profile">
-        <div
-          id="mypage-user-img"
-        />
-        <div id="mypage-user-age">{{ userAge }}세</div>
-        <div id="mypage-user-name">{{ userName }}</div>
-      </div>
+    <!-- 캔버스 -->
+    <canvas id="center-canvas" />
 
-      <div id="mypage-result">
-        <div id="mypage-result-title">
-          <v-icon x-large @click="month -= 1; slide = 'slide-left';"> mdi-menu-left </v-icon>
-
-          <transition :name="slide" mode="out-in" enter="enter">
-            <div v-bind:key="month" id="mypage-result-label">{{ month }}월 마인드맵 평가</div>
-          </transition>
-
-          <v-icon x-large @click="month += 1; slide = 'slide-right';"> mdi-menu-right </v-icon>
-        </div>
-
-        <transition :name="slide" mode="out-in">
-          <table v-bind:key="month" id="mypage-result-table" style="background: lightblue;">
-            <thead>
-              <tr>
-                <th> </th>
-                <th>1주</th>
-                <th>2주</th>
-                <th>3주</th>
-                <th>4주</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              <tr>
-                <td>이해도</td>
-                <td>10</td>
-                <td>21</td>
-                <td>10</td>
-                <td>21</td>
-              </tr>
-
-              <tr>
-                <td>성실성</td>
-                <td>10</td>
-                <td>21</td>
-                <td>10</td>
-                <td>21</td>
-              </tr>
-
-              <tr>
-                <td style="border-radius: 0 0 0 2vw;">창의성</td>
-                <td>10</td>
-                <td>21</td>
-                <td>10</td>
-                <td style="border-radius: 0 0 2vw 0;">21</td>
-              </tr>
-            </tbody>
-          </table>
-        </transition>
-
-      </div>
-    </div>
-
-    <div id="mypage-bot">
-      <div id="mypage-activity-left-bookname">
-
-        <transition name="slide-up" mode="out-in">
-          <div v-bind:key="activity">
-            {{ activities[activity].bookname }}
-          </div>
-        </transition>
-
-      </div>
-
-      <transition name="fade" mode="out-in">
-        <div v-bind:key="activity" id="mypage-activity-left-date">
-          {{ activities[activity].date }}
-        </div>
-      </transition>
-
-      <v-icon
-        id="mypage-activity-left-arrow"
-        @click="activity = Math.max(activity - 1, 0); reDrawAll();" x-large
-      > mdi-arrow-left-drop-circle </v-icon>
-
-      <canvas id="mypage-activity"></canvas>
-
-      <v-icon
-        id="mypage-activity-right-arrow"
-        @click="activity = Math.min(activity + 1, activities.length - 1); reDrawAll();" x-large
-      > mdi-arrow-right-drop-circle </v-icon>
-    </div>
-
+    <!-- TODO: Implementation -->
   </sub-layout>
 </template>
 
@@ -101,87 +17,57 @@
 export default {
   data() {
     return {
-      userName: '성균이',
-      userAge: '8',
-      userImg: '',
-      month: new Date().getMonth() + 1,
-      activity: 0,
-      slide: '',
-
       canvas: document.getElementById(''),
       ctx: [],
+      templateType: 1,
       scale: 0.5,
-
-      activities: [
-        {
-          bookname: '흥부와 놀부',
-          date: '2020.10.28',
-          nodes: [
-            {
-              id: 0, x: 389, y: 207.5, size: 125, type: -1, link: true,
-            },
-            {
-              id: 1, label: '등장인물', x: 120, y: 120, size: 80, type: 0, link: true,
-            },
-            {
-              id: 2, label: '줄거리', x: 389 * 2 - 120, y: 120, size: 80, type: 1, link: true,
-            },
-            {
-              id: 3, label: '느낀점', x: 120, y: 207.5 * 2 - 120, size: 80, type: 2, link: true,
-            },
-            {
-              id: 4, label: '인상장면', x: 389 * 2 - 120, y: 207.5 * 2 - 120, size: 80, type: 3, link: true,
-            },
-          ],
-          edges: [
-            { id: 1, from: 0, to: 1 },
-            { id: 2, from: 0, to: 2 },
-            { id: 3, from: 0, to: 3 },
-            { id: 4, from: 0, to: 4 },
-          ],
-          templateType: 1,
-        },
-        {
-          bookname: '아기돼지 삼형제',
-          date: '2020.10.23',
-          nodes: [
-            {
-              id: 0, x: 389, y: 207.5, size: 125, type: -1, link: true,
-            },
-            {
-              id: 1, label: '등장인물', x: 120, y: 120, size: 80, type: 0, link: true,
-            },
-            {
-              id: 2, label: '줄거리', x: 389 * 2 - 120, y: 120, size: 80, type: 1, link: true,
-            },
-            {
-              id: 3, label: '느낀점', x: 120, y: 207.5 * 2 - 120, size: 80, type: 2, link: true,
-            },
-            {
-              id: 4, label: '인상장면', x: 389 * 2 - 120, y: 207.5 * 2 - 120, size: 80, type: 3, link: true,
-            },
-          ],
-          edges: [
-            { id: 1, from: 0, to: 1 },
-            { id: 2, from: 0, to: 2 },
-            { id: 3, from: 0, to: 3 },
-            { id: 4, from: 0, to: 4 },
-          ],
-          templateType: 2,
-        },
-      ],
+      canvasScale: 1,
       padding: { x: 0, y: 0 },
+      startPos: { x: -1, y: -1 },
+
+      nodes: this.$route.params.nodes,
+
+      edges: this.$route.params.edges,
     };
   },
 
   mounted() {
-    this.canvas = document.getElementById('mypage-activity');
+    this.canvas = document.getElementById('center-canvas');
     this.ctx.push(this.canvas.getContext('2d'));
 
     this.canvas.width = this.canvas.clientWidth;
     this.canvas.height = this.canvas.clientHeight;
-    this.ctx[0].scale(0.2, 0.2);
+
+    this.canvas.addEventListener('touchstart', (e) => {
+      this.startDraw(e);
+    }, false);
+    this.canvas.addEventListener('touchmove', (e) => {
+      this.draw(e);
+    }, false);
+    // eslint-disable-next-line no-unused-vars
+    this.canvas.addEventListener('touchend', (e) => {
+      this.finishDraw(e);
+    }, false);
+
+    const submitBtn = document.querySelector('#canvas-submit');
+    const zoomin = document.querySelector('#canvas-zoomin');
+    const zoomout = document.querySelector('#canvas-zoomout');
+    if (submitBtn) {
+      submitBtn.addEventListener('click', this.submitBtnClicked);
+    }
+    if (zoomin) {
+      zoomin.addEventListener('click', this.zoomin);
+    }
+    if (zoomout) {
+      zoomout.addEventListener('click', this.zoomout);
+    }
+
+    this.canvas.width = this.canvas.clientWidth;
+    this.canvas.height = this.canvas.clientHeight;
+    this.ctx[0].scale(0.5, 0.5);
     this.ctx[0].scale(1, 1);
+    this.padding.x = -388;
+    this.padding.y = -727;
 
     this.reDrawAll();
   },
@@ -192,7 +78,7 @@ export default {
       const paddingY = changeY + this.padding.y;
 
       // 나무 템플릿
-      if (this.activities[this.activity].templateType === 1) {
+      if (this.templateType === 1) {
         const width = 389;
         const height = 207.5;
 
@@ -241,31 +127,69 @@ export default {
         // 책 이미지 넣기
         const bookImg = new Image();
         // eslint-disable-next-line
-        bookImg.src = require('../assets/left-book-menu/book3.png');
+        bookImg.src = require('../../../assets/left-book-menu/book3.png');
         // eslint-disable-next-line
         this.ctx[0].drawImage(bookImg, width - 80 - paddingX, height - 150 - paddingY, 150, 200);
         // 우주배경 템플릿
-      } else if (this.activities[this.activity].templateType === 2) {
+      } else if (this.templateType === 2) {
         this.canvas.style.background = '#777777';
       }
     },
 
-    reDrawAll() {
-      if (this.activities[this.activity].templateType === 1) {
-        this.padding.x = this.canvas.clientWidth * -0.8 - 389;
-        this.padding.y = this.canvas.clientHeight * -2 - 207.5;
-      }
-      this.canvas.style.background = '#FFFDF2';
+    startDraw(event) {
+      this.selectedNode = -1;
+      const coors = this.getPosition(event);
+      this.startPos.x = coors.X;
+      this.startPos.y = coors.Y;
+    },
+
+    draw(event) {
+      const coors = this.getPosition(event);
+      const changeX = this.startPos.x - coors.X;
+      const changeY = this.startPos.y - coors.Y;
+
       this.ctx[0].clearRect(0, 0, 100000, 100000);
       this.ctx[0].beginPath();
 
       // edge 먼저 그리기
       // eslint-disable-next-line no-plusplus
-      for (let i = 0; i < this.activities[this.activity].edges.length; i++) {
+      for (let i = 0; i < this.edges.length; i++) {
+        let from = this.nodes.find((element) => element.id === this.edges[i].from);
+        let to = this.nodes.find((element) => element.id === this.edges[i].to);
+        if (this.edges[i].from === -1) from = { x: this.edgePos.x, y: this.edgePos.y };
+        else if (this.edges[i].to === -1) to = { x: this.edgePos.x, y: this.edgePos.y };
         // eslint-disable-next-line max-len
-        const from = this.activities[this.activity].nodes.find((element) => element.id === this.activities[this.activity].edges[i].from);
+        this.drawEdge(from.x - this.padding.x - changeX, from.y - this.padding.y - changeY, to.x - this.padding.x - changeX, to.y - this.padding.y - changeY);
+      }
+
+      // 템플릿 그리기
+      this.initSetting(changeX, changeY);
+
+      // node 그리기
+      // eslint-disable-next-line no-plusplus
+      for (let i = 0; i < this.nodes.length; i++) {
         // eslint-disable-next-line max-len
-        const to = this.activities[this.activity].nodes.find((element) => element.id === this.activities[this.activity].edges[i].to);
+        this.makeNode(this.nodes[i].x - this.padding.x - changeX, this.nodes[i].y - this.padding.y - changeY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+      }
+    },
+
+    finishDraw(event) {
+      const coors = this.getPosition(event);
+      this.padding.x += this.startPos.x - coors.X;
+      this.padding.y += this.startPos.y - coors.Y;
+    },
+
+    reDrawAll() {
+      this.ctx[0].clearRect(0, 0, 100000, 100000);
+      this.ctx[0].beginPath();
+
+      // edge 먼저 그리기
+      // eslint-disable-next-line no-plusplus
+      for (let i = 0; i < this.edges.length; i++) {
+        let from = this.nodes.find((element) => element.id === this.edges[i].from);
+        let to = this.nodes.find((element) => element.id === this.edges[i].to);
+        if (this.edges[i].from === -1) from = { x: this.edgePos.x, y: this.edgePos.y };
+        else if (this.edges[i].to === -1) to = { x: this.edgePos.x, y: this.edgePos.y };
         // eslint-disable-next-line max-len
         this.drawEdge(from.x - this.padding.x, from.y - this.padding.y, to.x - this.padding.x, to.y - this.padding.y);
       }
@@ -275,9 +199,9 @@ export default {
 
       // node 그리기
       // eslint-disable-next-line no-plusplus
-      for (let i = 0; i < this.activities[this.activity].nodes.length; i++) {
+      for (let i = 0; i < this.nodes.length; i++) {
         // eslint-disable-next-line max-len
-        this.makeNode(this.activities[this.activity].nodes[i].x - this.padding.x, this.activities[this.activity].nodes[i].y - this.padding.y, this.activities[this.activity].nodes[i].size, this.activities[this.activity].nodes[i].type, this.activities[this.activity].nodes[i].label);
+        this.makeNode(this.nodes[i].x - this.padding.x, this.nodes[i].y - this.padding.y, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
       }
     },
 
@@ -299,7 +223,7 @@ export default {
         if (text.length % 10 === 0) linesize -= 1;
       }
 
-      if (this.activities[this.activity].templateType === 1) {
+      if (this.templateType === 1) {
         if (type === 0) {
           // 나뭇잎1 그리기
           this.ctx[0].beginPath();
@@ -422,7 +346,7 @@ export default {
             textloc += 1;
           }
         }
-      } else if (this.activities[this.activity].templateType === 2) {
+      } else if (this.templateType === 2) {
         if (type === 0) {
           this.ctx[0].fillStyle = '#736993';
           this.ctx[0].beginPath();
@@ -503,13 +427,31 @@ export default {
     },
 
     drawEdge(x1, y1, x2, y2) {
-      if (this.activities[this.activity].templateType === 1) {
+      if (this.templateType === 1) {
         this.ctx[0].beginPath();
         this.ctx[0].moveTo(x1, y1);
         this.ctx[0].lineWidth = 12;
         this.ctx[0].strokeStyle = '#baad93';
         this.ctx[0].lineTo(x2, y2);
         this.ctx[0].stroke();
+      }
+    },
+
+    zoomin() {
+      if (this.canvasScale < 3) {
+        this.canvasScale += 0.1;
+        this.scale *= 1.1;
+        this.ctx[0].scale(1.1, 1.1);
+        this.reDrawAll();
+      }
+    },
+
+    zoomout() {
+      if (this.canvasScale > 0.1) {
+        this.canvasScale -= 0.1;
+        this.scale *= 0.9;
+        this.ctx[0].scale(0.9, 0.9);
+        this.reDrawAll();
       }
     },
 
@@ -584,200 +526,25 @@ export default {
       this.ctx[0].fill();
     },
 
+    submitBtnClicked() {
+      this.$router.replace({
+        name: 'Main',
+      });
+    },
+
   },
 };
 </script>
 
-<style scoped>
-#mypage-top {
-  width: 74vw;
-  height: 40vh;
-}
-
-#mypage-profile {
-  display: inline-block;
-  width: 30%;
-  height: 100%;
-}
-
-#mypage-user-img {
-  width: 20vw;
-  height: 20vw;
-  border-radius: 20vw;
-  margin-left: 1vw;
-  margin-top: 3vh;
-  border: 1px solid lightskyblue;
-  background-image: url('../assets/userImg.png');
-  background-size: cover;
-}
-
-#mypage-user-age {
+<style>
+#center-canvas {
   position: absolute;
-  width: 7vw;
-  height: 7vw;
-  top: 26.5vh;
-  left: 15.5vw;
-  text-align: center;
-  font-size: 3vw;
-  font-weight: 900;
-  font-family: 'Tmoney';
-  letter-spacing: -0.5vw;
-  padding-top: 1vw;
-  border-radius: 20vw;
-  background: orange;
-
-}
-
-#mypage-user-name {
-  width: 22vw;
-  height: 7vh;
-  border-radius: 3vw;
-  text-align: center;
-  font-size: 2.8vw;
-  letter-spacing: -0.2vw;
-  padding-top: 0.5vh;
-  margin-top: 2vh;
-  color: white;
-  font-family: BM HANNA_TTF;
-  background: lightblue;
-}
-
-#mypage-result {
-  position: absolute;
-  display: inline-block;
-  width: 50vw;
-  height: 39vh;
-  z-index: 100;
-  top: 6vh;
-  left: 24vw;
-  border-radius: 4vw;
-  background: lightblue;
-}
-
-#mypage-result-title {
-  width: 48vw;
-  margin-left: 1vw;
-  margin-top: 2vh;
-}
-
-#mypage-result-label {
-  width: 40vw;
-  height: 4vh;
-  text-align: center;
-  font-size: 2.5vw;
-  display: inline-block;
-}
-
-#mypage-result-table {
-  width: 48vw;
-  height: 26vh;
-  margin-left: 1vw;
-  margin-top: 3vh;
-  text-align: center;
-}
-
-#mypage-result-table th {
-  background: lightcyan;
-  font-size: 2.2vw;
-}
-
-#mypage-result-table td{
-  background: #fffdf2;
-  font-size: 2.2vw;
-}
-
-#mypage-bot {
   width: 100%;
-  height: 49%;
-  margin-top: 1%;
-}
-
-#mypage-activity-left-bookname {
-  position: absolute;
-  width: 23vw;
-  height: 7vh;
-  border-radius: 3vw;
-  font-size: 2vw;
-  text-align: center;
-  padding-top: 0.6vh;
-  letter-spacing: -0.2vw;
-  line-height: 6vh;
-  word-spacing: 0.8vw;
-
-  top: 50vh;
-  left: 5vw;
-  background: lightsalmon;
-  z-index: 2;
-}
-
-#mypage-activity-left-date {
-  position: absolute;
-  font-size: 2vw;
-  letter-spacing: -0.4vw;
-  word-spacing: 0.8vw;
-  top: 58vh;
-  left: 12vw;
-}
-
-#mypage-activity-left-arrow {
-  position: absolute;
-  top: 78vh;
-  left: 20vw;
-}
-
-#mypage-activity-right-arrow {
-  position: absolute;
-  top: 78vh;
-  left: 71vw;
-}
-
-#mypage-activity {
-  position: absolute;
-  top: 46vh;
-  left: 26vw;
-  width: 44vw;
-  height: 38vh;
-  border: 2px solid gray;
+  height: 100%;
   background: #fffdf2;
-  z-index: 10;
+  z-index: 5;
+  border-radius: 1vw;
+  top: 0;
+  left: 0;
 }
-
-.slide-left-enter-active {
-  transition: all .3s ease;
-}
-.slide-left-leave-active {
-  transition: all .3s cubic-bezier(1.0, 0.5, 0.8, 1.0);
-}
-.slide-left-enter {
-  transform: translateX(-30px);
-  opacity: 0;
-}
- .slide-left-leave-to {
-  transform: translateX(+30px);
-  opacity: 0;
- }
-
- .slide-right-enter-active {
-  transition: all .3s ease;
-}
-.slide-right-leave-active {
-  transition: all .3s cubic-bezier(1.0, 0.5, 0.8, 1.0);
-}
-.slide-right-enter {
-  transform: translateX(+30px);
-  opacity: 0;
-}
- .slide-right-leave-to {
-  transform: translateX(-30px);
-  opacity: 0;
- }
-
-.slide-up { transition: all 0.35s; }
-.slide-up-enter-active { transition: all 0.35s ease; }
-.slide-up-leave-active { transition: all 0.35s cubic-bezier(1, 0.5, 0.8, 1); }
-.slide-up-enter, .slide-up-leave-active { opacity: 0; transform: translateY(10px); }
-
-.fade-enter-active, .fade-leave-active { transition: opacity 0.75s; }
-.fade-enter, .fade-leave-to { opacity: 0; }
-
 </style>

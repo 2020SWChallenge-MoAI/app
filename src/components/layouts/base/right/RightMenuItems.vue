@@ -2,12 +2,12 @@
   <div class="right-menu-items">
     <right-menu-button
       text="AI도우미"
-      url="/"
+      id="aiHelp"
       :image="require('@/assets/img/layouts/base/right/ai-assistant.svg')"
     />
     <right-menu-button
       text="생각펼치기"
-      url="/activity/mindmap/start"
+      url="/activity/mindmap"
       :image="require('@/assets/img/layouts/base/right/mindmap.svg')"
     />
     <right-menu-button

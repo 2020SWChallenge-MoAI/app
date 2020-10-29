@@ -10,8 +10,9 @@ import Read from '../views/Read.vue';
 import QuizGame from '../views/activity/QuizGame.vue';
 import Writing from '../views/activity/Writing.vue';
 import Drawing from '../views/activity/Drawing.vue';
-import MindMap from '../views/main/MindMap.vue';
-import StartMindMap from '../views/main/StartMindMap.vue';
+import MindMap from '../views/activity/mindmap/MindMap.vue';
+import StartMindMap from '../views/activity/mindmap/ChooseTemplate.vue';
+import FinishMindMap from '../views/activity/mindmap/FinishMindMap.vue';
 
 Vue.use(VueRouter);
 
@@ -46,15 +47,21 @@ const routes = [
     meta: { auth: true },
   },
   {
-    path: '/activity/mindmap/view',
+    path: '/activity/mindmap/start',
     name: 'MindMap',
     component: MindMap,
     meta: { auth: true },
   },
   {
-    path: '/activity/mindmap/start',
+    path: '/activity/mindmap/',
     name: 'StartMindMap',
     component: StartMindMap,
+    meta: { auth: true },
+  },
+  {
+    path: '/activity/mindmap/finish',
+    name: 'FinishMindMap',
+    component: FinishMindMap,
     meta: { auth: true },
   },
   {
