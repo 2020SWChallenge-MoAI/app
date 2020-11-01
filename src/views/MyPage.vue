@@ -68,29 +68,32 @@
       <div id="mypage-activity-left-bookname">
 
         <transition name="slide-up" mode="out-in">
-          <div v-bind:key="activity">
-            {{ activities[activity].bookname }}
+          <div v-bind:key="activityIdIndex">
+            {{ activity.bookname }}
           </div>
         </transition>
 
       </div>
 
       <transition name="fade" mode="out-in">
-        <div v-bind:key="activity" id="mypage-activity-left-date">
-          {{ activities[activity].date }}
+        <div v-bind:key="activityIdIndex" id="mypage-activity-left-date">
+          {{ activity.date }}
         </div>
       </transition>
 
       <v-icon
         id="mypage-activity-left-arrow"
-        @click="activity = Math.max(activity - 1, 0); reDrawAll();" x-large
+        @click="activityBefore" x-large
       > mdi-arrow-left-drop-circle </v-icon>
 
+      <transition name="fade">
+        <div v-if="!showNextActivity" id="mypage-activity-cover" />
+      </transition>
       <canvas id="mypage-activity"></canvas>
 
       <v-icon
         id="mypage-activity-right-arrow"
-        @click="activity = Math.min(activity + 1, activities.length - 1); reDrawAll();" x-large
+        @click="activityNext" x-large
       > mdi-arrow-right-drop-circle </v-icon>
     </div>
 
@@ -98,79 +101,33 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   data() {
     return {
-      userName: '성균이',
-      userAge: '8',
+      userName: '',
+      userAge: '',
       userImg: '',
       month: new Date().getMonth() + 1,
-      activity: 0,
+      activityIdIndex: 0,
       slide: '',
 
       canvas: document.getElementById(''),
       ctx: [],
       scale: 0.5,
 
-      activities: [
-        {
-          bookname: '흥부와 놀부',
-          date: '2020.10.28',
-          nodes: [
-            {
-              id: 0, x: 389, y: 207.5, size: 125, type: -1, link: true,
-            },
-            {
-              id: 1, label: '등장인물', x: 120, y: 120, size: 80, type: 0, link: true,
-            },
-            {
-              id: 2, label: '줄거리', x: 389 * 2 - 120, y: 120, size: 80, type: 1, link: true,
-            },
-            {
-              id: 3, label: '느낀점', x: 120, y: 207.5 * 2 - 120, size: 80, type: 2, link: true,
-            },
-            {
-              id: 4, label: '인상장면', x: 389 * 2 - 120, y: 207.5 * 2 - 120, size: 80, type: 3, link: true,
-            },
-          ],
-          edges: [
-            { id: 1, from: 0, to: 1 },
-            { id: 2, from: 0, to: 2 },
-            { id: 3, from: 0, to: 3 },
-            { id: 4, from: 0, to: 4 },
-          ],
-          templateType: 1,
-        },
-        {
-          bookname: '아기돼지 삼형제',
-          date: '2020.10.23',
-          nodes: [
-            {
-              id: 0, x: 389, y: 207.5, size: 125, type: -1, link: true,
-            },
-            {
-              id: 1, label: '등장인물', x: 120, y: 120, size: 80, type: 0, link: true,
-            },
-            {
-              id: 2, label: '줄거리', x: 389 * 2 - 120, y: 120, size: 80, type: 1, link: true,
-            },
-            {
-              id: 3, label: '느낀점', x: 120, y: 207.5 * 2 - 120, size: 80, type: 2, link: true,
-            },
-            {
-              id: 4, label: '인상장면', x: 389 * 2 - 120, y: 207.5 * 2 - 120, size: 80, type: 3, link: true,
-            },
-          ],
-          edges: [
-            { id: 1, from: 0, to: 1 },
-            { id: 2, from: 0, to: 2 },
-            { id: 3, from: 0, to: 3 },
-            { id: 4, from: 0, to: 4 },
-          ],
-          templateType: 2,
-        },
-      ],
+      activity: {
+        nodes: [],
+        edges: [],
+        templateType: -1,
+        date: '',
+        bookname: '',
+      },
       padding: { x: 0, y: 0 },
+      activityIdList: [],
+
+      showNextActivity: true,
     };
   },
 
@@ -183,7 +140,33 @@ export default {
     this.ctx[0].scale(0.2, 0.2);
     this.ctx[0].scale(1, 1);
 
-    this.reDrawAll();
+    axios.get('/api/user/work', {
+    }).then((res) => {
+      this.activityIdList = res.data.wids;
+      // eslint-disable-next-line
+      axios.get('/api/user/work/' + this.activityIdList[0], {
+      }).then((res1) => {
+        // eslint-disable-next-line
+        const content = JSON.parse(res1.data.content);
+        const data = {
+          // eslint-disable-next-line
+          nodes: content.nodes, edges: content.edges, templateType: content.templateType, date: res1.data.created_at, bookname: '강림도령',
+        };
+        this.activity = data;
+
+        this.reDrawAll();
+      }).catch((err1) => {
+        console.warn('ERROR!!!!: ', err1);
+      });
+    }).catch((err) => {
+      console.warn('ERROR!!!!: ', err);
+    });
+
+    axios.get('/api/user', {}).then((res) => {
+      console.log(res);
+      this.userName = res.data.nickname;
+      this.userAge = res.data.age;
+    });
   },
 
   methods: {
@@ -192,9 +175,9 @@ export default {
       const paddingY = changeY + this.padding.y;
 
       // 나무 템플릿
-      if (this.activities[this.activity].templateType === 1) {
-        const width = 389;
-        const height = 207.5;
+      if (this.activity.templateType === 1) {
+        const width = this.activity.nodes[0].x;
+        const height = this.activity.nodes[0].y;
 
         // 땅 그리기
         this.ctx[0].fillStyle = '#44A508';
@@ -231,11 +214,11 @@ export default {
         this.ctx[0].beginPath();
         this.ctx[0].fillStyle = '#836d4b';
         // eslint-disable-next-line max-len
-        this.ctx[0].fillRect(width - 20 - paddingX, height * 2 - 120 - paddingY, 40, 120);
+        this.ctx[0].fillRect(width - 20 - paddingX, height * 0.9 - paddingY + height / 3, 40, 120);
         this.ctx[0].lineWidth = 12;
         this.ctx[0].strokeStyle = '#836d4b';
         // eslint-disable-next-line max-len
-        this.ctx[0].arc(width * 2 * 0.5 - paddingX, height * 2 * 0.4 - paddingY, 130, Math.PI * 0.25, Math.PI * 0.75);
+        this.ctx[0].arc(width - paddingX, height * 0.9 - paddingY, height / 3, Math.PI * 0.25, Math.PI * 0.75);
         this.ctx[0].stroke();
 
         // 책 이미지 넣기
@@ -245,15 +228,16 @@ export default {
         // eslint-disable-next-line
         this.ctx[0].drawImage(bookImg, width - 80 - paddingX, height - 150 - paddingY, 150, 200);
         // 우주배경 템플릿
-      } else if (this.activities[this.activity].templateType === 2) {
+      } else if (this.activity.templateType === 2) {
         this.canvas.style.background = '#777777';
       }
     },
 
     reDrawAll() {
-      if (this.activities[this.activity].templateType === 1) {
-        this.padding.x = this.canvas.clientWidth * -0.8 - 389;
-        this.padding.y = this.canvas.clientHeight * -2 - 207.5;
+      if (this.activity.templateType === 1) {
+        this.padding.x = this.activity.nodes[0].x - this.canvas.width / 0.4;
+        // eslint-disable-next-line max-len
+        this.padding.y = this.activity.nodes[0].y * 0.75 - this.canvas.height / (0.4 * 0.75);
       }
       this.canvas.style.background = '#FFFDF2';
       this.ctx[0].clearRect(0, 0, 100000, 100000);
@@ -261,11 +245,11 @@ export default {
 
       // edge 먼저 그리기
       // eslint-disable-next-line no-plusplus
-      for (let i = 0; i < this.activities[this.activity].edges.length; i++) {
+      for (let i = 0; i < this.activity.edges.length; i++) {
         // eslint-disable-next-line max-len
-        const from = this.activities[this.activity].nodes.find((element) => element.id === this.activities[this.activity].edges[i].from);
+        const from = this.activity.nodes.find((element) => element.id === this.activity.edges[i].from);
         // eslint-disable-next-line max-len
-        const to = this.activities[this.activity].nodes.find((element) => element.id === this.activities[this.activity].edges[i].to);
+        const to = this.activity.nodes.find((element) => element.id === this.activity.edges[i].to);
         // eslint-disable-next-line max-len
         this.drawEdge(from.x - this.padding.x, from.y - this.padding.y, to.x - this.padding.x, to.y - this.padding.y);
       }
@@ -275,9 +259,9 @@ export default {
 
       // node 그리기
       // eslint-disable-next-line no-plusplus
-      for (let i = 0; i < this.activities[this.activity].nodes.length; i++) {
+      for (let i = 0; i < this.activity.nodes.length; i++) {
         // eslint-disable-next-line max-len
-        this.makeNode(this.activities[this.activity].nodes[i].x - this.padding.x, this.activities[this.activity].nodes[i].y - this.padding.y, this.activities[this.activity].nodes[i].size, this.activities[this.activity].nodes[i].type, this.activities[this.activity].nodes[i].label);
+        this.makeNode(this.activity.nodes[i].x - this.padding.x, this.activity.nodes[i].y - this.padding.y, this.activity.nodes[i].size, this.activity.nodes[i].type, this.activity.nodes[i].label);
       }
     },
 
@@ -299,7 +283,7 @@ export default {
         if (text.length % 10 === 0) linesize -= 1;
       }
 
-      if (this.activities[this.activity].templateType === 1) {
+      if (this.activity.templateType === 1) {
         if (type === 0) {
           // 나뭇잎1 그리기
           this.ctx[0].beginPath();
@@ -422,7 +406,7 @@ export default {
             textloc += 1;
           }
         }
-      } else if (this.activities[this.activity].templateType === 2) {
+      } else if (this.activity.templateType === 2) {
         if (type === 0) {
           this.ctx[0].fillStyle = '#736993';
           this.ctx[0].beginPath();
@@ -503,7 +487,7 @@ export default {
     },
 
     drawEdge(x1, y1, x2, y2) {
-      if (this.activities[this.activity].templateType === 1) {
+      if (this.activity.templateType === 1) {
         this.ctx[0].beginPath();
         this.ctx[0].moveTo(x1, y1);
         this.ctx[0].lineWidth = 12;
@@ -584,6 +568,61 @@ export default {
       this.ctx[0].fill();
     },
 
+    activityBefore() {
+      if (this.activityIdIndex > 0) {
+        this.activityIdIndex -= 1;
+        this.showNextActivity = false;
+        setTimeout(() => {
+          this.showNextActivity = true;
+        }, 800);
+      } else {
+        this.activityIdIndex = 0;
+      }
+
+      // eslint-disable-next-line
+      axios.get('/api/user/work/' + this.activityIdList[this.activityIdIndex], {
+      }).then((res) => {
+        // eslint-disable-next-line
+        const content = JSON.parse(res.data.content);
+        const data = {
+          // eslint-disable-next-line
+          nodes: content.nodes, edges: content.edges, templateType: content.templateType, date: res.data.created_at, bookname: '강림도령',
+        };
+        this.activity = data;
+
+        this.reDrawAll();
+      }).catch((err1) => {
+        console.warn('ERROR!!!!: ', err1);
+      });
+    },
+
+    activityNext() {
+      if (this.activityIdIndex < this.activityIdList.length - 1) {
+        this.activityIdIndex += 1;
+        this.showNextActivity = false;
+        setTimeout(() => {
+          this.showNextActivity = true;
+        }, 800);
+      } else {
+        this.activityIdIndex = this.activityIdList.length - 1;
+      }
+
+      // eslint-disable-next-line
+      axios.get('/api/user/work/' + this.activityIdList[this.activityIdIndex], {
+      }).then((res) => {
+        // eslint-disable-next-line
+        const content = JSON.parse(res.data.content);
+        const data = {
+          // eslint-disable-next-line
+          nodes: content.nodes, edges: content.edges, templateType: content.templateType, date: res.data.created_at, bookname: '흥부와 놀부',
+        };
+        this.activity = data;
+
+        this.reDrawAll();
+      }).catch((err1) => {
+        console.warn('ERROR!!!!: ', err1);
+      });
+    },
   },
 };
 </script>
@@ -634,6 +673,7 @@ export default {
   border-radius: 3vw;
   text-align: center;
   font-size: 2.8vw;
+  font-weight: 900;
   letter-spacing: -0.2vw;
   padding-top: 0.5vh;
   margin-top: 2vh;
@@ -742,6 +782,22 @@ export default {
   z-index: 10;
 }
 
+#mypage-activity-cover {
+  position: absolute;
+  top: 46vh;
+  left: 26vw;
+  width: 44vw;
+  height: 38vh;
+  border: 2px solid gray;
+  background: rgba(255, 253, 242, 1);
+  z-index: 15;
+
+  animation: fadein 1s;
+  -moz-animation: fadein 1s;
+  -webkit-animation: fadein 1s;
+  -o-animation: fadein 1s;
+}
+
 .slide-left-enter-active {
   transition: all .3s ease;
 }
@@ -780,4 +836,36 @@ export default {
 .fade-enter-active, .fade-leave-active { transition: opacity 0.75s; }
 .fade-enter, .fade-leave-to { opacity: 0; }
 
+@keyframes fadein {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@-moz-keyframes fadein {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@-webkit-keyframes fadein {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@-o-keyframes fadein {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
 </style>

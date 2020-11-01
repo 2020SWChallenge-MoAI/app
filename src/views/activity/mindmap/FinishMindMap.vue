@@ -14,6 +14,8 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   data() {
     return {
@@ -66,8 +68,8 @@ export default {
     this.canvas.height = this.canvas.clientHeight;
     this.ctx[0].scale(0.5, 0.5);
     this.ctx[0].scale(1, 1);
-    this.padding.x = -388;
-    this.padding.y = -727;
+    this.padding.x = this.canvas.width / 2 - this.canvas.width / (0.5 * 2);
+    this.padding.y = this.canvas.height / 1.1 - this.canvas.height / (0.5 * 1.1);
 
     this.reDrawAll();
   },
@@ -79,8 +81,8 @@ export default {
 
       // 나무 템플릿
       if (this.templateType === 1) {
-        const width = 389;
-        const height = 207.5;
+        const width = this.canvas.width / 2;
+        const height = this.canvas.height / 2;
 
         // 땅 그리기
         this.ctx[0].fillStyle = '#44A508';
@@ -117,11 +119,11 @@ export default {
         this.ctx[0].beginPath();
         this.ctx[0].fillStyle = '#836d4b';
         // eslint-disable-next-line max-len
-        this.ctx[0].fillRect(width - 20 - paddingX, height * 2 - 120 - paddingY, 40, 120);
+        this.ctx[0].fillRect(width - 20 - paddingX, height * 0.9 - paddingY + height / 3, 40, 140);
         this.ctx[0].lineWidth = 12;
         this.ctx[0].strokeStyle = '#836d4b';
         // eslint-disable-next-line max-len
-        this.ctx[0].arc(width * 2 * 0.5 - paddingX, height * 2 * 0.4 - paddingY, 130, Math.PI * 0.25, Math.PI * 0.75);
+        this.ctx[0].arc(width - paddingX, height * 0.9 - paddingY, height / 3, Math.PI * 0.25, Math.PI * 0.75);
         this.ctx[0].stroke();
 
         // 책 이미지 넣기
@@ -527,8 +529,19 @@ export default {
     },
 
     submitBtnClicked() {
-      this.$router.replace({
-        name: 'Main',
+      const data = {
+        nodes: this.nodes, edges: this.edges, templateType: this.templateType, bookname: '강림도령',
+      };
+      console.log(data);
+
+      axios.post('/api/user/work/save', {
+        bid: 3, type: 0, thumbnail: btoa('string'), content: JSON.stringify(data),
+      }).then(() => {
+        this.$router.replace({
+          name: 'Main',
+        });
+      }).catch((err) => {
+        console.warn('ERROR!!!!: ', err);
       });
     },
 

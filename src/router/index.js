@@ -12,7 +12,8 @@ import QuizGameCreation from '../views/activity/quiz-game/QuizGameCreation.vue';
 import QuizGameSolving from '../views/activity/quiz-game/QuizGameSolving.vue';
 import WritingIntro from '../views/activity/writing/WritingIntro.vue';
 import Writing from '../views/activity/writing/Writing.vue';
-import Drawing from '../views/activity/Drawing.vue';
+import BeforeDrawing from '../views/activity/drawing/ChooseSentence.vue';
+import Drawing from '../views/activity/drawing/Drawing.vue';
 import MindMap from '../views/activity/mindmap/MindMap.vue';
 import StartMindMap from '../views/activity/mindmap/ChooseTemplate.vue';
 import FinishMindMap from '../views/activity/mindmap/FinishMindMap.vue';
@@ -103,6 +104,12 @@ const routes = [
   },
   {
     path: '/activity/drawing',
+    name: 'BeforeDrawing',
+    component: BeforeDrawing,
+    meta: { auth: true },
+  },
+  {
+    path: '/activity/drawing/start',
     name: 'Drawing',
     component: Drawing,
     meta: { auth: true },
