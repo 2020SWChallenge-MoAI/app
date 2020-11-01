@@ -1,17 +1,53 @@
 <template>
   <div id="container">
-    <div id="left-column" class="column">
-      <slot name="left" />
-      <recent-book-items v-if="recentBooks" />
+    <v-snackbar
+      v-model="$store.state.success"
+      top
+      rounded="pill"
+      type="success"
+    >
+      <v-icon>mdi-alert-circle</v-icon> {{ successMessage }}
+    </v-snackbar>
+    <v-snackbar
+      v-model="$store.state.error"
+      top
+      rounded="pill"
+      type="error"
+    >
+      <v-icon>mdi-alert-circle</v-icon> {{ errorMessage }}
+    </v-snackbar>
+    <div
+      id="left-column"
+      class="column"
+    >
+      <div class="scroll">
+        <slot name="left" />
+        <recent-book-items v-if="recentBooks" />
+      </div>
     </div>
-    <div id="mid-column" class="column">
-      <v-overlay absolute :value="loading">
-        <v-progress-circular indeterminate size="64"></v-progress-circular>
-      </v-overlay>
+    <div
+      id="mid-column"
+      class="column"
+    >
       <slot />
+      <v-overlay
+        v-show="loadingOverlay"
+        absolute
+        :value="appLoading"
+      >
+        <v-progress-circular
+          indeterminate
+          size="64"
+        />
+      </v-overlay>
     </div>
-    <div id="right-column" class="column">
-      <div id="menu-title">MENU</div>
+    <div
+      id="right-column"
+      class="column"
+    >
+      <div id="menu-title">
+        MENU
+      </div>
       <div id="menu-items">
         <slot name="right" />
       </div>
@@ -26,10 +62,20 @@ export default {
       type: Boolean,
       default: true,
     },
+    loadingOverlay: {
+      type: Boolean,
+      default: false,
+    },
   },
   computed: {
-    loading() {
-      return this.$store.state.loading;
+    successMessage() {
+      return this.$store.state.successMessage;
+    },
+    errorMessage() {
+      return this.$store.state.errorMessage;
+    },
+    appLoading() {
+      return this.$store.state.appLoading;
     },
   },
 };
@@ -55,9 +101,10 @@ export default {
   position: relative;
   flex-flow: column;
   width: 6vw;
+  overflow-y: scroll;
 }
 
-#left-column > *:not(:last-child) {
+#left-column .scroll > *:not(:last-child) {
   margin-bottom: 1vh;
 }
 

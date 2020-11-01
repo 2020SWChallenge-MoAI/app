@@ -38,7 +38,35 @@
           <div class="hole" />
           <div class="hole" />
         </div>
-        <slot />
+        <v-overlay
+          v-show="loadingOverlay"
+          absolute
+          color="#fffdf2"
+          :dark="false"
+          :light="true"
+          :value="appLoading"
+        >
+          <v-progress-circular
+            indeterminate
+            size="64"
+          />
+        </v-overlay>
+        <v-overlay
+          absolute
+          color="#fffdf2"
+          opacity="1.0"
+          :dark="false"
+          :light="true"
+          :value="appError"
+        >
+          <div class="error-overlay">
+            <v-icon x-large>
+              mdi-alert-decagram
+            </v-icon>
+            <h1>오류가 발생했습니다.</h1>
+          </div>
+        </v-overlay>
+        <slot v-if="!appLoading && !appError" />
       </div>
     </div>
   </base-layout>
@@ -58,6 +86,18 @@ export default {
     recentBooks: {
       type: Boolean,
       default: true,
+    },
+    loadingOverlay: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  computed: {
+    appLoading() {
+      return this.$store.state.appLoading;
+    },
+    appError() {
+      return this.$store.state.appError;
     },
   },
 };
@@ -112,7 +152,7 @@ export default {
   position: relative;
   padding: 1vw;
   display: flex;
-  flex-flow:column;
+  flex-flow: column;
 }
 
 #holes {
@@ -131,7 +171,14 @@ export default {
 .hole {
   width: 2vw;
   height: 2vw;
-  background: #D2EADE;
+  background: #d2eade;
   border-radius: 100%;
+}
+
+.error-overlay {
+  display: flex;
+  flex-flow: column;
+  justify-content: center;
+  align-items: center;
 }
 </style>

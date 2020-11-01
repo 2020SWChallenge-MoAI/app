@@ -16,7 +16,12 @@ export default new Vuex.Store({
     accessToken: localStorage.getItem('access-token'),
     books: JSON.parse(localStorage.getItem('books')) || [],
     recentBookIds: [],
-    loading: false,
+    appLoading: false,
+    appError: false,
+    error: false,
+    errorMessage: '',
+    success: false,
+    successMessage: '',
     currentBook: null,
   },
   getters: {
@@ -29,6 +34,8 @@ export default new Vuex.Store({
       thumbnail: `/api/book/${b.bid}/cover`,
       pageNum: b.page_num,
     })),
+    isBookLoaded: (ctx) => ctx.books.length > 0,
+    isLoading: (ctx) => ctx.appLoading,
     getCategories: (ctx, getters) => [...new Set(getters.getBooks.map((b) => b.category))],
     // eslint-disable-next-line max-len
     // eslint-disable-next-line arrow-body-style
@@ -55,16 +62,28 @@ export default new Vuex.Store({
       localStorage.setItem('books', JSON.stringify(books));
     },
     loadFinish(ctx) {
-      ctx.loading = false;
+      ctx.appLoading = false;
     },
     loadStart(ctx) {
-      ctx.loading = true;
+      ctx.appLoading = true;
     },
     setCurrentBook(ctx, book) {
       ctx.currentBook = book;
       const index = ctx.recentBookIds.indexOf(book.bid);
       if (index > -1) ctx.recentBookIds.splice(index, 1);
       ctx.recentBookIds.unshift(book.bid);
+    },
+    setSuccessMessage(ctx, message) {
+      ctx.successMessage = message;
+    },
+    setErrorMessage(ctx, message) {
+      ctx.errorMessage = message;
+    },
+    showSuccess(ctx) {
+      ctx.success = true;
+    },
+    showError(ctx) {
+      ctx.error = true;
     },
   },
   actions: {
@@ -120,6 +139,15 @@ export default new Vuex.Store({
             reject();
           });
       });
+    },
+    showMessage({ commit }, { mode, message }) {
+      if (mode === 'success') {
+        commit('setSuccessMessage', message);
+        commit('showSuccess');
+      } else if (mode === 'error') {
+        commit('setErrorMessage', message);
+        commit('showError');
+      }
     },
   },
   modules: {},

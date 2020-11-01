@@ -1,10 +1,25 @@
 <template>
-  <sub-layout title="독서하기" :tooltip="book.title">
-    <v-overlay absolute opacity="0.5" :value="finished">
+  <sub-layout
+    title="독서하기"
+    :tooltip="book ? book.title : '책 선택 안 됨'"
+  >
+    <v-overlay
+      absolute
+      opacity="0.5"
+      :value="finished"
+    >
       <div class="finish-overlay">
-        <v-icon x-large>mdi-book-open-page-variant</v-icon>
+        <v-icon x-large>
+          mdi-book-open-page-variant
+        </v-icon>
         <h1>다 읽었어요</h1>
-        <v-btn dark rounded depressed x-large color="#668d8d">
+        <v-btn
+          dark
+          rounded
+          depressed
+          x-large
+          color="#668d8d"
+        >
           독서 완료하기
         </v-btn>
         <v-btn
@@ -19,20 +34,38 @@
         </v-btn>
       </div>
     </v-overlay>
+    <v-overlay
+      absolute
+      opacity="1"
+      color="#fffdf2"
+      :dark="false"
+      :light="true"
+      :value="!book"
+    >
+      책 선택 안됨
+    </v-overlay>
     <flip-book
-      v-if="loaded"
       ref="viewer"
       v-slot="viewer"
       class="book-viewer"
       :pages="pages"
-      :zooms="null"
+      :zooms="[1, 2]"
       :flip-duration="flipDuration"
       @flip-left-end="onFlip"
       @flip-right-end="onFlip"
     >
       <div class="book-viewer-control">
-        <v-btn light icon @click="delayedFlipLeft">
-          <v-icon x-large color="#668d8d">mdi-arrow-left-circle</v-icon>
+        <v-btn
+          light
+          icon
+          @click="delayedFlipLeft"
+        >
+          <v-icon
+            x-large
+            color="#668d8d"
+          >
+            mdi-arrow-left-circle
+          </v-icon>
         </v-btn>
         <div class="page-input">
           <v-text-field
@@ -44,8 +77,17 @@
             :value="`${viewer.page} / ${viewer.numPages - 1}`"
           />
         </div>
-        <v-btn light icon @click="delayedFlipRight">
-          <v-icon x-large color="#668d8d">mdi-arrow-right-circle</v-icon>
+        <v-btn
+          light
+          icon
+          @click="delayedFlipRight"
+        >
+          <v-icon
+            x-large
+            color="#668d8d"
+          >
+            mdi-arrow-right-circle
+          </v-icon>
         </v-btn>
       </div>
     </flip-book>
@@ -66,7 +108,6 @@ export default {
       flipDuration: 300,
       finished: false,
       pages: [],
-      loaded: false,
     };
   },
   computed: {
@@ -76,17 +117,7 @@ export default {
   },
   watch: {
     async book() {
-      this.loaded = false;
-
-      const pages = await Promise.all(
-        Array.from(Array(this.book.pageNum).keys())
-          .map((k) => `/api/book/${this.book.bid}/${k + 1}`)
-          .map(async (url) => util.base64(url)),
-      );
-
-      this.pages = [null].concat(pages).concat([null]);
-
-      this.loaded = true;
+      await this.loadBook();
     },
   },
   async created() {
@@ -96,17 +127,7 @@ export default {
     // eslint-disable-next-line global-require
     this.audio = new Audio(require('../assets/wav/page-flip.wav'));
 
-    this.loaded = false;
-
-    const pages = await Promise.all(
-      Array.from(Array(this.book.pageNum).keys())
-        .map((k) => `/api/book/${this.book.bid}/${k + 1}`)
-        .map(async (url) => util.base64(url)),
-    );
-
-    this.pages = [null].concat(pages).concat([null]);
-
-    this.loaded = true;
+    if (this.book) await this.loadBook();
   },
   methods: {
     flipLeft() {
@@ -123,6 +144,19 @@ export default {
       } else {
         this.finished = false;
       }
+    },
+    async loadBook() {
+      this.$store.commit('loadStart');
+
+      const pages = await Promise.all(
+        Array.from(Array(this.book.pageNum).keys())
+          .map((k) => `/api/book/${this.book.bid}/${k + 1}`)
+          .map(async (url) => util.base64(url)),
+      );
+
+      this.pages = [null].concat(pages).concat([null]);
+
+      this.$store.commit('loadFinish');
     },
   },
 };
