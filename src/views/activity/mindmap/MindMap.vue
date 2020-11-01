@@ -4,7 +4,7 @@
       <!-- 왼쪽 버튼은 이렇게 입력 -->
       <left-menu-button icon="mdi-thought-bubble-outline" text="불러오기" />
       <left-menu-button icon="mdi-check-bold" text="완료" id="canvas-finish" />
-      <left-menu-button icon="mdi-pen" text="그리기" id="canvas-pen"
+      <left-menu-button icon="mdi-pencil" text="그리기" id="canvas-pen"
         class="canvas-tool"
       />
       <left-menu-button icon="mdi-cursor-pointer" text="고르기" id="canvas-select"
@@ -24,9 +24,39 @@
     <!-- 캔버스 -->
     <canvas id="center-canvas" />
 
+    <v-overlay absolute v-show="popup">
+      <v-text-field
+        v-model="selectedNodeLabel"
+        label="내용을 입력해주세요!"
+        outlined
+        clearable
+        counter="40"
+        outline="true"
+        height=50
+        hint="도움이 필요하면 AI 도우미를 불러봐!"
+        style="width: 40vw;"
+      />
+      <v-btn
+        color="error"
+        text
+        @click="popupCancel"
+        style="background: rgba(255, 255, 255, 0.7); float:left; margin-top: 2vh;"
+      >
+        취소
+      </v-btn>
+      <v-btn
+        color="success"
+        text
+        @click="popupSuccess"
+        style="background: rgba(255, 255, 255, 0.7); float:right; margin-top: 2vh;"
+      >
+        완료
+      </v-btn>
+    </v-overlay>
+
     <!-- TODO: Implementation -->
     <div id="center-recommend" v-show="!finish && aiHelp">
-      <div id="ai-background">
+      <div id="ai-background" v-ripple>
         <div id="ai-img" />
         <div id="ai-space" />
         <div id="ai-dotline">
@@ -42,19 +72,19 @@
 
       <div id="recommend-words" v-show="recommendClicked && recommendLoaded">
         <div id="recommend-words-top">
-          <div class="recommend-word" id="recommend1">
+          <div class="recommend-word" id="recommend1" v-ripple>
           </div>
-          <div class="recommend-word" id="recommend2">
+          <div class="recommend-word" id="recommend2" v-ripple>
           </div>
-          <div class="recommend-word" id="recommend3">
+          <div class="recommend-word" id="recommend3" v-ripple>
           </div>
         </div>
         <div id="recommend-words-bot">
-          <div class="recommend-word" id="recommend4">
+          <div class="recommend-word" id="recommend4" v-ripple>
           </div>
-          <div class="recommend-word" id="recommend5">
+          <div class="recommend-word" id="recommend5" v-ripple>
           </div>
-          <div class="recommend-word" id="recommend6">
+          <div class="recommend-word" id="recommend6" v-ripple>
           </div>
         </div>
       </div>
@@ -112,6 +142,10 @@ export default {
       recommendClicked: false,
       recommendLoaded: false,
       finish: false,
+
+      popup: false,
+      selectedNodeLabel: '',
+      popupNodeId: -1,
     };
   },
 
@@ -182,10 +216,10 @@ export default {
     this.ctx[0].scale(0.9, 0.9);
     this.ctx[0].scale(0.9, 0.9);
     this.ctx[0].scale(1, 1);
-    this.padding.x = -100;
-    this.padding.y = -(this.canvas.height) / 3;
     this.scale = 0.9 * 0.9;
     this.canvasScale = 0.8;
+    this.padding.x = this.canvas.width / 2 - this.canvas.width / (0.9 * 0.9 * 2);
+    this.padding.y = this.canvas.height / 2 - this.canvas.height / (0.9 * 0.9 * 2);
 
     this.edges.push({
       id: 1, from: 0, to: 1,
@@ -200,8 +234,8 @@ export default {
       id: 4, from: 0, to: 4,
     });
 
-    const width = 389;
-    const height = 207.5;
+    const width = this.canvas.width / 2;
+    const height = this.canvas.height / 2;
 
     this.nodes.push({
       id: 0, x: width, y: height, size: 125, type: -1, link: true,
@@ -209,19 +243,19 @@ export default {
 
     this.nodes.push({
       // eslint-disable-next-line max-len
-      id: 1, label: '등장인물', x: 120, y: 120, size: 80, type: 0, link: true,
+      id: 1, label: '등장인물', x: width - 240, y: height - 0, size: 200, type: 0, link: true,
     });
     this.nodes.push({
       // eslint-disable-next-line max-len
-      id: 2, label: '줄거리', x: width * 2 - 120, y: 120, size: 80, type: 1, link: true,
+      id: 2, label: '줄거리', x: width + 240, y: height - 100, size: 80, type: 1, link: true,
     });
     this.nodes.push({
       // eslint-disable-next-line max-len
-      id: 3, label: '느낀점', x: 120, y: height * 2 - 120, size: 80, type: 2, link: true,
+      id: 3, label: '느낀점', x: width - 240, y: height + 100, size: 80, type: 2, link: true,
     });
     this.nodes.push({
       // eslint-disable-next-line max-len
-      id: 4, label: '인상장면', x: width * 2 - 120, y: height * 2 - 120, size: 80, type: 3, link: true,
+      id: 4, label: '인상장면', x: width + 240, y: height + 100, size: 80, type: 3, link: true,
     });
 
     this.reDrawAll();
@@ -234,8 +268,8 @@ export default {
 
       // 나무 템플릿
       if (this.templateType === 1) {
-        const width = 389;
-        const height = 207.5;
+        const width = this.canvas.width / 2;
+        const height = this.canvas.height / 2;
 
         // 종료시 배경 그리기 (땅, 구름)
         if (this.finish) {
@@ -275,11 +309,11 @@ export default {
         this.ctx[0].beginPath();
         this.ctx[0].fillStyle = '#836d4b';
         // eslint-disable-next-line max-len
-        this.ctx[0].fillRect(width - 20 - paddingX, height * 2 - 120 - paddingY, 40, 120);
+        this.ctx[0].fillRect(width - 20 - paddingX, height * 0.9 - paddingY + height / 3, 40, 140);
         this.ctx[0].lineWidth = 12;
         this.ctx[0].strokeStyle = '#836d4b';
         // eslint-disable-next-line max-len
-        this.ctx[0].arc(width * 2 * 0.5 - paddingX, height * 2 * 0.4 - paddingY, 130, Math.PI * 0.25, Math.PI * 0.75);
+        this.ctx[0].arc(width - paddingX, height * 0.9 - paddingY, height / 3, Math.PI * 0.25, Math.PI * 0.75);
         this.ctx[0].stroke();
 
         // 책 이미지 넣기
@@ -290,7 +324,7 @@ export default {
         this.ctx[0].drawImage(bookImg, width - 80 - paddingX, height - 150 - paddingY, 150, 200);
         // 우주배경 템플릿
       } else if (this.templateType === 2) {
-        this.canvas.style.background = '#777777';
+        this.canvas.style.background = 'white';
       }
     },
 
@@ -522,71 +556,35 @@ export default {
           }
           this.reDrawAll();
         } else {
-          const inputLabel = prompt('단어를 입력하세요.');
+          this.popupInput();
           let nodesize = 50;
           const size = (this.maxPos.R - this.maxPos.L) / 2 + (this.maxPos.T - this.maxPos.B) / 2;
           nodesize = size / 2;
 
-          // edge 없는 노드 삭제
-          for (let i = 1; i < this.nodes.length; i += 1) {
-            if (this.nodes[i].link === false) {
-              // 노드 삭제
-              const deleteNodeid = this.nodes[i].id;
-              this.nodes.splice(i, 1);
+          const newid = new Date().getTime();
+          this.popupNodeId = newid;
+          this.nodes.push({
+          // eslint-disable-next-line max-len
+            id: newid, label: ' ', x: (this.maxPos.L + this.maxPos.R) / 2 + this.padding.x, y: (this.maxPos.T + this.maxPos.B) / 2 + this.padding.y, size: nodesize, type: newid % 4, link: false,
+          });
 
-              for (let j = 0; j < this.edges.length; j += 1) {
-                if (this.edges[j].to === deleteNodeid || this.edges[j].from === deleteNodeid) {
-                  this.edges.splice(j, 1);
-                  j -= 1;
-                }
-              }
-              i -= 1;
-            }
-          }
-
-          if (inputLabel != null) {
-            const newid = new Date().getTime();
-            this.nodes.push({
+          // 노드에 연결 안돼있는 엣지 제거
+          if (this.edgeId !== -1) {
             // eslint-disable-next-line max-len
-              id: newid, label: inputLabel, x: (this.maxPos.L + this.maxPos.R) / 2 + this.padding.x, y: (this.maxPos.T + this.maxPos.B) / 2 + this.padding.y, size: nodesize, type: newid % 4, link: false,
-            });
-
-            // 노드에 연결 안돼있는 엣지 제거
-            if (this.edgeId !== -1) {
-              // eslint-disable-next-line max-len
-              if (((this.maxPos.L + this.maxPos.R) / 2 + this.padding.x - nodesize < this.edgePos.x && this.edgePos.x < (this.maxPos.L + this.maxPos.R) / 2 + this.padding.x + nodesize) && ((this.maxPos.T + this.maxPos.B) / 2 + this.padding.y - nodesize < this.edgePos.y && this.edgePos.y < (this.maxPos.T + this.maxPos.B) / 2 + this.padding.y + nodesize)) {
-                const index = this.edges.findIndex((element) => element.id === this.edgeId);
-                if (this.edges[index].to === -1) this.edges[index].to = newid;
-                else this.edges[index].from = newid;
-                const nodeindex = this.nodes.findIndex((element) => element.id === newid);
-                this.nodes[nodeindex].link = true;
-              } else {
-                const index = this.edges.findIndex((element) => element.id === this.edgeId);
-                this.edges.splice(index, 1);
-              }
+            if (((this.maxPos.L + this.maxPos.R) / 2 + this.padding.x - nodesize < this.edgePos.x && this.edgePos.x < (this.maxPos.L + this.maxPos.R) / 2 + this.padding.x + nodesize) && ((this.maxPos.T + this.maxPos.B) / 2 + this.padding.y - nodesize < this.edgePos.y && this.edgePos.y < (this.maxPos.T + this.maxPos.B) / 2 + this.padding.y + nodesize)) {
+              const index = this.edges.findIndex((element) => element.id === this.edgeId);
+              if (this.edges[index].to === -1) this.edges[index].to = newid;
+              else this.edges[index].from = newid;
+              const nodeindex = this.nodes.findIndex((element) => element.id === newid);
+              this.nodes[nodeindex].link = true;
+            } else {
+              const index = this.edges.findIndex((element) => element.id === this.edgeId);
+              this.edges.splice(index, 1);
             }
-
-            this.edgeId = -1;
-            this.reDrawAll();
-          } else {
-            // edge 없는 노드 삭제
-            for (let i = 1; i < this.nodes.length; i += 1) {
-              if (this.nodes[i].link === false) {
-                // 노드 삭제
-                const deleteNodeid = this.nodes[i].id;
-                this.nodes.splice(i, 1);
-
-                for (let j = 0; j < this.edges.length; j += 1) {
-                  if (this.edges[j].to === deleteNodeid || this.edges[j].from === deleteNodeid) {
-                    this.edges.splice(j, 1);
-                    j -= 1;
-                  }
-                }
-                i -= 1;
-              }
-            }
-            this.reDrawAll();
           }
+
+          this.edgeId = -1;
+          console.log('test1111');
         }
         this.startPos.x = -1;
         this.startPos.y = -1;
@@ -663,14 +661,11 @@ export default {
       } else if (this.touchmode === 'select') {
         if (this.doubleSelectedNode === this.selectedNode) {
           if (this.doubleSelectedTime) {
-            const index = this.nodes.findIndex((element) => element.id === this.selectedNode);
-            const inputLabel = prompt('단어를 입력하세요.', this.nodes[index].label);
+            const node = this.nodes.find((element) => element.id === this.selectedNode);
+            this.selectedNodeLabel = node.label;
+            this.popupInput();
 
-            if (inputLabel != null) {
-              this.nodes[index].label = inputLabel;
-              this.reDrawAll();
-              this.doubleSelectedTime = false;
-            }
+            this.doubleSelectedTime = false;
           } else {
             this.doubleSelectedTime = true;
             setTimeout(() => {
@@ -855,22 +850,30 @@ export default {
         }
       } else if (this.templateType === 2) {
         if (type === 0) {
-          this.ctx[0].fillStyle = '#736993';
+          this.ctx[0].shadowOffsetX = 0;
+          this.ctx[0].shadowOffsetY = 4;
+          this.ctx[0].shadowColor = 'rgba(0, 0, 0, 0.25)';
+          this.ctx[0].shadowBlur = 4;
+          this.ctx[0].fillStyle = '#7159BA';
           this.ctx[0].beginPath();
           this.ctx[0].arc(x, y, size, 0, Math.PI * 2);
           this.ctx[0].fill();
 
           this.ctx[0].beginPath();
-          this.ctx[0].strokeStyle = '#c5a863';
-          this.ctx[0].lineWidth = size * 0.15;
-          this.ctx[0].lineCap = 'round';
-          this.ctx[0].moveTo(x - size * 0.9, y + size / 2);
+          this.ctx[0].moveTo(x + size * 0.3, y - size * 0.65);
           // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x - size * 0.8, y + size * 2, x + size * 2, y - size * 0.9, x + size * 0.7, y - size * 0.7);
+          this.ctx[0].bezierCurveTo(x + size * 0.3, y - size * 0.63, x + size * 0.2, y - size * 0.5, x + size * 0.2, y - size * 0.5);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size * 0.2, y - size * 0.375, x + size * 0.3, y - size * 0.25, x + size * 0.7, y - size * 0.25);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size * 0.5, y - size * 0.25, x + size * 0.6, y - size * 0.375, x + size * 0.6, y - size * 0.5);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size * 0.6, y - size * 0.625, x + size * 0.5, y - size * 0.75, x + size * 0.3, y - size * 0.65);
           this.ctx[0].stroke();
 
           let textloc = ((linesize - 1) / 2) * -1;
           for (let i = 0; i < linesize; i += 1) {
+            this.ctx[0].shadowColor = 'transparent';
             // eslint-disable-next-line prefer-template
             this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
             this.ctx[0].fillStyle = 'white';
@@ -1045,12 +1048,15 @@ export default {
       const pen = document.querySelector('#canvas-pen');
       if (this.touchmode === 'pen') {
         this.touchmode = 'drag';
-        pen.style.background = '#83b1b1';
+        pen.classList.add('canvas-tool');
+        pen.classList.remove('canvas-tool-selected');
       } else {
         this.touchmode = 'pen';
-        pen.style.background = '#24b1a1';
+        pen.classList.add('canvas-tool-selected');
+        pen.classList.remove('canvas-tool');
         const select = document.querySelector('#canvas-select');
-        select.style.background = '#83b1b1';
+        select.classList.remove('canvas-tool-selected');
+        select.classList.add('canvas-tool');
       }
     },
 
@@ -1060,12 +1066,15 @@ export default {
       const select = document.querySelector('#canvas-select');
       if (this.touchmode === 'select') {
         this.touchmode = 'drag';
-        select.style.background = '#83b1b1';
+        select.classList.add('canvas-tool');
+        select.classList.remove('canvas-tool-selected');
       } else {
         this.touchmode = 'select';
-        select.style.background = '#24b1a1';
+        select.classList.add('canvas-tool-selected');
+        select.classList.remove('canvas-tool');
         const pen = document.querySelector('#canvas-pen');
-        pen.style.background = '#83b1b1';
+        pen.classList.remove('canvas-tool-selected');
+        pen.classList.add('canvas-tool');
       }
     },
 
@@ -1167,14 +1176,9 @@ export default {
       const ancWord = [];
       if (this.selectedNode >= 5) ancWord.push(node.label);
 
-      console.log(ancWord);
-
       axios.get('/api/book/3/keyword', {
         params: {
           num: 60, anc: JSON.stringify(ancWord),
-        },
-        headers: {
-          'x-access-token': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1aWQiOjEsImV4cCI6MTYzMjA1MzYyMX0.Qj4k0qGouoYABTAGF_WWJLSfmxrDw9i87ZB2HM-ZiGU',
         },
       }).then((res) => {
         this.words = res.data.keywords;
@@ -1382,6 +1386,59 @@ export default {
       this.recommendLoaded = false;
     },
 
+    popupInput() {
+      this.popup = true;
+    },
+
+    popupCancel() {
+      this.popup = false;// edge 없는 노드 삭제
+
+      if (this.popupNodeId !== -1) {
+        const nodeIndex = this.nodes.findIndex((element) => element.id === this.popupNodeId);
+        this.nodes.splice(nodeIndex, 1);
+        this.popupNodeId = -1;
+        this.reDrawAll();
+      }
+
+      this.selectedNodeLabel = '';
+    },
+
+    popupSuccess() {
+      if (this.popupNodeId !== -1) {
+        const nodeIndex = this.nodes.findIndex((element) => element.id === this.popupNodeId);
+        this.nodes[nodeIndex].label = this.selectedNodeLabel;
+
+        // edge 없는 노드 삭제
+        for (let i = 1; i < this.nodes.length; i += 1) {
+          if (this.nodes[i].link === false && i !== nodeIndex) {
+            // 노드 삭제
+            const deleteNodeid = this.nodes[i].id;
+            this.nodes.splice(i, 1);
+
+            for (let j = 0; j < this.edges.length; j += 1) {
+              if (this.edges[j].to === deleteNodeid || this.edges[j].from === deleteNodeid) {
+                this.edges.splice(j, 1);
+                j -= 1;
+              }
+            }
+            i -= 1;
+          }
+        }
+        this.popupNodeId = -1;
+        this.selectedNodeLabel = '';
+        this.reDrawAll();
+      } else if (this.selectedNode !== -1) {
+        const nodeIndex = this.nodes.findIndex((element) => element.id === this.selectedNode);
+        this.nodes[nodeIndex].label = this.selectedNodeLabel;
+
+        const node = this.nodes[nodeIndex];
+        this.reDrawAll();
+        this.highlightNode(node.x - this.padding.x, node.y - this.padding.y, node.size, node.type);
+      }
+
+      this.popup = false;
+    },
+
   },
 };
 </script>
@@ -1407,6 +1464,7 @@ export default {
   z-index: 15;
   top: 72%;
   left: 2.5%;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
 }
 #ai-img {
   position: absolute;
@@ -1512,6 +1570,7 @@ export default {
   display: inline-block;
   margin-left: 2vw;
   margin-right: 2vw;
+  box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.25);
 }
 #recommend2 {
   position: absolute;
@@ -1529,6 +1588,7 @@ export default {
   display: inline-block;
   margin-left: 18vw;
   margin-right: 2vw;
+  box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.25);
 }
 #recommend3 {
   position: absolute;
@@ -1546,6 +1606,7 @@ export default {
   display: inline-block;
   margin-left: 34vw;
   margin-right: 2vw;
+  box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.25);
 }
 #recommend4 {
   position: absolute;
@@ -1563,6 +1624,7 @@ export default {
   display: inline-block;
   margin-left: 2vw;
   margin-right: 2vw;
+  box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.25);
 }
 #recommend5 {
   position: absolute;
@@ -1580,6 +1642,7 @@ export default {
   display: inline-block;
   margin-left: 18vw;
   margin-right: 2vw;
+  box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.25);
 }
 #recommend6 {
   position: absolute;
@@ -1597,6 +1660,7 @@ export default {
   display: inline-block;
   margin-left: 34vw;
   margin-right: 2vw;
+  box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.25);
 }
 #right-btn {
   position: absolute;
@@ -1610,5 +1674,8 @@ export default {
 
 .canvas-tool {
   background: #FFAE00 !important;
+}
+.canvas-tool-selected {
+  background: #24b1a1 !important;
 }
 </style>
