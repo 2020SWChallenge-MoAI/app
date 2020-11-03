@@ -77,7 +77,10 @@ export default {
         // 페이지 이동
         this.$router.push({
           name: 'MindMap',
-          params: { template: this.template },
+          params: {
+            template: this.template,
+            bookId: (this.$store.getters.getCurrentBook).bid,
+          },
         });
       } else {
         // eslint-disable-next-line no-lonely-if

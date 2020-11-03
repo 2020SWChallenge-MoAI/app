@@ -162,6 +162,8 @@ export default {
     this.canvas.width = this.canvas.clientWidth;
     this.canvas.height = this.canvas.clientHeight;
 
+    console.log(this.$route.params.bookId);
+
     // eslint-disable-next-line
     this.bookImg.src = require('../../../assets/left-book-menu/book3.png');
     // eslint-disable-next-line
@@ -1312,11 +1314,13 @@ export default {
       const ancWord = [];
       if (this.selectedNode >= 5) ancWord.push(node.label);
 
-      axios.get('/api/book/3/keyword', {
+      // eslint-disable-next-line
+      axios.get('/api/book/' + this.$route.params.bookId + '/keyword', {
         params: {
           num: 60, anc: JSON.stringify(ancWord),
         },
       }).then((res) => {
+        console.log('test');
         this.words = res.data.keywords;
         this.wordIndex = 0;
 
@@ -1441,7 +1445,8 @@ export default {
 
       this.$router.replace({
         name: 'FinishMindMap',
-        params: { nodes: this.nodes, edges: this.edges, template: this.templateType },
+        // eslint-disable-next-line
+        params: { nodes: this.nodes, edges: this.edges, template: this.templateType, bookId: this.$route.params.bookId },
       });
     },
 

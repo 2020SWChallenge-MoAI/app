@@ -102,6 +102,7 @@
 
 <script>
 import axios from 'axios';
+import moment from 'moment';
 
 export default {
   data() {
@@ -162,7 +163,7 @@ export default {
         const content = JSON.parse(res1.data.content);
         const data = {
           // eslint-disable-next-line
-          nodes: content.nodes, edges: content.edges, templateType: content.templateType, date: res1.data.created_at, bookname: '강림도령',
+          nodes: content.nodes, edges: content.edges, templateType: content.templateType, date: moment(new Date(res1.data.created_at)).format("yyyy-MM-DD HH:mm:ss"), bookname: '강림도령',
         };
         this.activity = data;
 
@@ -950,7 +951,7 @@ export default {
   letter-spacing: -0.4vw;
   word-spacing: 0.8vw;
   top: 58vh;
-  left: 12vw;
+  left: 8vw;
 }
 
 #mypage-activity-left-arrow {

@@ -92,7 +92,7 @@ export default {
       ctx: [],
 
       mainSentence: this.$route.params.sentence,
-      showToolBar: false,
+      showToolBar: true,
       strokeColor: 'black',
       scale: 1,
     };
@@ -101,6 +101,7 @@ export default {
   mounted() {
     this.canvas = document.getElementById('drawing-canvas');
     this.ctx.push(this.canvas.getContext('2d'));
+    console.log(this.showToolBar);
 
     this.canvas.width = this.canvas.clientWidth;
     this.canvas.height = this.canvas.clientHeight;
@@ -212,13 +213,15 @@ export default {
     },
 
     penBtnClicked() {
-      const eraser = document.querySelector('#drawing-eraser');
-      eraser.style.backgroundColor = '#83b1b1';
+      const pen = document.querySelector('#drawing-pen');
+      pen.style.backgroundColor = '#83b1b1';
       this.ctx[0].strokeStyle = this.strokeColor;
       this.showToolBar = !this.showToolBar;
+      console.log(this.showToolBar);
     },
 
     eraserBtnClicked() {
+      console.log(this.showToolBar);
       this.showToolBar = false;
       const eraser = document.querySelector('#drawing-eraser');
       // eslint-disable-next-line
