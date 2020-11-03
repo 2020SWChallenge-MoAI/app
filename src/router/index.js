@@ -7,8 +7,11 @@ import Signup from '../views/Signup.vue';
 import Main from '../views/Main.vue';
 import MyPage from '../views/MyPage.vue';
 import Read from '../views/Read.vue';
-import QuizGame from '../views/activity/QuizGame.vue';
-import Writing from '../views/activity/Writing.vue';
+import QuizGameIntro from '../views/activity/quiz-game/QuizGameIntro.vue';
+import QuizGameCreation from '../views/activity/quiz-game/QuizGameCreation.vue';
+import QuizGameSolving from '../views/activity/quiz-game/QuizGameSolving.vue';
+import WritingIntro from '../views/activity/writing/WritingIntro.vue';
+import Writing from '../views/activity/writing/Writing.vue';
 import BeforeDrawing from '../views/activity/drawing/ChooseSentence.vue';
 import Drawing from '../views/activity/drawing/Drawing.vue';
 import MindMap from '../views/activity/mindmap/MindMap.vue';
@@ -66,13 +69,35 @@ const routes = [
     meta: { auth: true },
   },
   {
-    path: '/activity/quiz-game',
-    name: 'QuizGame',
-    component: QuizGame,
+    path: '/activity/quiz-game/intro',
+    alias: '/activity/quiz-game',
+    name: 'QuizGameIntro',
+    component: QuizGameIntro,
     meta: { auth: true },
   },
   {
-    path: '/activity/writing',
+    path: '/activity/quiz-game/solving',
+    alias: '/activity/quiz-game',
+    name: 'QuizGameSolving',
+    component: QuizGameSolving,
+    meta: { auth: true },
+  },
+  {
+    path: '/activity/quiz-game/creation',
+    alias: '/activity/quiz-game',
+    name: 'QuizGameCreation',
+    component: QuizGameCreation,
+    meta: { auth: true },
+  },
+  {
+    path: '/activity/writing/intro',
+    alias: '/activity/writing',
+    name: 'WritingIntro',
+    component: WritingIntro,
+    meta: { auth: true },
+  },
+  {
+    path: '/activity/writing/process',
     name: 'Writing',
     component: Writing,
     meta: { auth: true },

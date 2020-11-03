@@ -1,6 +1,6 @@
 <template>
   <div class="recent-books-menu">
-    <p class="recent-books-menu-title">최근독서</p>
+    <p class="recent-books-menu-title">읽은책</p>
     <ul class="recent-books">
       <li class="recent-book-more up" v-if="isPaginationNeeded && !isStart" @click="prevPage">
         <img :src="require('@/assets/img/layouts/base/left/more.svg')" />

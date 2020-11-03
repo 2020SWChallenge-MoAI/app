@@ -1,5 +1,5 @@
 <template>
-  <base-layout>
+  <base-layout :loading-overlay="true">
     <template v-slot:left>
       <left-menu-button
         text="로그아웃"
@@ -10,7 +10,7 @@
     <template v-slot:right>
       <right-menu-items />
     </template>
-    <ul v-if="loaded" id="tabs-category">
+    <ul id="tabs-category">
       <li
         v-for="(category, index) in categories"
         :key="index"
@@ -26,7 +26,6 @@
         함께 읽을 책을 선택해보자!
       </div>
       <v-carousel
-        v-if="loaded"
         v-model="currentPage"
         :show-arrows="false"
         :cycle="false"
@@ -34,8 +33,14 @@
         class="bookshelf"
         height="calc(100% - 3vw - 2vh)"
       >
-        <div id="bookshelf-bar-1" class="bookshelf-bar" />
-        <div id="bookshelf-bar-2" class="bookshelf-bar" />
+        <div
+          id="bookshelf-bar-1"
+          class="bookshelf-bar"
+        />
+        <div
+          id="bookshelf-bar-2"
+          class="bookshelf-bar"
+        />
         <v-carousel-item
           v-for="(page, index) in pages"
           :key="index"
@@ -71,7 +76,6 @@ export default {
       currentPage: 0,
       currentCategory: 0,
       currentBook: null,
-      loaded: false,
     };
   },
   computed: {
@@ -99,8 +103,9 @@ export default {
     },
   },
   async created() {
-    await this.$store.dispatch('getBooks');
-    this.loaded = true;
+    this.$store.commit('loadStart');
+    if (!this.$store.getters.isBookLoaded) await this.$store.dispatch('getBooks');
+    this.$store.commit('loadFinish');
   },
   methods: {
     logout() {
@@ -198,7 +203,7 @@ export default {
   height: 100%;
   flex-wrap: wrap;
   justify-content: center;
-  align-content: start;
+  align-content: flex-start;
 }
 
 .books > * {
