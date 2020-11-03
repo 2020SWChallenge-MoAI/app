@@ -44,6 +44,9 @@ export default {
       doubleTabTimer: false,
       template: 1,
       clickedTemplate: '',
+
+      leaf1Img: new Image(),
+      leaf2Img: new Image(),
     };
   },
 
@@ -53,6 +56,11 @@ export default {
 
     this.canvas.width = this.canvas.clientWidth;
     this.canvas.height = this.canvas.clientHeight;
+
+    // eslint-disable-next-line
+    this.leaf1Img.src = require('../../../assets/mindmap/grape-leaf1.png');
+    // eslint-disable-next-line
+    this.leaf2Img.src = require('../../../assets/mindmap/grape-leaf2.png');
 
     const templates = document.querySelectorAll('.choose-template');
 
@@ -213,7 +221,130 @@ export default {
           this.ctx[0].fillText(text, x - (size / 4) * (text.length / 2), y);
         }
       } else if (template === 2) {
-        console.log('test');
+        // eslint-disable-next-line
+        var lightRad = Math.atan2(y + 50, this.canvas.width / 2 - x);
+        const r = size * 0.8;
+        if (type === 0) {
+          this.ctx[0].shadowOffsetX = 0;
+          this.ctx[0].shadowOffsetY = 4;
+          this.ctx[0].shadowColor = 'rgba(0, 0, 0, 0.25)';
+          this.ctx[0].shadowBlur = 4;
+          this.ctx[0].fillStyle = '#7159BA';
+          this.ctx[0].beginPath();
+          this.ctx[0].arc(x, y, size, 0, Math.PI * 2);
+          this.ctx[0].fill();
+
+          this.ctx[0].fillStyle = 'white';
+          this.ctx[0].shadowOffsetX = 0;
+          this.ctx[0].shadowOffsetY = 0;
+          this.ctx[0].beginPath();
+          // eslint-disable-next-line max-len
+          this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
+          this.ctx[0].rotate(-lightRad);
+          this.ctx[0].moveTo(0, -size * 0.15);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(-size * 0.05, -size * 0.15, -size * 0.1, -size * 0.075, -size * 0.1, 0);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(-size * 0.1, size * 0.075, -size * 0.05, size * 0.15, 0, size * 0.15);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(size * 0.05, size * 0.15, size * 0.1, size * 0.075, size * 0.1, 0);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(size * 0.1, -size * 0.075, size * 0.05, -size * 0.15, 0, -size * 0.15);
+          this.ctx[0].fill();
+          this.ctx[0].rotate(+lightRad);
+          // eslint-disable-next-line max-len
+          this.ctx[0].translate(-(x + r * Math.cos(lightRad)), -(y - r * Math.sin(lightRad)));
+        } else if (type === 1) {
+          this.ctx[0].shadowOffsetX = 0;
+          this.ctx[0].shadowOffsetY = 4;
+          this.ctx[0].shadowColor = 'rgba(0, 0, 0, 0.25)';
+          this.ctx[0].shadowBlur = 4;
+          this.ctx[0].fillStyle = '#AC92EB';
+          this.ctx[0].beginPath();
+          this.ctx[0].arc(x, y, size, 0, Math.PI * 2);
+          this.ctx[0].fill();
+
+          this.ctx[0].fillStyle = 'white';
+          this.ctx[0].shadowOffsetX = 0;
+          this.ctx[0].shadowOffsetY = 0;
+          this.ctx[0].beginPath();
+          // eslint-disable-next-line max-len
+          this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
+          this.ctx[0].rotate(-lightRad);
+          this.ctx[0].moveTo(0, -size * 0.18);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(-size * 0.05, -size * 0.18, -size * 0.1, -size * 0.15, -size * 0.1, 0);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(-size * 0.1, size * 0.15, -size * 0.05, size * 0.18, 0, size * 0.18);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(size * 0.05, size * 0.18, size * 0.1, size * 0.15, size * 0.1, 0);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(size * 0.1, -size * 0.15, size * 0.05, -size * 0.18, 0, -size * 0.18);
+          this.ctx[0].fill();
+          this.ctx[0].rotate(+lightRad);
+          // eslint-disable-next-line max-len
+          this.ctx[0].translate(-(x + r * Math.cos(lightRad)), -(y - r * Math.sin(lightRad)));
+        } else if (type === 2) {
+          this.ctx[0].shadowOffsetX = 0;
+          this.ctx[0].shadowOffsetY = 4;
+          this.ctx[0].shadowColor = 'rgba(0, 0, 0, 0.25)';
+          this.ctx[0].shadowBlur = 4;
+          this.ctx[0].fillStyle = '#B8AAD1';
+          this.ctx[0].beginPath();
+          this.ctx[0].arc(x, y, size, 0, Math.PI * 2);
+          this.ctx[0].fill();
+
+          this.ctx[0].fillStyle = 'white';
+          this.ctx[0].shadowOffsetX = 0;
+          this.ctx[0].shadowOffsetY = 0;
+          this.ctx[0].beginPath();
+          // eslint-disable-next-line max-len
+          this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
+          this.ctx[0].rotate(-lightRad);
+          this.ctx[0].moveTo(0, -size * 0.18);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(-size * 0.05, -size * 0.18, -size * 0.1, -size * 0.15, -size * 0.1, 0);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(-size * 0.1, size * 0.15, -size * 0.05, size * 0.18, 0, size * 0.18);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(size * 0.05, size * 0.18, size * 0.1, size * 0.15, size * 0.1, 0);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(size * 0.1, -size * 0.15, size * 0.05, -size * 0.18, 0, -size * 0.18);
+          this.ctx[0].fill();
+          this.ctx[0].rotate(+lightRad);
+          // eslint-disable-next-line max-len
+          this.ctx[0].translate(-(x + r * Math.cos(lightRad)), -(y - r * Math.sin(lightRad)));
+        } else if (type === 3) {
+          this.ctx[0].shadowOffsetX = 0;
+          this.ctx[0].shadowOffsetY = 4;
+          this.ctx[0].shadowColor = 'rgba(0, 0, 0, 0.25)';
+          this.ctx[0].shadowBlur = 4;
+          this.ctx[0].fillStyle = '#784DFF';
+          this.ctx[0].beginPath();
+          this.ctx[0].arc(x, y, size, 0, Math.PI * 2);
+          this.ctx[0].fill();
+
+          this.ctx[0].fillStyle = 'white';
+          this.ctx[0].shadowOffsetX = 0;
+          this.ctx[0].shadowOffsetY = 0;
+          this.ctx[0].beginPath();
+          // eslint-disable-next-line max-len
+          this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
+          this.ctx[0].rotate(-lightRad);
+          this.ctx[0].moveTo(0, -size * 0.15);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(-size * 0.05, -size * 0.15, -size * 0.1, -size * 0.075, -size * 0.1, 0);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(-size * 0.1, size * 0.075, -size * 0.05, size * 0.15, 0, size * 0.15);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(size * 0.05, size * 0.15, size * 0.1, size * 0.075, size * 0.1, 0);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(size * 0.1, -size * 0.075, size * 0.05, -size * 0.15, 0, -size * 0.15);
+          this.ctx[0].fill();
+          this.ctx[0].rotate(+lightRad);
+          // eslint-disable-next-line max-len
+          this.ctx[0].translate(-(x + r * Math.cos(lightRad)), -(y - r * Math.sin(lightRad)));
+        }
       }
     },
 
@@ -270,6 +401,16 @@ export default {
         this.makeNode(width + 240, height - 100, 80, 1, '', template);
         this.makeNode(width - 240, height + 100, 80, 2, '', template);
         this.makeNode(width + 240, height + 100, 80, 3, '', template);
+      } else if (template === 2) {
+        const width = this.canvas.width / 2;
+
+        this.ctx[0].drawImage(this.leaf1Img, width - 450, -300, 700, 600);
+        this.ctx[0].drawImage(this.leaf2Img, width - 150, -300, 700, 600);
+
+        this.makeNode(width - 320, 120, 80, 0, '', template);
+        this.makeNode(width - 150, 300, 80, 1, '', template);
+        this.makeNode(width + 120, 250, 80, 2, '', template);
+        this.makeNode(width + 300, 150, 80, 3, '', template);
       }
     },
 
@@ -361,5 +502,18 @@ export default {
   background-image: url('../../../assets/choose-more.svg');
   background-size: cover;
   top: 1.5vw;
+}
+
+#template1 {
+  background-image: url('../../../assets/mindmap/tree.png');
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+#template2 {
+  background-image: url('../../../assets/mindmap/grape.png');
+  background-position: center;
+  background-size: contain;
+  background-repeat : no-repeat;
 }
 </style>
