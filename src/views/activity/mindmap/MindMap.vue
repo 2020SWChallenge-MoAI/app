@@ -137,6 +137,8 @@ export default {
       edgePos: { x: 0, y: 0 },
       edgeId: -1,
 
+      lightPos: { x: 0, y: 0 },
+
       wordSelected: '',
       wordCanSelect: true,
       recommendClicked: false,
@@ -146,6 +148,10 @@ export default {
       popup: false,
       selectedNodeLabel: '',
       popupNodeId: -1,
+
+      bookImg: new Image(),
+      leaf1Img: new Image(),
+      leaf2Img: new Image(),
     };
   },
 
@@ -155,6 +161,13 @@ export default {
 
     this.canvas.width = this.canvas.clientWidth;
     this.canvas.height = this.canvas.clientHeight;
+
+    // eslint-disable-next-line
+    this.bookImg.src = require('../../../assets/left-book-menu/book3.png');
+    // eslint-disable-next-line
+    this.leaf1Img.src = require('../../../assets/mindmap/grape-leaf1.png');
+    // eslint-disable-next-line
+    this.leaf2Img.src = require('../../../assets/mindmap/grape-leaf2.png');
 
     this.canvas.addEventListener('touchstart', (e) => {
       this.startDraw(e);
@@ -237,28 +250,53 @@ export default {
     const width = this.canvas.width / 2;
     const height = this.canvas.height / 2;
 
-    this.nodes.push({
-      id: 0, x: width, y: height, size: 125, type: -1, link: true,
-    });
+    if (this.templateType === 1) {
+      this.nodes.push({
+        id: 0, x: width, y: height, size: 125, type: -1, link: true,
+      });
 
-    this.nodes.push({
-      // eslint-disable-next-line max-len
-      id: 1, label: '등장인물', x: width - 240, y: height - 0, size: 200, type: 0, link: true,
-    });
-    this.nodes.push({
-      // eslint-disable-next-line max-len
-      id: 2, label: '줄거리', x: width + 240, y: height - 100, size: 80, type: 1, link: true,
-    });
-    this.nodes.push({
-      // eslint-disable-next-line max-len
-      id: 3, label: '느낀점', x: width - 240, y: height + 100, size: 80, type: 2, link: true,
-    });
-    this.nodes.push({
-      // eslint-disable-next-line max-len
-      id: 4, label: '인상장면', x: width + 240, y: height + 100, size: 80, type: 3, link: true,
-    });
+      this.nodes.push({
+        // eslint-disable-next-line max-len
+        id: 1, label: '등장인물', x: width - 240, y: height - 100, size: 80, type: 0, link: true,
+      });
+      this.nodes.push({
+        // eslint-disable-next-line max-len
+        id: 2, label: '줄거리', x: width + 240, y: height - 100, size: 80, type: 1, link: true,
+      });
+      this.nodes.push({
+        // eslint-disable-next-line max-len
+        id: 3, label: '느낀점', x: width - 240, y: height + 100, size: 80, type: 2, link: true,
+      });
+      this.nodes.push({
+        // eslint-disable-next-line max-len
+        id: 4, label: '인상장면', x: width + 240, y: height + 100, size: 80, type: 3, link: true,
+      });
+    } else if (this.templateType === 2) {
+      this.nodes.push({
+        id: 0, x: width, y: 0 + 100, size: 150, type: -1, link: true,
+      });
 
-    this.reDrawAll();
+      this.nodes.push({
+        // eslint-disable-next-line max-len
+        id: 1, label: '등장인물', x: width - 320, y: 120, size: 80, type: 0, link: true,
+      });
+      this.nodes.push({
+        // eslint-disable-next-line max-len
+        id: 2, label: '줄거리', x: width - 150, y: 300, size: 80, type: 1, link: true,
+      });
+      this.nodes.push({
+        // eslint-disable-next-line max-len
+        id: 3, label: '느낀점', x: width + 120, y: 250, size: 80, type: 2, link: true,
+      });
+      this.nodes.push({
+        // eslint-disable-next-line max-len
+        id: 4, label: '인상장면', x: width + 300, y: 150, size: 80, type: 3, link: true,
+      });
+    }
+
+    setTimeout(() => {
+      this.reDrawAll(this.padding.x, this.padding.y);
+    }, 100);
   },
 
   methods: {
@@ -317,20 +355,28 @@ export default {
         this.ctx[0].stroke();
 
         // 책 이미지 넣기
-        const bookImg = new Image();
         // eslint-disable-next-line
-        bookImg.src = require('../../../assets/left-book-menu/book3.png');
-        // eslint-disable-next-line
-        this.ctx[0].drawImage(bookImg, width - 80 - paddingX, height - 150 - paddingY, 150, 200);
-        // 우주배경 템플릿
+        this.ctx[0].drawImage(this.bookImg, width - 80 - paddingX, height - 150 - paddingY, 150, 200);
+        // 포도 템플릿
       } else if (this.templateType === 2) {
-        this.canvas.style.background = 'white';
+        const width = this.canvas.width / 2;
+        // const height = this.canvas.height / 2;
+        // 잎2
+        // eslint-disable-next-line
+        this.ctx[0].drawImage(this.leaf1Img, width - paddingX - 450, 0 - paddingY - 300, 700, 600);
+
+        // 잎2
+        // eslint-disable-next-line
+        this.ctx[0].drawImage(this.leaf2Img, width - paddingX - 150, 0 - paddingY - 300, 700, 600);
+
+        // eslint-disable-next-line
+        this.ctx[0].drawImage(this.bookImg, width - paddingX - 75, 0 - paddingY, 150, 200);
       }
     },
 
     startDraw(event) {
       if (this.touchmode === 'pen') {
-        this.reDrawAll();
+        this.reDrawAll(this.padding.x, this.padding.y);
         this.selectedNode = -1;
         this.ctx[0].beginPath();
         this.ctx[0].lineWidth = 12;
@@ -356,7 +402,7 @@ export default {
           this.edges.splice(index, 1);
           this.edgeId = -1;
         }
-        this.reDrawAll();
+        this.reDrawAll(this.padding.x, this.padding.y);
         const coors = this.getPosition(event);
         this.startPos.x = coors.X;
         this.startPos.y = coors.Y;
@@ -371,16 +417,14 @@ export default {
               const loc2 = (Math.abs(this.nodes[this.selectedNode].x - this.padding.x - coors.X)) / 2 + Math.abs((this.nodes[this.selectedNode].y - this.padding.y - coors.Y)) / 2;
               if (loc1 < loc2) {
                 this.selectedNode = this.nodes[i].id;
-                this.doubleSelectedNode = this.selectedNode;
               }
             }
             this.selectedNode = this.nodes[i].id;
-            this.doubleSelectedNode = this.selectedNode;
           }
         }
         if (this.selectedNode !== -1) {
           const node = this.nodes.find((element) => element.id === this.selectedNode);
-          this.reDrawAll();
+          this.reDrawAll(this.padding.x, this.padding.y);
           // eslint-disable-next-line max-len
           this.highlightNode(node.x - this.padding.x, node.y - this.padding.y, node.size, node.type);
         }
@@ -406,29 +450,7 @@ export default {
         const changeX = this.startPos.x - coors.X;
         const changeY = this.startPos.y - coors.Y;
 
-        this.ctx[0].clearRect(0, 0, 100000, 100000);
-        this.ctx[0].beginPath();
-
-        // edge 먼저 그리기
-        // eslint-disable-next-line no-plusplus
-        for (let i = 0; i < this.edges.length; i++) {
-          let from = this.nodes.find((element) => element.id === this.edges[i].from);
-          let to = this.nodes.find((element) => element.id === this.edges[i].to);
-          if (this.edges[i].from === -1) from = { x: this.edgePos.x, y: this.edgePos.y };
-          else if (this.edges[i].to === -1) to = { x: this.edgePos.x, y: this.edgePos.y };
-          // eslint-disable-next-line max-len
-          this.drawEdge(from.x - this.padding.x - changeX, from.y - this.padding.y - changeY, to.x - this.padding.x - changeX, to.y - this.padding.y - changeY);
-        }
-
-        // 템플릿 그리기
-        this.initSetting(changeX, changeY);
-
-        // node 그리기
-        // eslint-disable-next-line no-plusplus
-        for (let i = 0; i < this.nodes.length; i++) {
-          // eslint-disable-next-line max-len
-          this.makeNode(this.nodes[i].x - this.padding.x - changeX, this.nodes[i].y - this.padding.y - changeY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
-        }
+        this.reDrawAll(this.padding.x + changeX, this.padding.y + changeY);
       } else if (this.touchmode === 'select') {
         if (this.selectedNode !== -1) {
           const coors = this.getPosition(event);
@@ -438,35 +460,13 @@ export default {
           this.nodes[index].x = coors.X + this.padding.x;
           this.nodes[index].y = coors.Y + this.padding.y;
 
-          this.ctx[0].clearRect(0, 0, 100000, 100000);
-          this.ctx[0].beginPath();
-
-          // edge 먼저 그리기
-          // eslint-disable-next-line no-plusplus
-          for (let i = 0; i < this.edges.length; i++) {
-            let from = this.nodes.find((element) => element.id === this.edges[i].from);
-            let to = this.nodes.find((element) => element.id === this.edges[i].to);
-            if (this.edges[i].from === -1) from = { x: this.edgePos.x, y: this.edgePos.y };
-            else if (this.edges[i].to === -1) to = { x: this.edgePos.x, y: this.edgePos.y };
-            // eslint-disable-next-line max-len
-            this.drawEdge(from.x - this.padding.x, from.y - this.padding.y, to.x - this.padding.x, to.y - this.padding.y);
-          }
-
-          // 템플릿 그리기
-          this.initSetting(0, 0);
-
-          // node 그리기
-          // eslint-disable-next-line no-plusplus
-          for (let i = 0; i < this.nodes.length; i++) {
-            // eslint-disable-next-line max-len
-            this.makeNode(this.nodes[i].x - this.padding.x, this.nodes[i].y - this.padding.y, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
-          }
+          this.reDrawAll(this.padding.x, this.padding.y);
 
           // eslint-disable-next-line max-len
           this.highlightNode(node.x - this.padding.x, node.y - this.padding.y, node.size, node.type);
         }
       } else if (this.touchmode === 'word') {
-        this.reDrawAll();
+        this.reDrawAll(this.padding.x, this.padding.y);
         const coors = this.getPosition(event);
         const nodex = (coors.X + this.startPos.x) / 2;
         const nodey = (coors.Y + this.startPos.y) / 2;
@@ -516,7 +516,7 @@ export default {
 
           // edge가 아닐때
           if (edgeFrom === -1 && edgeTo === -1) {
-            this.reDrawAll();
+            this.reDrawAll(this.padding.x, this.padding.y);
 
             // 하나만 연결된 edge일 때
           } else if (edgeFrom === -1 || edgeTo === -1) {
@@ -525,7 +525,7 @@ export default {
             this.edgeId = newid;
             this.edgePos.x = coors.X + this.padding.x;
             this.edgePos.y = coors.Y + this.padding.y;
-            this.reDrawAll();
+            this.reDrawAll(this.padding.x, this.padding.y);
             // edge일 때
           } else {
             const newid = new Date().getTime();
@@ -535,7 +535,7 @@ export default {
             const nodeindex2 = this.nodes.findIndex((element) => element.id === edgeTo);
             this.nodes[nodeindex1].link = true;
             this.nodes[nodeindex2].link = true;
-            this.reDrawAll();
+            this.reDrawAll(this.padding.x, this.padding.y);
           }
 
           // edge 없는 노드 삭제
@@ -554,7 +554,7 @@ export default {
               i -= 1;
             }
           }
-          this.reDrawAll();
+          this.reDrawAll(this.padding.x, this.padding.y);
         } else {
           this.popupInput();
           let nodesize = 50;
@@ -584,7 +584,6 @@ export default {
           }
 
           this.edgeId = -1;
-          console.log('test1111');
         }
         this.startPos.x = -1;
         this.startPos.y = -1;
@@ -601,7 +600,7 @@ export default {
         this.padding.x += this.startPos.x - coors.X;
         this.padding.y += this.startPos.y - coors.Y;
       } else if (this.touchmode === 'word') {
-        this.reDrawAll();
+        this.reDrawAll(this.padding.x, this.padding.y);
         const coors = this.getPosition(event);
         const nodex = (coors.X + this.startPos.x) / 2;
         const nodey = (coors.Y + this.startPos.y) / 2;
@@ -657,7 +656,7 @@ export default {
         select.style.background = '#83b1b1';
 
         this.resetWordBackground();
-        this.reDrawAll();
+        this.reDrawAll(this.padding.x, this.padding.y);
       } else if (this.touchmode === 'select') {
         if (this.doubleSelectedNode === this.selectedNode) {
           if (this.doubleSelectedTime) {
@@ -668,12 +667,14 @@ export default {
             this.doubleSelectedTime = false;
           } else {
             this.doubleSelectedTime = true;
+            this.doubleSelectedNode = this.selectedNode;
             setTimeout(() => {
               this.doubleSelectedTime = false;
             }, 200);
           }
         } else {
           this.doubleSelectedTime = true;
+          this.doubleSelectedNode = this.selectedNode;
           setTimeout(() => {
             this.doubleSelectedTime = false;
           }, 200);
@@ -681,29 +682,57 @@ export default {
       }
     },
 
-    reDrawAll() {
+    reDrawAll(paddingX, paddingY) {
       this.ctx[0].clearRect(0, 0, 100000, 100000);
       this.ctx[0].beginPath();
 
-      // edge 먼저 그리기
-      // eslint-disable-next-line no-plusplus
-      for (let i = 0; i < this.edges.length; i++) {
-        let from = this.nodes.find((element) => element.id === this.edges[i].from);
-        let to = this.nodes.find((element) => element.id === this.edges[i].to);
-        if (this.edges[i].from === -1) from = { x: this.edgePos.x, y: this.edgePos.y };
-        else if (this.edges[i].to === -1) to = { x: this.edgePos.x, y: this.edgePos.y };
-        // eslint-disable-next-line max-len
-        this.drawEdge(from.x - this.padding.x, from.y - this.padding.y, to.x - this.padding.x, to.y - this.padding.y);
-      }
+      if (this.templateType === 1) {
+        // edge 먼저 그리기
+        // eslint-disable-next-line no-plusplus
+        for (let i = 0; i < this.edges.length; i++) {
+          let from = this.nodes.find((element) => element.id === this.edges[i].from);
+          let to = this.nodes.find((element) => element.id === this.edges[i].to);
+          if (this.edges[i].from === -1) from = { x: this.edgePos.x, y: this.edgePos.y };
+          else if (this.edges[i].to === -1) to = { x: this.edgePos.x, y: this.edgePos.y };
+          // eslint-disable-next-line max-len
+          this.drawEdge(from.x - paddingX, from.y - paddingY, to.x - paddingX, to.y - paddingY);
+        }
 
-      // 템플릿 그리기
-      this.initSetting(0, 0);
+        // 템플릿 그리기
+        this.initSetting(paddingX - this.padding.x, paddingY - this.padding.y);
 
-      // node 그리기
-      // eslint-disable-next-line no-plusplus
-      for (let i = 0; i < this.nodes.length; i++) {
-        // eslint-disable-next-line max-len
-        this.makeNode(this.nodes[i].x - this.padding.x, this.nodes[i].y - this.padding.y, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+        // node 그리기
+        // eslint-disable-next-line no-plusplus
+        for (let i = 0; i < this.nodes.length; i++) {
+          // eslint-disable-next-line max-len
+          this.makeNode(this.nodes[i].x - paddingX, this.nodes[i].y - paddingY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+        }
+      } else if (this.templateType === 2) {
+        this.lightPos.x = this.canvas.width / 2 - paddingX;
+        this.lightPos.y = -100 - paddingY;
+        // 템플릿 그리기
+        this.initSetting(paddingX - this.padding.x, paddingY - this.padding.y);
+
+        // edge 먼저 그리기
+        // eslint-disable-next-line no-plusplus
+        for (let i = 0; i < this.edges.length; i++) {
+          let from = this.nodes.find((element) => element.id === this.edges[i].from);
+          let to = this.nodes.find((element) => element.id === this.edges[i].to);
+          if (this.edges[i].from === -1) from = { x: this.edgePos.x, y: this.edgePos.y };
+          else if (this.edges[i].to === -1) to = { x: this.edgePos.x, y: this.edgePos.y };
+          // eslint-disable-next-line max-len
+          this.drawEdge(from.x - paddingX, from.y - paddingY, to.x - paddingX, to.y - paddingY);
+        }
+
+        // eslint-disable-next-line
+        this.ctx[0].drawImage(this.bookImg, this.canvas.width / 2 - paddingX - 75, 0 - paddingY, 150, 200);
+
+        // node 그리기
+        // eslint-disable-next-line no-plusplus
+        for (let i = 0; i < this.nodes.length; i++) {
+          // eslint-disable-next-line max-len
+          this.makeNode(this.nodes[i].x - paddingX, this.nodes[i].y - paddingY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+        }
       }
     },
 
@@ -849,6 +878,9 @@ export default {
           }
         }
       } else if (this.templateType === 2) {
+        // eslint-disable-next-line
+        var lightRad = Math.atan2(y - this.lightPos.y, this.lightPos.x - x);
+        const r = size * 0.8;
         if (type === 0) {
           this.ctx[0].shadowOffsetX = 0;
           this.ctx[0].shadowOffsetY = 4;
@@ -859,17 +891,26 @@ export default {
           this.ctx[0].arc(x, y, size, 0, Math.PI * 2);
           this.ctx[0].fill();
 
+          this.ctx[0].fillStyle = 'white';
+          this.ctx[0].shadowOffsetX = 0;
+          this.ctx[0].shadowOffsetY = 0;
           this.ctx[0].beginPath();
-          this.ctx[0].moveTo(x + size * 0.3, y - size * 0.65);
           // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x + size * 0.3, y - size * 0.63, x + size * 0.2, y - size * 0.5, x + size * 0.2, y - size * 0.5);
+          this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
+          this.ctx[0].rotate(-lightRad);
+          this.ctx[0].moveTo(0, -size * 0.15);
           // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x + size * 0.2, y - size * 0.375, x + size * 0.3, y - size * 0.25, x + size * 0.7, y - size * 0.25);
+          this.ctx[0].bezierCurveTo(-size * 0.05, -size * 0.15, -size * 0.1, -size * 0.075, -size * 0.1, 0);
           // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x + size * 0.5, y - size * 0.25, x + size * 0.6, y - size * 0.375, x + size * 0.6, y - size * 0.5);
+          this.ctx[0].bezierCurveTo(-size * 0.1, size * 0.075, -size * 0.05, size * 0.15, 0, size * 0.15);
           // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x + size * 0.6, y - size * 0.625, x + size * 0.5, y - size * 0.75, x + size * 0.3, y - size * 0.65);
-          this.ctx[0].stroke();
+          this.ctx[0].bezierCurveTo(size * 0.05, size * 0.15, size * 0.1, size * 0.075, size * 0.1, 0);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(size * 0.1, -size * 0.075, size * 0.05, -size * 0.15, 0, -size * 0.15);
+          this.ctx[0].fill();
+          this.ctx[0].rotate(+lightRad);
+          // eslint-disable-next-line max-len
+          this.ctx[0].translate(-(x + r * Math.cos(lightRad)), -(y - r * Math.sin(lightRad)));
 
           let textloc = ((linesize - 1) / 2) * -1;
           for (let i = 0; i < linesize; i += 1) {
@@ -882,149 +923,232 @@ export default {
             textloc += 1;
           }
         } else if (type === 1) {
-          const gradient = this.ctx[0].createLinearGradient(x, y - size, x, y + size);
-          gradient.addColorStop(0, '#f2e7bf');
-          gradient.addColorStop(0.3, '#cca978');
-          gradient.addColorStop(0.4, '#f2e7bf');
-          gradient.addColorStop(0.5, '#f2e7bf');
-          gradient.addColorStop(0.8, '#cca978');
-          gradient.addColorStop(1, '#f2e7bf');
-
+          this.ctx[0].shadowOffsetX = 0;
+          this.ctx[0].shadowOffsetY = 4;
+          this.ctx[0].shadowColor = 'rgba(0, 0, 0, 0.25)';
+          this.ctx[0].shadowBlur = 4;
+          this.ctx[0].fillStyle = '#AC92EB';
           this.ctx[0].beginPath();
-          this.ctx[0].fillStyle = gradient;
           this.ctx[0].arc(x, y, size, 0, Math.PI * 2);
           this.ctx[0].fill();
 
+          this.ctx[0].fillStyle = 'white';
+          this.ctx[0].shadowOffsetX = 0;
+          this.ctx[0].shadowOffsetY = 0;
           this.ctx[0].beginPath();
-          this.ctx[0].strokeStyle = '#c5a863';
-          this.ctx[0].lineWidth = size * 0.05;
-          this.ctx[0].lineCap = 'round';
           // eslint-disable-next-line max-len
-          this.ctx[0].arc(x, y, size, 0, Math.PI * 2);
-          this.ctx[0].stroke();
+          this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
+          this.ctx[0].rotate(-lightRad);
+          this.ctx[0].moveTo(0, -size * 0.18);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(-size * 0.05, -size * 0.18, -size * 0.1, -size * 0.15, -size * 0.1, 0);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(-size * 0.1, size * 0.15, -size * 0.05, size * 0.18, 0, size * 0.18);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(size * 0.05, size * 0.18, size * 0.1, size * 0.15, size * 0.1, 0);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(size * 0.1, -size * 0.15, size * 0.05, -size * 0.18, 0, -size * 0.18);
+          this.ctx[0].fill();
+          this.ctx[0].rotate(+lightRad);
+          // eslint-disable-next-line max-len
+          this.ctx[0].translate(-(x + r * Math.cos(lightRad)), -(y - r * Math.sin(lightRad)));
 
           let textloc = ((linesize - 1) / 2) * -1;
           for (let i = 0; i < linesize; i += 1) {
-            this.ctx[0].beginPath();
+            this.ctx[0].shadowColor = 'transparent';
             // eslint-disable-next-line prefer-template
             this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
-            this.ctx[0].fillStyle = '#5e453e';
+            this.ctx[0].fillStyle = 'white';
+            // eslint-disable-next-line max-len
+            this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
+            textloc += 1;
+          }
+        } else if (type === 2) {
+          this.ctx[0].shadowOffsetX = 0;
+          this.ctx[0].shadowOffsetY = 4;
+          this.ctx[0].shadowColor = 'rgba(0, 0, 0, 0.25)';
+          this.ctx[0].shadowBlur = 4;
+          this.ctx[0].fillStyle = '#B8AAD1';
+          this.ctx[0].beginPath();
+          this.ctx[0].arc(x, y, size, 0, Math.PI * 2);
+          this.ctx[0].fill();
+
+          this.ctx[0].fillStyle = 'white';
+          this.ctx[0].shadowOffsetX = 0;
+          this.ctx[0].shadowOffsetY = 0;
+          this.ctx[0].beginPath();
+          // eslint-disable-next-line max-len
+          this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
+          this.ctx[0].rotate(-lightRad);
+          this.ctx[0].moveTo(0, -size * 0.18);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(-size * 0.05, -size * 0.18, -size * 0.1, -size * 0.15, -size * 0.1, 0);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(-size * 0.1, size * 0.15, -size * 0.05, size * 0.18, 0, size * 0.18);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(size * 0.05, size * 0.18, size * 0.1, size * 0.15, size * 0.1, 0);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(size * 0.1, -size * 0.15, size * 0.05, -size * 0.18, 0, -size * 0.18);
+          this.ctx[0].fill();
+          this.ctx[0].rotate(+lightRad);
+          // eslint-disable-next-line max-len
+          this.ctx[0].translate(-(x + r * Math.cos(lightRad)), -(y - r * Math.sin(lightRad)));
+
+          let textloc = ((linesize - 1) / 2) * -1;
+          for (let i = 0; i < linesize; i += 1) {
+            this.ctx[0].shadowColor = 'transparent';
+            // eslint-disable-next-line prefer-template
+            this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
+            this.ctx[0].fillStyle = 'white';
             // eslint-disable-next-line max-len
             this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
             textloc += 1;
           }
         } else if (type === 3) {
-          this.ctx[0].fillStyle = 'yellow';
-          this.ctx[0].strokeStyle = 'yellow';
-
+          this.ctx[0].shadowOffsetX = 0;
+          this.ctx[0].shadowOffsetY = 4;
+          this.ctx[0].shadowColor = 'rgba(0, 0, 0, 0.25)';
+          this.ctx[0].shadowBlur = 4;
+          this.ctx[0].fillStyle = '#784DFF';
           this.ctx[0].beginPath();
-          this.ctx[0].moveTo(x + size * 0.1, y - size * 1.2);
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x - size * 0.1, y - size * 0.7, x - size * 0.7, y - size * 0.5, x - size * 0.9, y - size * 0.5);
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x - size * 0.8, y - size * 0.5, x - size * 0.4, y + size * 0.1, x - size * 0.55, y + size * 0.6);
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x - size * 0.2, y + size * 0.4, x + size * 0.5, y + size * 0.4, x + size * 0.85, y + size * 0.6);
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x + size * 0.8, y + size * 0.3, x + size * 0.8, y - size * 0.2, x + size * 1.1, y - size * 0.6);
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x + size * 0.5, y - size * 0.7, x + size * 0.3, y - size * 0.9, x + size * 0.1, y - size * 1.2);
-
-          this.ctx[0].stroke();
+          this.ctx[0].arc(x, y, size, 0, Math.PI * 2);
           this.ctx[0].fill();
+
+          this.ctx[0].fillStyle = 'white';
+          this.ctx[0].shadowOffsetX = 0;
+          this.ctx[0].shadowOffsetY = 0;
+          this.ctx[0].beginPath();
+          // eslint-disable-next-line max-len
+          this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
+          this.ctx[0].rotate(-lightRad);
+          this.ctx[0].moveTo(0, -size * 0.15);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(-size * 0.05, -size * 0.15, -size * 0.1, -size * 0.075, -size * 0.1, 0);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(-size * 0.1, size * 0.075, -size * 0.05, size * 0.15, 0, size * 0.15);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(size * 0.05, size * 0.15, size * 0.1, size * 0.075, size * 0.1, 0);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(size * 0.1, -size * 0.075, size * 0.05, -size * 0.15, 0, -size * 0.15);
+          this.ctx[0].fill();
+          this.ctx[0].rotate(+lightRad);
+          // eslint-disable-next-line max-len
+          this.ctx[0].translate(-(x + r * Math.cos(lightRad)), -(y - r * Math.sin(lightRad)));
+
+          let textloc = ((linesize - 1) / 2) * -1;
+          for (let i = 0; i < linesize; i += 1) {
+            this.ctx[0].shadowColor = 'transparent';
+            // eslint-disable-next-line prefer-template
+            this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
+            this.ctx[0].fillStyle = 'white';
+            // eslint-disable-next-line max-len
+            this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
+            textloc += 1;
+          }
         }
       }
     },
 
     highlightNode(x, y, size, type) {
-      if (type === 0) {
-        // 나뭇잎1 그리기
+      if (this.templateType === 1) {
+        if (type === 0) {
+          // 나뭇잎1 그리기
+          this.ctx[0].beginPath();
+          // 기본 세팅
+          this.ctx[0].strokeStyle = '#649a28';
+          this.ctx[0].lineWidth = size / 10;
+
+          this.ctx[0].moveTo(x, y - size * 0.6);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x - size / 2, y - size * 0.9, x - size * 1.2, y - size * 0.7, x - size * 0.8, y);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x - size * 1.2, y + size * 0.6, x, y + size * 0.8, x + size / 4, y + size * 0.4);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size * 0.8, y + size * 0.6, x + size * 0.9, y + size / 8, x + size * 0.75, y);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size, y - size * 0.8, x, y - size * 0.8, x, y - size * 0.6);
+          this.ctx[0].stroke();
+        } else if (type === 1) {
+          // 나뭇잎2 그리기
+          this.ctx[0].beginPath();
+          // 기본 세팅
+          this.ctx[0].strokeStyle = '#649a28';
+          this.ctx[0].lineWidth = size / 10;
+
+          this.ctx[0].moveTo(x, y - size / 2);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x - size / 4, y - size * 0.9, x - size, y - size * 0.6, x - size * 0.8, y - size * 0.2);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x - size * 1.3, y + size / 4, x - size / 2, y + size * 0.8, x - size / 4, y + size / 2);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size / 2, y + size * 0.9, x + size * 1, y + size * 0.3, x + size * 0.75, y - 5);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size, y - size / 2, x + size * 0.2, y - size * 0.9, x, y - size / 2);
+          this.ctx[0].stroke();
+        } else if (type === 2) {
+          // 나뭇잎3 그리기
+          this.ctx[0].beginPath();
+          // 기본 세팅
+          this.ctx[0].strokeStyle = '#649a28';
+          this.ctx[0].lineWidth = size / 10;
+
+          this.ctx[0].moveTo(x + size * 0.2, y - size * 0.6);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x, y - size * 0.8, x - size * 0.4, y - size * 0.8, x - size * 0.5, y - size * 0.6);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x - size * 1, y - size * 0.7, x - size * 1.2, y, x - size * 0.7, y + size * 0.1);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x - size * 0.9, y + size * 0.6, x - size * 0.2, y + size * 0.8, x, y + size * 0.5);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size * 0.7, y + size * 0.7, x + size * 0.9, y + size * 0.2, x + size * 0.7, y);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size * 1.1, y - size * 0.3, x + size * 0.35, y - size * 0.9, x + size * 0.2, y - size * 0.6);
+          this.ctx[0].stroke();
+        } else if (type === 3) {
+          // 나뭇잎4 그리기
+          this.ctx[0].beginPath();
+          // 기본 세팅
+          this.ctx[0].strokeStyle = '#649a28';
+          this.ctx[0].lineWidth = size / 10;
+
+          this.ctx[0].moveTo(x + size * 0.3, y - size * 0.6);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size * 0.1, y - size * 0.75, x - size * 0.2, y - size * 0.75, x - size * 0.4, y - size * 0.5);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x - size * 0.8, y - size * 0.7, x - size * 1, y - size * 0.2, x - size * 0.7, y);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x - size * 1.1, y + size * 0.4, x - size * 0.3, y + size * 0.8, x - size * 0.1, y + size * 0.5);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size * 0.15, y + size * 0.65, x + size * 0.3, y + size * 0.55, x + size * 0.4, y + size * 0.5);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size * 0.9, y + size * 0.7, x + size * 1.2, y, x + size * 0.8, y - size * 0.1);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size * 1.0, y - size * 0.8, x + size * 0.2, y - size * 0.7, x + size * 0.3, y - size * 0.6);
+          this.ctx[0].stroke();
+        }
+      } else if (this.templateType === 2) {
+        if (type === 0) this.ctx[0].strokeStyle = '#5c4a92';
+        else if (type === 1) this.ctx[0].strokeStyle = '#866bc6';
+        else if (type === 2) this.ctx[0].strokeStyle = '#917fb0';
+        else if (type === 3) this.ctx[0].strokeStyle = '#5d37d3';
         this.ctx[0].beginPath();
-        // 기본 세팅
-        this.ctx[0].strokeStyle = '#649a28';
-        this.ctx[0].lineWidth = 8;
-
-        this.ctx[0].moveTo(x, y - size * 0.6);
-        // eslint-disable-next-line max-len
-        this.ctx[0].bezierCurveTo(x - size / 2, y - size * 0.9, x - size * 1.2, y - size * 0.7, x - size * 0.8, y);
-
-        // eslint-disable-next-line max-len
-        this.ctx[0].bezierCurveTo(x - size * 1.2, y + size * 0.6, x, y + size * 0.8, x + size / 4, y + size * 0.4);
-
-        // eslint-disable-next-line max-len
-        this.ctx[0].bezierCurveTo(x + size * 0.8, y + size * 0.6, x + size * 0.9, y + size / 8, x + size * 0.75, y);
-
-        // eslint-disable-next-line max-len
-        this.ctx[0].bezierCurveTo(x + size, y - size * 0.8, x, y - size * 0.8, x, y - size * 0.6);
-        this.ctx[0].stroke();
-      } else if (type === 1) {
-        // 나뭇잎2 그리기
-        this.ctx[0].beginPath();
-        // 기본 세팅
-        this.ctx[0].strokeStyle = '#649a28';
-        this.ctx[0].lineWidth = 8;
-
-        this.ctx[0].moveTo(x, y - size / 2);
-        // eslint-disable-next-line max-len
-        this.ctx[0].bezierCurveTo(x - size / 4, y - size * 0.9, x - size, y - size * 0.6, x - size * 0.8, y - size * 0.2);
-
-        // eslint-disable-next-line max-len
-        this.ctx[0].bezierCurveTo(x - size * 1.3, y + size / 4, x - size / 2, y + size * 0.8, x - size / 4, y + size / 2);
-
-        // eslint-disable-next-line max-len
-        this.ctx[0].bezierCurveTo(x + size / 2, y + size * 0.9, x + size * 1, y + size * 0.3, x + size * 0.75, y - 5);
-
-        // eslint-disable-next-line max-len
-        this.ctx[0].bezierCurveTo(x + size, y - size / 2, x + size * 0.2, y - size * 0.9, x, y - size / 2);
-        this.ctx[0].stroke();
-      } else if (type === 2) {
-        // 나뭇잎3 그리기
-        this.ctx[0].beginPath();
-        // 기본 세팅
-        this.ctx[0].strokeStyle = '#649a28';
-        this.ctx[0].lineWidth = 8;
-
-        this.ctx[0].moveTo(x + size * 0.2, y - size * 0.6);
-        // eslint-disable-next-line max-len
-        this.ctx[0].bezierCurveTo(x, y - size * 0.8, x - size * 0.4, y - size * 0.8, x - size * 0.5, y - size * 0.6);
-
-        // eslint-disable-next-line max-len
-        this.ctx[0].bezierCurveTo(x - size * 1, y - size * 0.7, x - size * 1.2, y, x - size * 0.7, y + size * 0.1);
-
-        // eslint-disable-next-line max-len
-        this.ctx[0].bezierCurveTo(x - size * 0.9, y + size * 0.6, x - size * 0.2, y + size * 0.8, x, y + size * 0.5);
-
-        // eslint-disable-next-line max-len
-        this.ctx[0].bezierCurveTo(x + size * 0.7, y + size * 0.7, x + size * 0.9, y + size * 0.2, x + size * 0.7, y);
-
-        // eslint-disable-next-line max-len
-        this.ctx[0].bezierCurveTo(x + size * 1.1, y - size * 0.3, x + size * 0.35, y - size * 0.9, x + size * 0.2, y - size * 0.6);
-        this.ctx[0].stroke();
-      } else if (type === 3) {
-        // 나뭇잎4 그리기
-        this.ctx[0].beginPath();
-        // 기본 세팅
-        this.ctx[0].strokeStyle = '#649a28';
-        this.ctx[0].lineWidth = 8;
-
-        this.ctx[0].moveTo(x + size * 0.3, y - size * 0.6);
-        // eslint-disable-next-line max-len
-        this.ctx[0].bezierCurveTo(x + size * 0.1, y - size * 0.75, x - size * 0.2, y - size * 0.75, x - size * 0.4, y - size * 0.5);
-
-        // eslint-disable-next-line max-len
-        this.ctx[0].bezierCurveTo(x - size * 0.8, y - size * 0.7, x - size * 1, y - size * 0.2, x - size * 0.7, y);
-
-        // eslint-disable-next-line max-len
-        this.ctx[0].bezierCurveTo(x - size * 1.1, y + size * 0.4, x - size * 0.3, y + size * 0.8, x - size * 0.1, y + size * 0.5);
-
-        // eslint-disable-next-line max-len
-        this.ctx[0].bezierCurveTo(x + size * 0.15, y + size * 0.65, x + size * 0.3, y + size * 0.55, x + size * 0.4, y + size * 0.5);
-
-        // eslint-disable-next-line max-len
-        this.ctx[0].bezierCurveTo(x + size * 0.9, y + size * 0.7, x + size * 1.2, y, x + size * 0.8, y - size * 0.1);
-
-        // eslint-disable-next-line max-len
-        this.ctx[0].bezierCurveTo(x + size * 1.0, y - size * 0.8, x + size * 0.2, y - size * 0.7, x + size * 0.3, y - size * 0.6);
+        this.ctx[0].lineWidth = size / 10;
+        this.ctx[0].arc(x, y, size, 0, Math.PI * 2);
         this.ctx[0].stroke();
       }
     },
@@ -1035,6 +1159,13 @@ export default {
         this.ctx[0].moveTo(x1, y1);
         this.ctx[0].lineWidth = 12;
         this.ctx[0].strokeStyle = '#baad93';
+        this.ctx[0].lineTo(x2, y2);
+        this.ctx[0].stroke();
+      } else if (this.templateType === 2) {
+        this.ctx[0].beginPath();
+        this.ctx[0].moveTo(x1, y1);
+        this.ctx[0].lineWidth = 12;
+        this.ctx[0].strokeStyle = '#9A8653';
         this.ctx[0].lineTo(x2, y2);
         this.ctx[0].stroke();
       }
@@ -1078,7 +1209,8 @@ export default {
       }
     },
 
-    deleteNode() {
+    deleteNode(nodeId) {
+      if (this.selectedNode === -1 && nodeId !== 0) this.selectedNode = nodeId;
       if (this.selectedNode !== -1 && this.selectedNode !== 0) {
         const index = this.nodes.findIndex((element) => element.id === this.selectedNode);
         this.nodes.splice(index, 1);
@@ -1100,11 +1232,15 @@ export default {
       for (let i = 0; i < this.edges.length; i += 1) {
         const toindex = this.nodes.findIndex((element) => element.id === this.edges[i].to);
         const fromindex = this.nodes.findIndex((element) => element.id === this.edges[i].from);
-        this.nodes[toindex].link = true;
-        this.nodes[fromindex].link = true;
+        if (toindex !== -1) this.nodes[toindex].link = true;
+        if (fromindex !== -1) this.nodes[fromindex].link = true;
+        if (toindex === -1 || fromindex === -1) {
+          this.edges.splice(i, 1);
+          i -= 1;
+        }
       }
 
-      this.reDrawAll();
+      this.reDrawAll(this.padding.x, this.padding.y);
       this.selectedNode = -1;
     },
 
@@ -1113,7 +1249,7 @@ export default {
         this.canvasScale += 0.1;
         this.scale *= 1.1;
         this.ctx[0].scale(1.1, 1.1);
-        this.reDrawAll();
+        this.reDrawAll(this.padding.x, this.padding.y);
       }
     },
 
@@ -1122,7 +1258,7 @@ export default {
         this.canvasScale -= 0.1;
         this.scale *= 0.9;
         this.ctx[0].scale(0.9, 0.9);
-        this.reDrawAll();
+        this.reDrawAll(this.padding.x, this.padding.y);
       }
     },
 
@@ -1305,79 +1441,8 @@ export default {
 
       this.$router.replace({
         name: 'FinishMindMap',
-        params: { nodes: this.nodes, edges: this.edges },
+        params: { nodes: this.nodes, edges: this.edges, template: this.templateType },
       });
-    },
-
-    drawCloud(x, y, paddingX, paddingY) {
-      const width = 389;
-      const height = 207.5;
-
-      // 구름 그리기
-      this.ctx[0].fillStyle = '#e5f6ff';
-      this.ctx[0].beginPath();
-      // eslint-disable-next-line max-len
-      this.ctx[0].moveTo(width - paddingX - x, height - 165 - paddingY - y);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width - 40 - paddingX - x, height - 240 - paddingY - y, width - 165 - paddingX - x, height - 240 - paddingY - y, width - 190 - paddingX - x, height - 140 - paddingY - y);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width - 270 - paddingX - x, height - 150 - paddingY - y, width - 315 - paddingX - x, height - 65 - paddingY - y, width - 250 - paddingX - x, height - 15 - paddingY - y);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width - 190 - paddingX - x, height - 10 - paddingY - y, width + 0 - paddingX - x, height - 10 - paddingY - y, width + 90 - paddingX - x, height - 15 - paddingY - y);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 140 - paddingX - x, height - 30 - paddingY - y, width + 140 - paddingX - x, height - 90 - paddingY - y, width + 65 - paddingX - x, height - 110 - paddingY - y);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 50 - paddingX - x, height - 170 - paddingY - y, width - paddingX - x, height - 170 - paddingY - y, width - 0 - paddingX - x, height - 165 - paddingY - y);
-      this.ctx[0].fill();
-
-      this.ctx[0].fillStyle = '#caedff';
-      this.ctx[0].beginPath();
-      // eslint-disable-next-line max-len
-      this.ctx[0].moveTo(width - paddingX - x, height - 165 - paddingY - y + 30);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width - 40 - paddingX - x, height - 240 - paddingY - y + 30, width - 165 - paddingX - x, height - 240 - paddingY - y + 30, width - 190 - paddingX - x, height - 140 - paddingY - y + 30);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width - 270 - paddingX - x, height - 150 - paddingY - y + 30, width - 315 - paddingX - x, height - 65 - paddingY - y + 30, width - 250 - paddingX - x, height - 15 - paddingY - y + 30);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width - 190 - paddingX - x, height - 10 - paddingY - y + 30, width + 0 - paddingX - x, height - 10 - paddingY - y + 30, width + 90 - paddingX - x, height - 15 - paddingY - y + 30);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 140 - paddingX - x, height - 30 - paddingY - y + 30, width + 140 - paddingX - x, height - 90 - paddingY - y + 30, width + 65 - paddingX - x, height - 110 - paddingY - y + 30);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 50 - paddingX - x, height - 170 - paddingY - y + 30, width - paddingX - x, height - 170 - paddingY - y + 30, width - 0 - paddingX - x, height - 165 - paddingY - y + 30);
-      this.ctx[0].fill();
-
-      // 옆 작은 구름
-      this.ctx[0].fillStyle = '#ebf7f7';
-      this.ctx[0].beginPath();
-      // eslint-disable-next-line max-len
-      this.ctx[0].moveTo(width + 65 - paddingX - x, height - 110 - paddingY - y);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 30 - paddingX - x, height - 140 - paddingY - y, width - 10 - paddingX - x, height - 80 - paddingY - y, width + 40 - paddingX - x, height - 60 - paddingY - y);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 45 - paddingX - x, height - 25 - paddingY - y, width + 85 - paddingX - x, height - 30 - paddingY - y, width + 100 - paddingX - x, height - 40 - paddingY - y);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 120 - paddingX - x, height - 30 - paddingY - y, width + 140 - paddingX - x, height - 30 - paddingY - y, width + 160 - paddingX - x, height - 45 - paddingY - y);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 230 - paddingX - x, height + 0 - paddingY - y, width + 280 - paddingX - x, height - 120 - paddingY - y, width + 180 - paddingX - x, height - 120 - paddingY - y);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 170 - paddingX - x, height - 170 - paddingY - y, width + 80 - paddingX - x, height - 170 - paddingY - y, width + 65 - paddingX - x, height - 110 - paddingY - y);
-      this.ctx[0].fill();
-
-      this.ctx[0].fillStyle = '#e1f6fb';
-      this.ctx[0].beginPath();
-      // eslint-disable-next-line max-len
-      this.ctx[0].moveTo(width + 65 - paddingX - x - 10, height - 110 - paddingY - y + 20);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 30 - paddingX - x + 10, height - 140 - paddingY - y + 20, width - 10 - paddingX - x + 10, height - 80 - paddingY - y + 20, width + 40 - paddingX - x + 10, height - 60 - paddingY - y + 20);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 45 - paddingX - x + 10, height - 25 - paddingY - y + 20, width + 85 - paddingX - x + 10, height - 30 - paddingY - y + 20, width + 100 - paddingX - x + 10, height - 40 - paddingY - y + 20);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 120 - paddingX - x + 10, height - 30 - paddingY - y + 20, width + 140 - paddingX - x + 10, height - 30 - paddingY - y + 20, width + 160 - paddingX - x + 10, height - 45 - paddingY - y + 20);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 230 - paddingX - x + 10, height + 0 - paddingY - y + 20, width + 280 - paddingX - x + 10, height - 120 - paddingY - y + 20, width + 180 - paddingX - x + 10, height - 120 - paddingY - y + 20);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 170 - paddingX - x + 10, height - 170 - paddingY - y + 20, width + 80 - paddingX - x + 10, height - 170 - paddingY - y + 20, width + 65 - paddingX - x + 10, height - 110 - paddingY - y + 20);
-      this.ctx[0].fill();
     },
 
     aiHelpSelected() {
@@ -1395,9 +1460,9 @@ export default {
 
       if (this.popupNodeId !== -1) {
         const nodeIndex = this.nodes.findIndex((element) => element.id === this.popupNodeId);
-        this.nodes.splice(nodeIndex, 1);
+        this.deleteNode(nodeIndex);
         this.popupNodeId = -1;
-        this.reDrawAll();
+        this.reDrawAll(this.padding.x, this.padding.y);
       }
 
       this.selectedNodeLabel = '';
@@ -1405,34 +1470,45 @@ export default {
 
     popupSuccess() {
       if (this.popupNodeId !== -1) {
-        const nodeIndex = this.nodes.findIndex((element) => element.id === this.popupNodeId);
+        let nodeIndex = this.nodes.findIndex((element) => element.id === this.popupNodeId);
         this.nodes[nodeIndex].label = this.selectedNodeLabel;
 
-        // edge 없는 노드 삭제
-        for (let i = 1; i < this.nodes.length; i += 1) {
-          if (this.nodes[i].link === false && i !== nodeIndex) {
-            // 노드 삭제
-            const deleteNodeid = this.nodes[i].id;
-            this.nodes.splice(i, 1);
+        // eslint-disable-next-line
+        if (this.selectedNodeLabel != '') {
+          // edge 없는 노드 삭제
+          for (let i = 1; i < this.nodes.length; i += 1) {
+            if (this.nodes[i].link === false && i !== nodeIndex) {
+              // 노드 삭제
+              const deleteNodeid = this.nodes[i].id;
+              this.nodes.splice(i, 1);
+              nodeIndex -= 1;
 
-            for (let j = 0; j < this.edges.length; j += 1) {
-              if (this.edges[j].to === deleteNodeid || this.edges[j].from === deleteNodeid) {
-                this.edges.splice(j, 1);
-                j -= 1;
+              for (let j = 0; j < this.edges.length; j += 1) {
+                if (this.edges[j].to === deleteNodeid || this.edges[j].from === deleteNodeid) {
+                  this.edges.splice(j, 1);
+                  j -= 1;
+                }
               }
+              i -= 1;
             }
-            i -= 1;
           }
+          this.popupNodeId = -1;
+          this.selectedNodeLabel = '';
+          this.reDrawAll(this.padding.x, this.padding.y);
+        } else {
+          this.nodes.splice(nodeIndex, 1);
+          this.reDrawAll(this.padding.x, this.padding.y);
         }
-        this.popupNodeId = -1;
-        this.selectedNodeLabel = '';
-        this.reDrawAll();
       } else if (this.selectedNode !== -1) {
         const nodeIndex = this.nodes.findIndex((element) => element.id === this.selectedNode);
-        this.nodes[nodeIndex].label = this.selectedNodeLabel;
+
+        // eslint-disable-next-line
+        if (this.selectedNodeLabel != null) {
+          this.nodes[nodeIndex].label = this.selectedNodeLabel;
+        }
 
         const node = this.nodes[nodeIndex];
-        this.reDrawAll();
+        this.reDrawAll(this.padding.x, this.padding.y);
         this.highlightNode(node.x - this.padding.x, node.y - this.padding.y, node.size, node.type);
       }
 
