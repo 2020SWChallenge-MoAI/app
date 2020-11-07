@@ -100,6 +100,7 @@ const routes = [
     path: '/activity/writing/process',
     name: 'Writing',
     component: Writing,
+    props: (route) => ({ rank: route.query.rank }),
     meta: { auth: true },
   },
   {

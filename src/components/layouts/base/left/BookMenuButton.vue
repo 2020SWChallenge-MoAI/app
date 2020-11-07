@@ -1,25 +1,32 @@
 <template>
-  <div class="btn-book-menu" v-ripple>
-    <img
+  <div class="btn-book-menu">
+    <v-img
       class="btn-image"
-      v-auth-image="image"
+      :src="book.thumbnail"
+      width="6vw"
+      height="6vw"
+      v-ripple
     >
-    <span class="btn-text">{{ text }}</span>
+      <template v-slot:placeholder>
+        <v-row
+          class="fill-height ma-0"
+          align="center"
+          justify="center"
+        >
+          <v-progress-circular
+            indeterminate
+            color="grey lighten-5"
+          />
+        </v-row>
+      </template>
+    </v-img>
   </div>
 </template>
 
 <script>
 export default {
-  props: {
-    text: {
-      default: '버튼',
-      type: String,
-    },
-    image: {
-      default: '',
-      type: String,
-    },
-  },
+  // eslint-disable-next-line vue/require-prop-types
+  props: ['book'],
 };
 </script>
 
@@ -29,9 +36,16 @@ export default {
   height: 6vw;
   overflow: hidden;
   border-radius: 1vw;
+  background: #83b1b1;
+  transform: translateZ(0);
 }
 
 .btn-image {
   width: 6vw;
+}
+
+.progress-bar {
+  justify-self: center;
+  align-self: center;
 }
 </style>

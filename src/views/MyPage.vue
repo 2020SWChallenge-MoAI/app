@@ -1,80 +1,21 @@
 <template>
   <sub-layout title="마이페이지" tooltip="나의 활동 기록을 살펴보자!" :recent-books="false">
-
-    <div id="mypage-top">
-      <div id="mypage-profile">
-        <div
-          id="mypage-user-img"
-        />
-        <div id="mypage-user-age">{{ userAge }}세</div>
-        <div id="mypage-user-name">{{ userName }}</div>
-      </div>
-
-      <div id="mypage-result">
-        <div id="mypage-result-title">
-          <v-icon x-large @click="month -= 1; slide = 'slide-left';"> mdi-menu-left </v-icon>
-
-          <transition :name="slide" mode="out-in" enter="enter">
-            <div v-bind:key="month" id="mypage-result-label">{{ month }}월 마인드맵 평가</div>
-          </transition>
-
-          <v-icon x-large @click="month += 1; slide = 'slide-right';"> mdi-menu-right </v-icon>
-        </div>
-
-        <transition :name="slide" mode="out-in">
-          <table v-bind:key="month" id="mypage-result-table" style="background: lightblue;">
-            <thead>
-              <tr>
-                <th> </th>
-                <th>1주</th>
-                <th>2주</th>
-                <th>3주</th>
-                <th>4주</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              <tr>
-                <td>이해도</td>
-                <td>10</td>
-                <td>21</td>
-                <td>10</td>
-                <td>21</td>
-              </tr>
-
-              <tr>
-                <td>성실성</td>
-                <td>10</td>
-                <td>21</td>
-                <td>10</td>
-                <td>21</td>
-              </tr>
-
-              <tr>
-                <td style="border-radius: 0 0 0 2vw;">창의성</td>
-                <td>10</td>
-                <td>21</td>
-                <td>10</td>
-                <td style="border-radius: 0 0 2vw 0;">21</td>
-              </tr>
-            </tbody>
-          </table>
-        </transition>
-
-      </div>
+    <div class="top">
+      <profile :user="user" />
+      <result-table
+        :month="month"
+        @prev="month -= 1"
+        @next="month += 1"
+      />
     </div>
-
-    <div id="mypage-bot">
+    <div class="bottom">
       <div id="mypage-activity-left-bookname">
-
         <transition name="slide-up" mode="out-in">
           <div v-bind:key="activityIdIndex">
             {{ activity.bookname }}
           </div>
         </transition>
-
       </div>
-
       <transition name="fade" mode="out-in">
         <div v-bind:key="activityIdIndex" id="mypage-activity-left-date">
           {{ activity.date }}
@@ -89,7 +30,12 @@
       <transition name="fade">
         <div v-if="!showNextActivity" id="mypage-activity-cover" />
       </transition>
-      <canvas id="mypage-activity"></canvas>
+
+      <div id="mypage-activity" v-if="activityType !== 0">
+        <writing-result :work="otherActivity" v-if="activityType === 3" />
+        <quiz-game-result :work="otherActivity" v-if="activityType === 1" />
+      </div>
+      <canvas id="mypage-activity" v-show="activityType === 0" />
 
       <v-icon
         id="mypage-activity-right-arrow"
@@ -104,12 +50,22 @@
 import axios from 'axios';
 import moment from 'moment';
 
+import Profile from '../components/views/mypage/Profile.vue';
+import ResultTable from '../components/views/mypage/ResultTable.vue';
+
+import WritingResult from '../components/views/activity/writing/WritingResult.vue';
+import QuizGameResult from '../components/views/activity/quiz-game/QuizGameResult.vue';
+
 export default {
+  components: {
+    Profile,
+    ResultTable,
+    WritingResult,
+    QuizGameResult,
+  },
   data() {
     return {
-      userName: '',
-      userAge: '',
-      userImg: '',
+      user: {},
       month: new Date().getMonth() + 1,
       activityIdIndex: 0,
       slide: '',
@@ -125,6 +81,8 @@ export default {
         date: '',
         bookname: '',
       },
+      otherActivity: {},
+      activityType: 0,
       padding: { x: 0, y: 0 },
       activityIdList: [],
 
@@ -136,7 +94,11 @@ export default {
       leaf2Img: new Image(),
     };
   },
-
+  created() {
+    axios.get('/api/user').then(({ data }) => {
+      this.user = data;
+    });
+  },
   async mounted() {
     this.canvas = document.getElementById('mypage-activity');
     this.ctx.push(this.canvas.getContext('2d'));
@@ -157,6 +119,12 @@ export default {
       // eslint-disable-next-line
       axios.get('/api/user/work/' + this.activityIdList[0], {
       }).then((res1) => {
+        this.activityType = res.data.type;
+        if (this.activityType !== 0) {
+          this.otherActivity = res.data;
+          return;
+        }
+
         // eslint-disable-next-line
         const content = JSON.parse(res1.data.content);
         const data = {
@@ -176,11 +144,6 @@ export default {
       });
     }).catch((err) => {
       console.warn('ERROR!!!!: ', err);
-    });
-
-    axios.get('/api/user', {}).then((res) => {
-      this.userName = res.data.nickname;
-      this.userAge = res.data.age;
     });
   },
 
@@ -751,6 +714,12 @@ export default {
       // eslint-disable-next-line
       axios.get('/api/user/work/' + this.activityIdList[this.activityIdIndex], {
       }).then((res) => {
+        this.activityType = res.data.type;
+        if (this.activityType !== 0) {
+          this.otherActivity = res.data;
+          return;
+        }
+
         // eslint-disable-next-line
         const content = JSON.parse(res.data.content);
         const data = {
@@ -785,6 +754,12 @@ export default {
       // eslint-disable-next-line
       axios.get('/api/user/work/' + this.activityIdList[this.activityIdIndex], {
       }).then((res) => {
+        this.activityType = res.data.type;
+        if (this.activityType !== 0) {
+          this.otherActivity = res.data;
+          return;
+        }
+
         // eslint-disable-next-line
         const content = JSON.parse(res.data.content);
         const data = {
@@ -838,105 +813,12 @@ export default {
 </script>
 
 <style scoped>
-#mypage-top {
-  width: 74vw;
+.top {
+  width: 100%;
   height: 40vh;
 }
 
-#mypage-profile {
-  display: inline-block;
-  width: 30%;
-  height: 100%;
-}
-
-#mypage-user-img {
-  width: 20vw;
-  height: 20vw;
-  border-radius: 20vw;
-  margin-left: 1vw;
-  margin-top: 3vh;
-  border: 1px solid lightskyblue;
-  background-image: url('../assets/userImg.png');
-  background-size: cover;
-}
-
-#mypage-user-age {
-  position: absolute;
-  width: 7vw;
-  height: 7vw;
-  top: 26.5vh;
-  left: 15.5vw;
-  text-align: center;
-  font-size: 3vw;
-  font-weight: 900;
-  font-family: 'Tmoney';
-  letter-spacing: -0.5vw;
-  padding-top: 1vw;
-  border-radius: 20vw;
-  background: orange;
-
-}
-
-#mypage-user-name {
-  width: 22vw;
-  height: 7vh;
-  border-radius: 3vw;
-  text-align: center;
-  font-size: 2.8vw;
-  font-weight: 900;
-  letter-spacing: -0.2vw;
-  padding-top: 0.5vh;
-  margin-top: 2vh;
-  color: white;
-  font-family: BM HANNA_TTF;
-  background: lightblue;
-}
-
-#mypage-result {
-  position: absolute;
-  display: inline-block;
-  width: 50vw;
-  height: 39vh;
-  z-index: 100;
-  top: 6vh;
-  left: 24vw;
-  border-radius: 4vw;
-  background: lightblue;
-}
-
-#mypage-result-title {
-  width: 48vw;
-  margin-left: 1vw;
-  margin-top: 2vh;
-}
-
-#mypage-result-label {
-  width: 40vw;
-  height: 4vh;
-  text-align: center;
-  font-size: 2.5vw;
-  display: inline-block;
-}
-
-#mypage-result-table {
-  width: 48vw;
-  height: 26vh;
-  margin-left: 1vw;
-  margin-top: 3vh;
-  text-align: center;
-}
-
-#mypage-result-table th {
-  background: lightcyan;
-  font-size: 2.2vw;
-}
-
-#mypage-result-table td{
-  background: #fffdf2;
-  font-size: 2.2vw;
-}
-
-#mypage-bot {
+.bottom {
   width: 100%;
   height: 49%;
   margin-top: 1%;

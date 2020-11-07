@@ -78,7 +78,7 @@ export default {
       this.ctx[0].clearRect(0, 0, 100000, 100000);
 
       if (this.doubleTabTimer && event.target.id === this.clickedTemplate) {
-        if (this.$store.getters.getCurrentBook === null) {
+        if (this.$store.getters.currentBook === null) {
           this.$store.dispatch('showMessage', {
             mode: 'error',
             message: '생각펼치기를 할 책을 골라봐!',
@@ -90,11 +90,19 @@ export default {
             name: 'MindMap',
             params: {
               template: this.template,
-              bookId: (this.$store.getters.getCurrentBook).bid,
-              thumbnail: (this.$store.getters.getCurrentBook).thumbnail,
+              bookId: (this.$store.getters.currentBook).bid,
+              thumbnail: (this.$store.getters.currentBook).thumbnail,
             },
           });
         }
+        // 페이지 이동
+        this.$router.push({
+          name: 'MindMap',
+          params: {
+            template: this.template,
+            bookId: (this.$store.getters.currentBook).bid,
+          },
+        });
       } else {
         // eslint-disable-next-line no-lonely-if
         if (event.target.id === 'template1') {

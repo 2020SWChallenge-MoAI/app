@@ -1,20 +1,37 @@
 <template>
   <div class="recent-books-menu">
-    <p class="recent-books-menu-title">읽은책</p>
+    <p class="recent-books-menu-title">
+      읽은책
+    </p>
     <ul class="recent-books">
-      <li class="recent-book-more up" v-if="isPaginationNeeded && !isStart" @click="prevPage">
-        <img :src="require('@/assets/img/layouts/base/left/more.svg')" />
+      <li
+        class="recent-book-more up"
+        :class="{active: !isStart}"
+        @click="prevPage"
+      >
+        <img src="@/assets/img/layouts/base/left/more.svg">
       </li>
       <li
-        class="recent-book"
         v-for="(book, index) in currentBooks"
         :key="index"
-        @click="selectBook(book)"
+        class="recent-book"
+        @click="selectBook(book.bid)"
       >
-        <book-menu-button :image="book.thumbnail" />
+        <book-menu-button :book="book" />
       </li>
-      <li class="recent-book-more down" v-if="isPaginationNeeded && !isEnd" @click="nextPage">
-        <img :src="require('@/assets/img/layouts/base/left/more.svg')" />
+      <li
+        v-for="n in (2 - currentBooks.length)"
+        :key="n"
+        class="recent-book"
+      >
+        <book-menu-dummy-button />
+      </li>
+      <li
+        class="recent-book-more down"
+        :class="{active: !isEnd}"
+        @click="nextPage"
+      >
+        <img src="@/assets/img/layouts/base/left/more.svg">
       </li>
     </ul>
   </div>
@@ -26,41 +43,44 @@ const booksPerPage = 2;
 export default {
   data() {
     return {
-      currentPage: 0,
+      page: 0,
     };
   },
   computed: {
     recentBooks() {
-      return this.$store.getters.getRecentBooks;
+      return this.$store.getters.recentBooks;
     },
     currentBooks() {
       return this.recentBooks.slice(
-        this.currentPage * booksPerPage,
-        (this.currentPage + 1) * booksPerPage,
+        this.page * booksPerPage,
+        (this.page + 1) * booksPerPage,
       );
     },
     isStart() {
-      return this.currentPage === 0;
+      return this.page === 0;
     },
     isEnd() {
-      return this.currentPage === (this.totalPages - 1);
+      if (!this.totalPages) return true;
+      return this.page === (this.totalPages - 1);
     },
     totalPages() {
       return Math.ceil(this.recentBooks.length / booksPerPage);
     },
-    isPaginationNeeded() {
-      return this.totalPages > 1;
-    },
+  },
+  async created() {
+    await this.$store.dispatch('downloadRecentBids');
   },
   methods: {
     prevPage() {
-      this.currentPage -= 1;
+      if (this.isStart) return;
+      this.page -= 1;
     },
     nextPage() {
-      this.currentPage += 1;
+      if (this.isEnd) return;
+      this.page += 1;
     },
-    selectBook(book) {
-      this.$store.commit('setCurrentBook', book);
+    selectBook(bid) {
+      this.$store.dispatch('setCurrentBook', bid);
     },
   },
 };
@@ -75,6 +95,7 @@ export default {
   text-align: center;
 }
 .recent-books-menu-title {
+  font-size: 1.5vw;
   color: white;
   margin-bottom: 1vh;
 }
@@ -100,10 +121,15 @@ export default {
 }
 
 .recent-book-more img {
+  opacity: 0.5;
   width: 100%;
 }
 
 .recent-book-more.up img {
   transform: scaleY(-1);
+}
+
+.recent-book-more.active img {
+  opacity: 1.0;
 }
 </style>

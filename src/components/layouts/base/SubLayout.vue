@@ -63,7 +63,7 @@
             <v-icon x-large>
               mdi-alert-decagram
             </v-icon>
-            <h1>오류가 발생했습니다.</h1>
+            <h1>{{ errorMessage }}</h1>
           </div>
         </v-overlay>
         <slot v-if="!appLoading && !appError" />
@@ -94,10 +94,13 @@ export default {
   },
   computed: {
     appLoading() {
-      return this.$store.state.appLoading;
+      return this.$store.getters.appLoading;
     },
     appError() {
-      return this.$store.state.appError;
+      return this.$store.getters.appError;
+    },
+    errorMessage() {
+      return this.$store.getters.errorMessage;
     },
   },
 };
@@ -153,6 +156,7 @@ export default {
   padding: 1vw;
   display: flex;
   flex-flow: column;
+  min-height: 0;
 }
 
 #holes {

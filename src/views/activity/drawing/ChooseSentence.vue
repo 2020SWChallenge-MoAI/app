@@ -115,7 +115,7 @@ export default {
 
   computed: {
     book() {
-      return this.$store.getters.getCurrentBook;
+      return this.$store.getters.currentBook;
     },
   },
 

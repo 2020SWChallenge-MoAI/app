@@ -3,47 +3,6 @@
     title="독서하기"
     :tooltip="book ? book.title : '책 선택 안 됨'"
   >
-    <v-overlay
-      absolute
-      opacity="0.5"
-      :value="finished"
-    >
-      <div class="finish-overlay">
-        <v-icon x-large>
-          mdi-book-open-page-variant
-        </v-icon>
-        <h1>다 읽었어요</h1>
-        <v-btn
-          dark
-          rounded
-          depressed
-          x-large
-          color="#668d8d"
-        >
-          독서 완료하기
-        </v-btn>
-        <v-btn
-          dark
-          rounded
-          depressed
-          x-large
-          color="#668d8d"
-          @click="finished = false"
-        >
-          더 읽기
-        </v-btn>
-      </div>
-    </v-overlay>
-    <v-overlay
-      absolute
-      opacity="1"
-      color="#fffdf2"
-      :dark="false"
-      :light="true"
-      :value="!book"
-    >
-      책 선택 안됨
-    </v-overlay>
     <flip-book
       ref="viewer"
       v-slot="viewer"
@@ -91,13 +50,56 @@
         </v-btn>
       </div>
     </flip-book>
+    <finish-overlay
+      v-show="finished"
+      :success="true"
+      message="다 읽었어요"
+    >
+      <overlay-button
+        text="독서 완료하기"
+        @click.native="dialog = true"
+      />
+      <overlay-button
+        text="더 읽기"
+        @click.native="finished = false"
+      />
+    </finish-overlay>
+    <v-dialog
+      v-model="dialog"
+      width="50vw"
+    >
+      <v-card class="finish-dialog">
+        <h2>다양한 독후활동으로 나만의 생각을 펼쳐 보자!</h2>
+        <div class="finish-dialog-content">
+          <right-menu-button
+            text="생각펼치기"
+            url="/activity/mindmap"
+            :image="require('@/assets/img/layouts/base/right/mindmap.svg')"
+          />
+          <right-menu-button
+            text="그림설명"
+            url="/activity/writing"
+            :image="require('@/assets/img/layouts/base/right/writing.svg')"
+          />
+          <right-menu-button
+            text="그림그리기"
+            url="/activity/drawing"
+            :image="require('@/assets/img/layouts/base/right/writing.svg')"
+          />
+          <right-menu-button
+            text="독서퀴즈"
+            url="/activity/quiz-game"
+            :image="require('@/assets/img/layouts/base/right/quiz-game.svg')"
+          />
+        </div>
+      </v-card>
+    </v-dialog>
   </sub-layout>
 </template>
 
 <script>
 import FlipBook from 'flipbook-vue';
 import _ from 'lodash';
-import util from '../util';
 
 export default {
   components: {
@@ -108,11 +110,12 @@ export default {
       flipDuration: 300,
       finished: false,
       pages: [],
+      dialog: false,
     };
   },
   computed: {
     book() {
-      return this.$store.getters.getCurrentBook;
+      return this.$store.getters.currentBook;
     },
   },
   watch: {
@@ -126,8 +129,10 @@ export default {
 
     // eslint-disable-next-line global-require
     this.audio = new Audio(require('../assets/wav/page-flip.wav'));
+    this.audio.volume = 0.1;
 
     if (this.book) await this.loadBook();
+    else this.$store.dispatch('showError', '책이 선택되지 않았어!');
   },
   methods: {
     flipLeft() {
@@ -146,17 +151,16 @@ export default {
       }
     },
     async loadBook() {
-      this.$store.commit('loadStart');
+      this.$store.dispatch('loadStart');
 
-      const pages = await Promise.all(
-        Array.from(Array(this.book.pageNum).keys())
-          .map((k) => `/api/book/${this.book.bid}/${k + 1}`)
-          .map(async (url) => util.base64(url)),
-      );
-
-      this.pages = [null].concat(pages).concat([null]);
-
-      this.$store.commit('loadFinish');
+      const pageRange = _.range(1, this.book.pageNum + 1);
+      Promise
+        .all(pageRange.map(async (page) => this.$store.dispatch('downloadBookPage', { page, bid: this.book.bid })))
+        .then((pages) => {
+          this.pages = [null].concat(pages).concat([null]);
+          this.$store.dispatch('loadFinish');
+        })
+        .catch(() => this.$store.dispatch('showError', '책을 불러올 수 없어...'));
     },
   },
 };
@@ -170,7 +174,7 @@ export default {
   flex-flow: column-reverse;
 }
 
-/deep/ .book-viewer .viewport .container {
+::v-deep .book-viewer .viewport .container {
   padding: 0 !important;
 }
 
@@ -187,21 +191,23 @@ export default {
   margin-right: 1vw;
 }
 
-/deep/ .page-input {
+::v-deep .page-input {
   width: 20vw;
 }
 
-/deep/ .page-input input {
+::v-deep .page-input input {
   text-align: center;
 }
 
-.finish-overlay {
+.finish-dialog {
+  padding: 2vw;
+  text-align: center;
+}
+
+.finish-dialog-content {
   display: flex;
-  flex-flow: column;
+  justify-content: space-around;
   text-align: center;
-}
-
-.finish-overlay > *:not(:last-child) {
-  margin-bottom: 2vh;
+  margin-top: 2vw;
 }
 </style>
