@@ -3,19 +3,22 @@
     <template v-slot:left>
     </template>
 
-    <div v-show="currentState == 1" style="height: 100%; width: 100%;">
-      <div class="drawing-recommend" id="drawing-recommend1" v-ripple>
-      </div>
-
-      <div class="drawing-recommend" id="drawing-recommend2" v-ripple>
-      </div>
-
-      <div class="drawing-recommend" id="drawing-recommend3" v-ripple>
+    <div id="sentence-group" v-show="currentState == 1">
+      <div
+        v-for="(sentence, index) in mainSentence"
+        v-bind:key="index"
+        class="drawing-recommend"
+        :id="'drawing-recommend' + (index + 1)"
+        @click="changeRecommend"
+        v-ripple
+      >
+        {{ sentence }}
       </div>
     </div>
 
-    <div v-show="currentState == -1">
-      책을 선택해줘!
+    <div v-show="currentState == -1" id="no-book-text">
+      <img src="../../../assets/noBooks.png" id="no-book-img" />
+      선택할 책이 없어. 책을 읽고 와야해!
     </div>
 
     <div id="sentence-loading" v-show="currentState == 0" />
@@ -36,6 +39,7 @@ export default {
       clickedSentenceId: '',
       selectedSentence: '',
       sentenceIndex: 0,
+      slide: '',
     };
   },
 
@@ -47,14 +51,6 @@ export default {
         .then((res) => {
           this.mainSentence = res.data.main_sentences;
           this.currentState = 1;
-
-          const recommends = document.querySelectorAll('.drawing-recommend');
-          recommends.forEach((recommend) => {
-            recommend.addEventListener('click', this.changeRecommend);
-            const r = recommend;
-            r.innerHTML = this.mainSentence[this.sentenceIndex];
-            this.sentenceIndex += 1;
-          }, true);
         }).catch((err) => {
           console.error(err);
         });
@@ -73,29 +69,14 @@ export default {
           params: { sentence: this.selectedSentence, bid: this.book.bid },
         });
       } else {
-        // eslint-disable-next-line no-lonely-if
-        if (event.target.id === 'drawing-recommend1') {
-          this.recommendStyleClear();
-          const sentence = document.querySelector('#drawing-recommend1');
-          this.selectedSentence = this.mainSentence[this.sentenceIndex - 3];
-          sentence.style.border = '5px solid #FFAE00';
-          sentence.style.background = 'rgba(255, 174, 0, 0.2)';
-          this.clickedSentenceId = 'drawing-recommend1';
-        } else if (event.target.id === 'drawing-recommend2') {
-          this.recommendStyleClear();
-          const sentence = document.querySelector('#drawing-recommend2');
-          this.selectedSentence = this.mainSentence[this.sentenceIndex - 2];
-          sentence.style.border = '5px solid #FFAE00';
-          sentence.style.background = 'rgba(255, 174, 0, 0.2)';
-          this.clickedSentenceId = 'drawing-recommend2';
-        } else if (event.target.id === 'drawing-recommend3') {
-          this.recommendStyleClear();
-          const sentence = document.querySelector('#drawing-recommend3');
-          this.selectedSentence = this.mainSentence[this.sentenceIndex - 1];
-          sentence.style.border = '5px solid #FFAE00';
-          sentence.style.background = 'rgba(255, 174, 0, 0.2)';
-          this.clickedSentenceId = 'drawing-recommend3';
-        }
+        this.recommendStyleClear();
+        const rid = event.target.id;
+        // eslint-disable-next-line
+        const recommend = document.querySelector('#' + rid);
+        this.selectedSentence = recommend.innerText;
+        recommend.style.border = '5px solid #FFAE00';
+        recommend.style.background = 'rgba(255, 174, 0, 0.2)';
+        this.clickedSentenceId = rid;
       }
 
       this.doubleTabTimer = true;
@@ -103,6 +84,7 @@ export default {
         this.doubleTabTimer = false;
       }, 200);
     },
+
     recommendStyleClear() {
       const recommends = document.querySelectorAll('.drawing-recommend');
       recommends.forEach((recommend) => {
@@ -123,20 +105,16 @@ export default {
     book() {
       this.currentState = 0;
       if (this.book !== null) {
+        this.tooltip = this.book.title;
         // eslint-disable-next-line
         axios.get('/api/book/' + this.book.bid + '/main-sentence')
           .then((res) => {
+            this.recommendStyleClear();
+            this.clickedSentenceId = '';
+            this.doubleTabTimer = false;
             this.mainSentence = res.data.main_sentences;
             this.sentenceIndex = 0;
             this.currentState = 1;
-
-            const recommends = document.querySelectorAll('.drawing-recommend');
-            recommends.forEach((recommend) => {
-              recommend.addEventListener('click', this.changeRecommend);
-              const r = recommend;
-              r.innerHTML = this.mainSentence[this.sentenceIndex];
-              this.sentenceIndex += 1;
-            }, true);
           }).catch((err) => {
             console.error(err);
           });
@@ -145,86 +123,41 @@ export default {
         this.currentState = -1;
       }
     },
+
+    clickedSentenceId() {
+      if (this.clickedSentenceId !== '') this.tooltip = this.book.title;
+      else this.tooltip = '그림을 그릴 책을 선택해보자!';
+    },
   },
 };
 </script>
 
 <style scoped>
+#sentence-group {
+  height: 78vh;
+  width: 100%;
+  overflow-y: scroll;
+}
+
 .drawing-recommend {
   width: 90%;
-  height: 25%;
   margin-left: 5%;
   margin-top: 3%;
   margin-bottom: 1%;
 
-  font-size: 1.7vh;
+  font-size: 2.5vh;
   color: black;
   font-family: BM HANNA_TTF;
   font-style: normal;
   font-weight: 900;
-  line-height: 9vh;
+  line-height: 5vh;
   padding-left: 5vh;
   padding-right: 5vh;
+  padding-top: 2vh;
+  padding-bottom: 2vh;
 
   border-radius: 1vw;
   border: 5px solid rgba(156, 138, 108, 0.85);
-}
-
-#drawing-recommend1-line1 {
-  position: absolute;
-  top: 16vh;
-  left: 7vw;
-  width: 62vw;
-  height: 3px;
-  border: 0;
-  background: rgba(156, 138, 108, 0.85);
-}
-#drawing-recommend1-line2 {
-  position: absolute;
-  top: 25vh;
-  left: 7vw;
-  width: 62vw;
-  height: 3px;
-  border: 0;
-  background: rgba(156, 138, 108, 0.85);
-}
-
-#drawing-recommend2-line1 {
-  position: absolute;
-  top: 41vh;
-  left: 7vw;
-  width: 62vw;
-  height: 3px;
-  border: 0;
-  background: rgba(156, 138, 108, 0.85);
-}
-#drawing-recommend2-line2 {
-  position: absolute;
-  top: 50vh;
-  left: 7vw;
-  width: 62vw;
-  height: 3px;
-  border: 0;
-  background: rgba(156, 138, 108, 0.85);
-}
-
-#drawing-recommend3-line1 {
-  position: absolute;
-  top: 65vh;
-  left: 7vw;
-  width: 62vw;
-  height: 3px;
-  border: 0;
-  background: rgba(156, 138, 108, 0.85);
-}
-#drawing-recommend3-line2 {
-  position: absolute;
-  top: 74vh;
-  left: 7vw;
-  width: 62vw;
-  height: 3px;
-  border: 0;
-  background: rgba(156, 138, 108, 0.85);
 }
 
 #sentence-loading {
@@ -245,4 +178,87 @@ export default {
 @-webkit-keyframes spin {
   to { -webkit-transform: rotate(360deg); }
 }
+
+#no-book-text {
+  text-align: center;
+  font-size: 2vw;
+  margin-top: calc(40% + 15vw);
+}
+
+#no-book-img {
+  position: absolute;
+  width: 30vw;
+  height: 30vw;
+  top: calc(40% - 15vw);
+  left: calc(50% - 15vw);
+}
+
+#recommend-btn {
+  position: absolute;
+  top: calc(100% - 8vw);
+  left: 0;
+  width: 100%;
+  height: 7vw;
+  padding-left: 3vw;
+  padding-right: 3vw;
+}
+
+#drawing-next {
+  width: 5vw;
+  height: 8vw;
+  display: inline-block;
+  float: right;
+  text-align: center;
+  font-size: 1.5vw;
+  border-radius: 1vw;
+}
+#drawing-next-img {
+  width: 5vw;
+  height: 5vw;
+}
+
+#drawing-before {
+  width: 5vw;
+  height: 8vw;
+  display: inline-block;
+  float: left;
+  text-align: center;
+  font-size: 1.5vw;
+  border-radius: 1vw;
+}
+#drawing-before-img {
+  width: 5vw;
+  height: 5vw;
+}
+
+.slide-left-enter-active {
+  transition: all .3s ease;
+}
+.slide-left-leave-active {
+  transition: all .3s cubic-bezier(1.0, 0.5, 0.8, 1.0);
+}
+.slide-left-enter {
+  transform: translateX(-30px);
+  opacity: 0;
+}
+ .slide-left-leave-to {
+  transform: translateX(+30px);
+  opacity: 0;
+ }
+
+ .slide-right-enter-active {
+  transition: all .3s ease;
+}
+.slide-right-leave-active {
+  transition: all .3s cubic-bezier(1.0, 0.5, 0.8, 1.0);
+}
+.slide-right-enter {
+  transform: translateX(+30px);
+  opacity: 0;
+}
+ .slide-right-leave-to {
+  transform: translateX(-30px);
+  opacity: 0;
+ }
+
 </style>

@@ -46,9 +46,6 @@ export default {
     this.canvas = document.getElementById('center-canvas');
     this.ctx.push(this.canvas.getContext('2d'));
 
-    console.log('finish', this.$route.params.bookId);
-    console.log('finish', this.$route.params.bookTitle);
-
     this.canvas.width = this.canvas.clientWidth;
     this.canvas.height = this.canvas.clientHeight;
 
@@ -868,14 +865,13 @@ export default {
     },
 
     submitBtnClicked() {
-      console.log('submit', this.$route.params.bookTitle);
       const data = {
         // eslint-disable-next-line
         nodes: this.nodes, edges: this.edges, templateType: this.templateType, bookId: this.$route.params.bookId, bookTitle: this.$route.params.bookTitle,
       };
 
       axios.post('/api/user/work/save', {
-        bid: 3, type: 0, thumbnail: btoa('string'), content: JSON.stringify(data),
+        bid: this.$route.params.bookId, type: 0, thumbnail: btoa('string'), content: JSON.stringify(data),
       }).then(() => {
         this.$router.replace({
           name: 'Main',

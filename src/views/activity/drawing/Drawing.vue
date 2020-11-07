@@ -81,6 +81,8 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   data() {
     return {
@@ -88,7 +90,7 @@ export default {
       ctx: [],
 
       mainSentence: this.$route.params.sentence,
-      showToolBar: true,
+      showToolBar: false,
       strokeColor: 'black',
       scale: 1,
     };
@@ -210,6 +212,8 @@ export default {
     penBtnClicked() {
       const pen = document.querySelector('#drawing-pen');
       pen.style.backgroundColor = '#83b1b1';
+      const eraser = document.querySelector('#drawing-eraser');
+      eraser.style.backgroundColor = '#83b1b1';
       this.ctx[0].strokeStyle = this.strokeColor;
       this.showToolBar = !this.showToolBar;
     },
@@ -228,9 +232,27 @@ export default {
     },
 
     finishBtnClicked() {
-      this.$router.replace({
-        name: 'Main',
+      /* eslint-disable */
+      var a = document.createElement('a');
+      a.href = this.canvas.toDataURL('image/png');
+      a.download = 'test.png';
+      document.body.appendChild(a);
+      a.click();
+
+      const data = {
+        sentence: this.$route.params.sentence,
+      }
+
+      axios.post('/api/user/work/save', {
+        bid: this.$route.params.bid, type: 2, thumbnail: this.canvas.toDataURL(), content: JSON.stringify(data),
+      }).then(() => {
+        this.$router.replace({
+          name: 'Main',
+        });
+      }).catch((err) => {
+        console.warn('ERROR!!!!: ', err);
       });
+      /* eslint-disable */
     },
   },
 };
@@ -249,9 +271,9 @@ export default {
 }
 
 #drawing-text {
-  width: 90%;
-  height: 35%;
-  margin-left: 5%;
+  width: 92%;
+  height: 20vh;
+  margin-left: 4%;
   margin-top: 5%;
 
   font-size: 3vh;
@@ -260,6 +282,12 @@ export default {
   font-style: normal;
   font-weight: 900;
   line-height: 8vh;
+
+  overflow-y: scroll;
+  -ms-overflow-style: none;
+}
+#drawing-text::-webkit-scrollbar {
+  display: none;
 }
 
 #drawing-tool-triangle {
