@@ -3,13 +3,18 @@
     <template v-slot:left>
     </template>
 
+    <div v-show="!ifBookExist" id="no-book-text">
+      <img src="../../../assets/noBooks.png" id="no-book-img" />
+      선택할 책이 없어. 책을 읽고 와야해!
+    </div>
+
     <!-- 캔버스 -->
-    <canvas id="center-canvas" />
+    <canvas id="center-canvas" v-show="ifBookExist" />
 
     <!-- TODO: Implementation -->
 
     <!-- 템플릿 선택 -->
-    <div id="center-template">
+    <div id="center-template" v-show="ifBookExist">
       <div id="choose-background">
         <div id="choose-img" />
         <div id="choose-space" />
@@ -27,9 +32,7 @@
       <div class="choose-template" id="template1" style="left: 13vw;" v-ripple />
       <div class="choose-template" id="template2" style="left: 28vw;" v-ripple />
       <div class="choose-template" id="template3" style="left: 43vw;" v-ripple />
-      <div class="choose-template" id="template-change" style="left: 58vw;" v-ripple>
-        <div id="choose-more-img" />
-      </div>
+      <div class="choose-template" id="template-change" style="left: 58vw;" v-ripple />
     </div>
   </sub-layout>
 </template>
@@ -39,11 +42,12 @@ export default {
   data() {
     return {
       tooltip: '원하는 템플릿을 골라보자!',
+      ifBookExist: true,
       aiHelp: false,
       canvas: document.getElementById(''),
       ctx: [],
       doubleTabTimer: false,
-      template: 1,
+      template: -1,
       clickedTemplate: '',
 
       leaf1Img: new Image(),
@@ -58,6 +62,9 @@ export default {
     this.canvas.width = this.canvas.clientWidth;
     this.canvas.height = this.canvas.clientHeight;
 
+    this.ctx[0].scale(0.8, 0.8);
+    this.ctx[0].scale(1, 1);
+
     // eslint-disable-next-line
     this.leaf1Img.src = require('../../../assets/mindmap/grape-leaf1.png');
     // eslint-disable-next-line
@@ -69,8 +76,7 @@ export default {
       template.addEventListener('click', this.changeToTemplate);
     });
 
-    this.ctx[0].scale(0.8, 0.8);
-    this.ctx[0].scale(1, 1);
+    if (this.book == null) this.ifBookExist = false;
   },
 
   methods: {
@@ -439,6 +445,22 @@ export default {
     },
 
   },
+
+  computed: {
+    book() {
+      return this.$store.getters.getCurrentBook;
+    },
+  },
+
+  watch: {
+    template() {
+      if (this.template !== -1) this.tooltip = this.book.title;
+    },
+
+    book() {
+      this.tooltip = this.book.title;
+    },
+  },
 };
 </script>
 
@@ -511,14 +533,6 @@ export default {
   background: #F0EBD7;
   top: 0.3vw;
 }
-#choose-more-img {
-  position: absolute;
-  width: 14vw;
-  height: 12vh;
-  background-image: url('../../../assets/choose-more.svg');
-  background-size: cover;
-  top: 1.5vw;
-}
 
 #template1 {
   background-image: url('../../../assets/mindmap/tree.png');
@@ -531,5 +545,19 @@ export default {
   background-position: center;
   background-size: contain;
   background-repeat : no-repeat;
+}
+
+#no-book-text {
+  text-align: center;
+  font-size: 2vw;
+  margin-top: calc(40% + 15vw);
+}
+
+#no-book-img {
+  position: absolute;
+  width: 30vw;
+  height: 30vw;
+  top: calc(40% - 15vw);
+  left: calc(50% - 15vw);
 }
 </style>

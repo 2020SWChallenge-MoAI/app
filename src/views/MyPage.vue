@@ -161,16 +161,22 @@ export default {
         const content = JSON.parse(res1.data.content);
         const data = {
           // eslint-disable-next-line
-          nodes: content.nodes, edges: content.edges, templateType: content.templateType, date: moment(new Date(res1.data.created_at)).format("yyyy-MM-DD HH:mm:ss"), bookname: content.bookTitle, bid: content.bookId,
+          nodes: content.nodes, edges: content.edges, templateType: content.templateType, date: moment(new Date(res1.data.created_at)).format("yyyy-MM-DD HH:mm:ss"), bookname: content.bookTitle, bid: res1.data.bid, type: res1.data.type,
         };
         this.activity = data;
+        console.log(res1);
 
         // eslint-disable-next-line
-        this.bookImg.src = '/api/book/' + this.activity.bid + '/cover';
+        this.bookImg.src = '/api/book/' + res1.data.bid + '/cover';
 
-        setTimeout(() => {
-          this.reDrawAll();
-        }, 100);
+        if (this.activity.type === 0) {
+          setTimeout(() => {
+            this.reDrawAll();
+          }, 100);
+        } else {
+          this.showNextActivity = false;
+          this.ctx[0].clearRect(0, 0, 100000, 100000);
+        }
       }).catch((err1) => {
         console.warn('ERROR!!!!: ', err1);
       });
@@ -755,15 +761,20 @@ export default {
         const content = JSON.parse(res.data.content);
         const data = {
           // eslint-disable-next-line
-          nodes: content.nodes, edges: content.edges, templateType: content.templateType, date: moment(new Date(res.data.created_at)).format("yyyy-MM-DD HH:mm:ss"), bookname: content.bookTitle, bid: content.bookId,
+          nodes: content.nodes, edges: content.edges, templateType: content.templateType, date: moment(new Date(res.data.created_at)).format("yyyy-MM-DD HH:mm:ss"), bookname: content.bookTitle, bid: res.data.bid, type: res.data.type,
         };
         this.activity = data;
         // eslint-disable-next-line
-        this.bookImg.src = '/api/book/' + this.activity.bid + '/cover';
+        this.bookImg.src = '/api/book/' + res.data.bid + '/cover';
 
-        setTimeout(() => {
-          this.reDrawAll();
-        }, 100);
+        if (this.activity.type === 0) {
+          setTimeout(() => {
+            this.reDrawAll();
+          }, 100);
+        } else {
+          this.ctx[0].clearRect(0, 0, 100000, 100000);
+          this.showNextActivity = false;
+        }
       }).catch((err1) => {
         console.warn('ERROR!!!!: ', err1);
       });
@@ -789,15 +800,20 @@ export default {
         const content = JSON.parse(res.data.content);
         const data = {
           // eslint-disable-next-line
-          nodes: content.nodes, edges: content.edges, templateType: content.templateType, date: moment(new Date(res.data.created_at)).format("yyyy-MM-DD HH:mm:ss"), bookname: content.bookTitle, bid: content.bookId,
+          nodes: content.nodes, edges: content.edges, templateType: content.templateType, date: moment(new Date(res.data.created_at)).format("yyyy-MM-DD HH:mm:ss"), bookname: content.bookTitle, bid: res.data.bid, type: res.data.type,
         };
         this.activity = data;
         // eslint-disable-next-line
-        this.bookImg.src = '/api/book/' + this.activity.bid + '/cover';
+        this.bookImg.src = '/api/book/' + res.data.bid + '/cover';
 
-        setTimeout(() => {
-          this.reDrawAll();
-        }, 100);
+        if (this.activity.type === 0) {
+          setTimeout(() => {
+            this.reDrawAll();
+          }, 100);
+        } else {
+          this.ctx[0].clearRect(0, 0, 100000, 100000);
+          this.showNextActivity = false;
+        }
       }).catch((err1) => {
         console.warn('ERROR!!!!: ', err1);
       });
@@ -958,6 +974,7 @@ export default {
   left: 5vw;
   background: lightsalmon;
   z-index: 2;
+  overflow: hidden;
 }
 
 #mypage-activity-left-date {

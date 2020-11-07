@@ -497,7 +497,7 @@ export default {
         // eslint-disable-next-line max-len
         const thresh = (this.startPos.x - coors.X) * (this.startPos.x - coors.X) + (this.startPos.y - coors.Y) * (this.startPos.y - coors.Y);
 
-        if (thresh > 800) {
+        if (thresh > 3000) {
           let edgeFrom = -1;
           let edgeTo = -1;
 
@@ -587,7 +587,6 @@ export default {
               i -= 1;
             }
           }
-          // 노드에 단어 직접 쓰기 테스트!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           htmlInput.focus();
 
           let nodesize = 50;
@@ -654,14 +653,23 @@ export default {
         this.padding.x += this.startPos.x - coors.X;
         this.padding.y += this.startPos.y - coors.Y;
       } else if (this.touchmode === 'word') {
+        const htmlInput = document.querySelector('#input-test');
+        htmlInput.value = '';
+        htmlInput.focus();
+        this.selectedNodeLabel = '';
+        this.selectedNodeLabel = this.wordSelected;
+        this.popupNodeId = -1;
+
         this.reDrawAll(this.padding.x, this.padding.y);
         const coors = this.getPosition(event);
         const nodex = (coors.X + this.startPos.x) / 2;
         const nodey = (coors.Y + this.startPos.y) / 2;
         // eslint-disable-next-line max-len
-        const nodesize = Math.abs(coors.X - this.startPos.x) / 2 + Math.abs(coors.Y - this.startPos.y) / 2;
+        let nodesize = Math.abs(coors.X - this.startPos.x) / 2 + Math.abs(coors.Y - this.startPos.y) / 2;
+        nodesize = Math.max(nodesize, 80);
         const nodetype = Math.floor(this.startPos.x + this.startPos.y) % 4;
         const newid = new Date().getTime();
+        this.popupNodeId = newid;
 
         // edge 없는 노드 삭제
         for (let i = 1; i < this.nodes.length; i += 1) {
@@ -682,7 +690,7 @@ export default {
 
         this.nodes.push({
           // eslint-disable-next-line max-len
-          id: newid, label: this.wordSelected, x: nodex + this.padding.x, y: nodey + this.padding.y, size: nodesize, type: nodetype, link: false,
+          id: newid, label: '', x: nodex + this.padding.x, y: nodey + this.padding.y, size: nodesize, type: nodetype, link: false,
         });
 
         // 노드에 연결 안돼있는 엣지 제거
@@ -699,6 +707,21 @@ export default {
             this.edges.splice(index, 1);
           }
         }
+
+        const index = this.nodes.findIndex((element) => element.id === this.popupNodeId);
+        const node = this.nodes[index];
+        const fontsize = Math.max(node.size / 8, 20);
+
+        this.ctx[0].beginPath();
+        this.ctx[0].strokeStyle = 'black';
+        this.ctx[0].lineWidth = 3;
+        this.ctx[0].setLineDash([5, 2]);
+        // eslint-disable-next-line
+        this.ctx[0].rect(node.x - node.size / 1.5 - this.padding.x - fontsize, node.y - this.padding.y - fontsize * 1.5, node.size * (4 / 3) + fontsize * 2, fontsize * 1.5 * 1.8);
+        this.ctx[0].stroke();
+
+        this.inputNodeLabel(this.wordSelected);
+
         this.edgeId = -1;
         this.wordSelected = false;
         this.wordSelected = '';
@@ -706,19 +729,18 @@ export default {
         // tool reset
         const pen = document.querySelector('#mindmap-tool-pen');
         const select = document.querySelector('#mindmap-tool-select');
-        pen.style.background = '#83b1b1';
-        select.style.background = '#83b1b1';
+        pen.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
+        select.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
 
         this.resetWordBackground();
-        this.reDrawAll(this.padding.x, this.padding.y);
       } else if (this.touchmode === 'select') {
         if (this.doubleSelectedNode === this.selectedNode) {
           if (this.doubleSelectedTime) {
             const node = this.nodes.find((element) => element.id === this.selectedNode);
             const htmlInput = document.querySelector('#input-test');
             htmlInput.focus();
-            htmlInput.value = '';
             this.popupNodeId = this.selectedNode;
+            this.inputNodeLabel('');
             this.selectedNodeLabel = node.label;
 
             this.doubleSelectedTime = false;
@@ -1603,27 +1625,27 @@ export default {
         if (e.target.id === 'recommend1') {
           this.resetWordBackground();
           word1.style.background = '#b6b6b6';
-          this.wordSelected = word1.innerHTML;
+          this.wordSelected = word1.innerText;
         } else if (e.target.id === 'recommend2') {
           this.resetWordBackground();
           word2.style.background = '#b6b6b6';
-          this.wordSelected = word2.innerHTML;
+          this.wordSelected = word2.innerText;
         } else if (e.target.id === 'recommend3') {
           this.resetWordBackground();
           word3.style.background = '#b6b6b6';
-          this.wordSelected = word3.innerHTML;
+          this.wordSelected = word3.innerText;
         } else if (e.target.id === 'recommend4') {
           this.resetWordBackground();
           word4.style.background = '#b6b6b6';
-          this.wordSelected = word4.innerHTML;
+          this.wordSelected = word4.innerText;
         } else if (e.target.id === 'recommend5') {
           this.resetWordBackground();
           word5.style.background = '#b6b6b6';
-          this.wordSelected = word5.innerHTML;
+          this.wordSelected = word5.innerText;
         } else if (e.target.id === 'recommend6') {
           this.resetWordBackground();
           word6.style.background = '#b6b6b6';
-          this.wordSelected = word6.innerHTML;
+          this.wordSelected = word6.innerText;
         }
       }
     },
@@ -1645,6 +1667,14 @@ export default {
     },
 
     finishBtnClicked() {
+      // interval, timeout 모두 제거
+      this.intervals.forEach(clearInterval);
+      this.intervals.length = 0;
+      for (let t = 0; t < this.timeouts.length; t += 1) {
+        clearTimeout(this.timeouts[t]);
+        this.timeouts.splice(t, 1);
+      }
+
       // 연결 안돼있는 edge 제거
       for (let i = 0; i < this.edges.length; i += 1) {
         if (this.edges[i].from === -1 || this.edges[i].to === -1) {
@@ -1702,7 +1732,6 @@ export default {
       const labelLength = this.getTextLength(str);
       let linesize = Math.floor(labelLength / 20) + 1;
       if (labelLength % 20 === 0 && labelLength !== 0) linesize -= 1;
-      console.log('check', textpadding, node.size);
 
       this.ctx[0].beginPath();
       this.ctx[0].strokeStyle = 'black';
@@ -1824,7 +1853,6 @@ export default {
         // eslint-disable-next-line
       } else if (str.length == 0) {
         stringLength = 0;
-        console.log('test', stringLength, node, fontsize, stringLine, textpadding);
 
         const firsttime = setTimeout(() => {
           this.ctx[0].beginPath();
@@ -1897,6 +1925,16 @@ export default {
         htmlInput.focus();
       }
     },
+  },
+
+  beforeDestroy() {
+    // interval, timeout 모두 제거
+    this.intervals.forEach(clearInterval);
+    this.intervals.length = 0;
+    for (let t = 0; t < this.timeouts.length; t += 1) {
+      clearTimeout(this.timeouts[t]);
+      this.timeouts.splice(t, 1);
+    }
   },
 };
 </script>
