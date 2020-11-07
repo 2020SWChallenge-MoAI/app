@@ -137,7 +137,7 @@ export default {
     };
   },
 
-  mounted() {
+  async mounted() {
     this.canvas = document.getElementById('mypage-activity');
     this.ctx.push(this.canvas.getContext('2d'));
 
@@ -146,8 +146,6 @@ export default {
     this.ctx[0].scale(0.2, 0.2);
     this.ctx[0].scale(1, 1);
 
-    // eslint-disable-next-line
-    this.bookImg.src = require('../assets/left-book-menu/book3.png');
     // eslint-disable-next-line
     this.leaf1Img.src = require('../assets/mindmap/grape-leaf1.png');
     // eslint-disable-next-line
@@ -163,11 +161,16 @@ export default {
         const content = JSON.parse(res1.data.content);
         const data = {
           // eslint-disable-next-line
-          nodes: content.nodes, edges: content.edges, templateType: content.templateType, date: moment(new Date(res1.data.created_at)).format("yyyy-MM-DD HH:mm:ss"), bookname: '강림도령',
+          nodes: content.nodes, edges: content.edges, templateType: content.templateType, date: moment(new Date(res1.data.created_at)).format("yyyy-MM-DD HH:mm:ss"), bookname: content.bookTitle, bid: content.bookId,
         };
         this.activity = data;
 
-        this.reDrawAll();
+        // eslint-disable-next-line
+        this.bookImg.src = '/api/book/' + this.activity.bid + '/cover';
+
+        setTimeout(() => {
+          this.reDrawAll();
+        }, 100);
       }).catch((err1) => {
         console.warn('ERROR!!!!: ', err1);
       });
@@ -735,10 +738,12 @@ export default {
     activityBefore() {
       if (this.activityIdIndex > 0) {
         this.activityIdIndex -= 1;
-        this.showNextActivity = false;
+        setTimeout(() => {
+          this.showNextActivity = false;
+        }, 100);
         setTimeout(() => {
           this.showNextActivity = true;
-        }, 800);
+        }, 900);
       } else {
         this.activityIdIndex = 0;
       }
@@ -750,11 +755,15 @@ export default {
         const content = JSON.parse(res.data.content);
         const data = {
           // eslint-disable-next-line
-          nodes: content.nodes, edges: content.edges, templateType: content.templateType, date: res.data.created_at, bookname: '강림도령',
+          nodes: content.nodes, edges: content.edges, templateType: content.templateType, date: moment(new Date(res.data.created_at)).format("yyyy-MM-DD HH:mm:ss"), bookname: content.bookTitle, bid: content.bookId,
         };
         this.activity = data;
+        // eslint-disable-next-line
+        this.bookImg.src = '/api/book/' + this.activity.bid + '/cover';
 
-        this.reDrawAll();
+        setTimeout(() => {
+          this.reDrawAll();
+        }, 100);
       }).catch((err1) => {
         console.warn('ERROR!!!!: ', err1);
       });
@@ -763,10 +772,12 @@ export default {
     activityNext() {
       if (this.activityIdIndex < this.activityIdList.length - 1) {
         this.activityIdIndex += 1;
-        this.showNextActivity = false;
+        setTimeout(() => {
+          this.showNextActivity = false;
+        });
         setTimeout(() => {
           this.showNextActivity = true;
-        }, 800);
+        }, 900);
       } else {
         this.activityIdIndex = this.activityIdList.length - 1;
       }
@@ -778,11 +789,15 @@ export default {
         const content = JSON.parse(res.data.content);
         const data = {
           // eslint-disable-next-line
-          nodes: content.nodes, edges: content.edges, templateType: content.templateType, date: res.data.created_at, bookname: '흥부와 놀부',
+          nodes: content.nodes, edges: content.edges, templateType: content.templateType, date: moment(new Date(res.data.created_at)).format("yyyy-MM-DD HH:mm:ss"), bookname: content.bookTitle, bid: content.bookId,
         };
         this.activity = data;
+        // eslint-disable-next-line
+        this.bookImg.src = '/api/book/' + this.activity.bid + '/cover';
 
-        this.reDrawAll();
+        setTimeout(() => {
+          this.reDrawAll();
+        }, 100);
       }).catch((err1) => {
         console.warn('ERROR!!!!: ', err1);
       });
@@ -1028,7 +1043,7 @@ export default {
 .slide-up-leave-active { transition: all 0.35s cubic-bezier(1, 0.5, 0.8, 1); }
 .slide-up-enter, .slide-up-leave-active { opacity: 0; transform: translateY(10px); }
 
-.fade-enter-active, .fade-leave-active { transition: opacity 0.75s; }
+.fade-enter-active, .fade-leave-active { transition: opacity 1s; }
 .fade-enter, .fade-leave-to { opacity: 0; }
 
 @keyframes fadein {

@@ -77,10 +77,6 @@
       {{ mainSentence }}
     </div>
 
-    <hr id="drawing-text-line1">
-    <hr id="drawing-text-line2">
-    <hr id="drawing-text-line3">
-
   </sub-layout>
 </template>
 
@@ -101,7 +97,6 @@ export default {
   mounted() {
     this.canvas = document.getElementById('drawing-canvas');
     this.ctx.push(this.canvas.getContext('2d'));
-    console.log(this.showToolBar);
 
     this.canvas.width = this.canvas.clientWidth;
     this.canvas.height = this.canvas.clientHeight;
@@ -217,11 +212,9 @@ export default {
       pen.style.backgroundColor = '#83b1b1';
       this.ctx[0].strokeStyle = this.strokeColor;
       this.showToolBar = !this.showToolBar;
-      console.log(this.showToolBar);
     },
 
     eraserBtnClicked() {
-      console.log(this.showToolBar);
       this.showToolBar = false;
       const eraser = document.querySelector('#drawing-eraser');
       // eslint-disable-next-line
@@ -267,34 +260,6 @@ export default {
   font-style: normal;
   font-weight: 900;
   line-height: 8vh;
-}
-
-#drawing-text-line1 {
-  position: absolute;
-  top: 65vh;
-  left: 3.5vw;
-  width: 69vw;
-  height: 3px;
-  border: 0;
-  background: rgba(156, 138, 108, 0.85);
-}
-#drawing-text-line2 {
-  position: absolute;
-  top: 73vh;
-  left: 3.5vw;
-  width: 69vw;
-  height: 3px;
-  border: 0;
-  background: rgba(156, 138, 108, 0.85);
-}
-#drawing-text-line3 {
-  position: absolute;
-  top: 81vh;
-  left: 3.5vw;
-  width: 69vw;
-  height: 3px;
-  border: 0;
-  background: rgba(156, 138, 108, 0.85);
 }
 
 #drawing-tool-triangle {

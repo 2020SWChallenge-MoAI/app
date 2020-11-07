@@ -1,5 +1,5 @@
 <template>
-  <sub-layout title="마인드맵" tooltip="원하는 템플릿을 골라보자!">
+  <sub-layout title="마인드맵" :tooltip="tooltip">
     <template v-slot:left>
     </template>
 
@@ -38,6 +38,7 @@
 export default {
   data() {
     return {
+      tooltip: '원하는 템플릿을 골라보자!',
       aiHelp: false,
       canvas: document.getElementById(''),
       ctx: [],
@@ -67,6 +68,9 @@ export default {
     templates.forEach((template) => {
       template.addEventListener('click', this.changeToTemplate);
     });
+
+    this.ctx[0].scale(0.8, 0.8);
+    this.ctx[0].scale(1, 1);
   },
 
   methods: {
@@ -74,14 +78,23 @@ export default {
       this.ctx[0].clearRect(0, 0, 100000, 100000);
 
       if (this.doubleTabTimer && event.target.id === this.clickedTemplate) {
-        // 페이지 이동
-        this.$router.push({
-          name: 'MindMap',
-          params: {
-            template: this.template,
-            bookId: (this.$store.getters.getCurrentBook).bid,
-          },
-        });
+        if (this.$store.getters.getCurrentBook === null) {
+          this.$store.dispatch('showMessage', {
+            mode: 'error',
+            message: '생각펼치기를 할 책을 골라봐!',
+          });
+          this.drawTemplate(this.template);
+        } else {
+          // 페이지 이동
+          this.$router.push({
+            name: 'MindMap',
+            params: {
+              template: this.template,
+              bookId: (this.$store.getters.getCurrentBook).bid,
+              thumbnail: (this.$store.getters.getCurrentBook).thumbnail,
+            },
+          });
+        }
       } else {
         // eslint-disable-next-line no-lonely-if
         if (event.target.id === 'template1') {
@@ -353,8 +366,8 @@ export default {
 
     drawTemplate(template) {
       if (template === 1) {
-        const width = this.canvas.width / 2;
-        const height = this.canvas.height / 2;
+        const width = this.canvas.width / (2 * 0.8);
+        const height = this.canvas.height / (2 * 0.8);
         // edge 줄기 미리 그리기
         this.ctx[0].strokeStyle = '#baad93';
         this.ctx[0].lineWidth = 12;
@@ -393,11 +406,11 @@ export default {
         // 나무 줄기 그리기
         this.ctx[0].beginPath();
         this.ctx[0].fillStyle = '#836d4b';
-        this.ctx[0].fillRect(width - 20, this.canvas.height * 0.4 + 130, 40, 120);
+        this.ctx[0].fillRect(width - 20, this.canvas.height * (0.4 / 0.8) + 130, 40, 120);
         this.ctx[0].lineWidth = 12;
         this.ctx[0].strokeStyle = '#836d4b';
         // eslint-disable-next-line max-len
-        this.ctx[0].arc(this.canvas.width * 0.5, this.canvas.height * 0.4, 130, Math.PI * 0.25, Math.PI * 0.75);
+        this.ctx[0].arc(this.canvas.width * (0.5 / 0.8), this.canvas.height * (0.4 / 0.8), 130, Math.PI * 0.25, Math.PI * 0.75);
         this.ctx[0].stroke();
 
         this.makeNode(width - 240, height - 100, 80, 0, '', template);
@@ -405,7 +418,7 @@ export default {
         this.makeNode(width - 240, height + 100, 80, 2, '', template);
         this.makeNode(width + 240, height + 100, 80, 3, '', template);
       } else if (template === 2) {
-        const width = this.canvas.width / 2;
+        const width = this.canvas.width / (2 * 0.8);
 
         this.ctx[0].drawImage(this.leaf1Img, width - 450, -300, 700, 600);
         this.ctx[0].drawImage(this.leaf2Img, width - 150, -300, 700, 600);

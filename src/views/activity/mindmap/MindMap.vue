@@ -4,55 +4,20 @@
       <!-- 왼쪽 버튼은 이렇게 입력 -->
       <left-menu-button icon="mdi-thought-bubble-outline" text="불러오기" />
       <left-menu-button icon="mdi-check-bold" text="완료" id="canvas-finish" />
-      <left-menu-button icon="mdi-pencil" text="그리기" id="canvas-pen"
-        class="canvas-tool"
-      />
-      <left-menu-button icon="mdi-cursor-pointer" text="고르기" id="canvas-select"
-        class="canvas-tool"
-      />
-      <left-menu-button icon="mdi-delete" text="지우기" id="canvas-delete"
-        class="canvas-tool"
-      />
-      <left-menu-button icon="mdi-magnify-plus" text="확대" id="canvas-zoomin"
-        class="canvas-tool"
-      />
-      <left-menu-button icon="mdi-magnify-minus" text="축소" id="canvas-zoomout"
-        class="canvas-tool"
-      />
     </template>
 
     <!-- 캔버스 -->
     <canvas id="center-canvas" />
 
-    <v-overlay absolute v-show="popup">
-      <v-text-field
-        v-model="selectedNodeLabel"
-        label="내용을 입력해주세요!"
-        outlined
-        clearable
-        counter="40"
-        outline="true"
-        height=50
-        hint="도움이 필요하면 AI 도우미를 불러봐!"
-        style="width: 40vw;"
-      />
-      <v-btn
-        color="error"
-        text
-        @click="popupCancel"
-        style="background: rgba(255, 255, 255, 0.7); float:left; margin-top: 2vh;"
-      >
-        취소
-      </v-btn>
-      <v-btn
-        color="success"
-        text
-        @click="popupSuccess"
-        style="background: rgba(255, 255, 255, 0.7); float:right; margin-top: 2vh;"
-      >
-        완료
-      </v-btn>
-    </v-overlay>
+    <input id="input-test" v-model="selectedNodeLabel" @keyup.enter="enter">
+
+    <div id="mindmap-tool-bar">
+      <div class="mindmap-tools" v-ripple><div id="mindmap-tool-pen" /></div>
+      <div class="mindmap-tools" v-ripple><div id="mindmap-tool-select" /></div>
+      <div class="mindmap-tools" v-ripple><div id="mindmap-tool-zoomin" /></div>
+      <div class="mindmap-tools" v-ripple><div id="mindmap-tool-zoomout" /></div>
+      <div class="mindmap-tools" v-ripple><div id="mindmap-tool-delete" /></div>
+    </div>
 
     <!-- TODO: Implementation -->
     <div id="center-recommend" v-show="!finish && aiHelp">
@@ -152,6 +117,12 @@ export default {
       bookImg: new Image(),
       leaf1Img: new Image(),
       leaf2Img: new Image(),
+
+      bookThumbnail: this.$route.params.thumbnail,
+      bookTitle: '',
+
+      intervals: [],
+      timeouts: [],
     };
   },
 
@@ -162,10 +133,14 @@ export default {
     this.canvas.width = this.canvas.clientWidth;
     this.canvas.height = this.canvas.clientHeight;
 
-    console.log(this.$route.params.bookId);
-
+    // 책 제목 알아내기
     // eslint-disable-next-line
-    this.bookImg.src = require('../../../assets/left-book-menu/book3.png');
+    axios.get('/api/book/' + this.$route.params.bookId, {})
+      .then((res) => {
+        this.bookTitle = res.data.title;
+      });
+
+    this.bookImg.src = this.bookThumbnail;
     // eslint-disable-next-line
     this.leaf1Img.src = require('../../../assets/mindmap/grape-leaf1.png');
     // eslint-disable-next-line
@@ -182,11 +157,11 @@ export default {
       this.finishDraw(e);
     }, false);
 
-    const penBtn = document.querySelector('#canvas-pen');
-    const selectBtn = document.querySelector('#canvas-select');
-    const zoomin = document.querySelector('#canvas-zoomin');
-    const zoomout = document.querySelector('#canvas-zoomout');
-    const deleteBtn = document.querySelector('#canvas-delete');
+    const penBtn = document.querySelector('#mindmap-tool-pen');
+    const selectBtn = document.querySelector('#mindmap-tool-select');
+    const zoomin = document.querySelector('#mindmap-tool-zoomin');
+    const zoomout = document.querySelector('#mindmap-tool-zoomout');
+    const deleteBtn = document.querySelector('#mindmap-tool-delete');
     const finishBtn = document.querySelector('#canvas-finish');
     const aiSupportBtn = document.querySelector('#ai-background');
     const aiHelp = document.querySelector('#aiHelp');
@@ -228,6 +203,7 @@ export default {
       });
     }, true);
 
+    this.ctx[0].lineJoin = 'round';
     this.ctx[0].scale(0.9, 0.9);
     this.ctx[0].scale(0.9, 0.9);
     this.ctx[0].scale(1, 1);
@@ -302,6 +278,26 @@ export default {
   },
 
   methods: {
+    enter() {
+      this.intervals.forEach(clearInterval);
+      this.intervals.length = 0;
+      for (let t = 0; t < this.timeouts.length; t += 1) {
+        clearTimeout(this.timeouts[t]);
+        this.timeouts.splice(t, 1);
+      }
+      const index = this.nodes.findIndex((element) => element.id === this.popupNodeId);
+      this.nodes[index].label = this.selectedNodeLabel;
+      // eslint-disable-next-line
+      if (this.nodes[index].size / (Math.min(this.nodes[index].label.length - 1, 8)) < 20) {
+        this.nodes[index].size = (Math.min(this.nodes[index].label.length - 1, 8)) * 20;
+      }
+      this.reDrawAll(this.padding.x, this.padding.y);
+      this.selectedNodeLabel = '';
+      this.popupNodeId = -1;
+      const htmlInput = document.querySelector('#input-test');
+      htmlInput.value = '';
+      htmlInput.blur();
+    },
     initSetting(changeX, changeY) {
       const paddingX = changeX + this.padding.x;
       const paddingY = changeY + this.padding.y;
@@ -377,6 +373,15 @@ export default {
     },
 
     startDraw(event) {
+      this.intervals.forEach(clearInterval);
+      this.intervals.length = 0;
+      for (let t = 0; t < this.timeouts.length; t += 1) {
+        clearTimeout(this.timeouts[t]);
+        this.timeouts.splice(t, 1);
+      }
+      const htmlInput = document.querySelector('#input-test');
+      this.popupNodeId = -1;
+      htmlInput.blur();
       if (this.touchmode === 'pen') {
         this.reDrawAll(this.padding.x, this.padding.y);
         this.selectedNode = -1;
@@ -398,6 +403,7 @@ export default {
         this.startPos.y = coors.Y;
       } else if (this.touchmode === 'select') {
         this.selectedNode = -1;
+        this.selectedNodeLabel = '';
         // 노드에 연결 안돼있는 엣지 제거
         if (this.edgeId !== -1) {
           const index = this.edges.findIndex((element) => element.id === this.edgeId);
@@ -481,6 +487,12 @@ export default {
 
     finishDraw(event) {
       if (this.touchmode === 'pen') {
+        // 초기화
+        const htmlInput = document.querySelector('#input-test');
+        htmlInput.value = '';
+        this.selectedNodeLabel = '';
+        this.popupNodeId = -1;
+
         const coors = this.getPosition(event);
         // eslint-disable-next-line max-len
         const thresh = (this.startPos.x - coors.X) * (this.startPos.x - coors.X) + (this.startPos.y - coors.Y) * (this.startPos.y - coors.Y);
@@ -557,35 +569,75 @@ export default {
             }
           }
           this.reDrawAll(this.padding.x, this.padding.y);
+          // 노드일 때
         } else {
-          this.popupInput();
-          let nodesize = 50;
-          const size = (this.maxPos.R - this.maxPos.L) / 2 + (this.maxPos.T - this.maxPos.B) / 2;
-          nodesize = size / 2;
+          // edge 없는 노드 삭제
+          for (let i = 1; i < this.nodes.length; i += 1) {
+            if (this.nodes[i].link === false) {
+              // 노드 삭제
+              const deleteNodeid = this.nodes[i].id;
+              this.nodes.splice(i, 1);
 
-          const newid = new Date().getTime();
-          this.popupNodeId = newid;
-          this.nodes.push({
-          // eslint-disable-next-line max-len
-            id: newid, label: ' ', x: (this.maxPos.L + this.maxPos.R) / 2 + this.padding.x, y: (this.maxPos.T + this.maxPos.B) / 2 + this.padding.y, size: nodesize, type: newid % 4, link: false,
-          });
-
-          // 노드에 연결 안돼있는 엣지 제거
-          if (this.edgeId !== -1) {
-            // eslint-disable-next-line max-len
-            if (((this.maxPos.L + this.maxPos.R) / 2 + this.padding.x - nodesize < this.edgePos.x && this.edgePos.x < (this.maxPos.L + this.maxPos.R) / 2 + this.padding.x + nodesize) && ((this.maxPos.T + this.maxPos.B) / 2 + this.padding.y - nodesize < this.edgePos.y && this.edgePos.y < (this.maxPos.T + this.maxPos.B) / 2 + this.padding.y + nodesize)) {
-              const index = this.edges.findIndex((element) => element.id === this.edgeId);
-              if (this.edges[index].to === -1) this.edges[index].to = newid;
-              else this.edges[index].from = newid;
-              const nodeindex = this.nodes.findIndex((element) => element.id === newid);
-              this.nodes[nodeindex].link = true;
-            } else {
-              const index = this.edges.findIndex((element) => element.id === this.edgeId);
-              this.edges.splice(index, 1);
+              for (let j = 0; j < this.edges.length; j += 1) {
+                if (this.edges[j].to === deleteNodeid || this.edges[j].from === deleteNodeid) {
+                  this.edges.splice(j, 1);
+                  j -= 1;
+                }
+              }
+              i -= 1;
             }
           }
+          // 노드에 단어 직접 쓰기 테스트!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+          htmlInput.focus();
 
-          this.edgeId = -1;
+          let nodesize = 50;
+          const size = (this.maxPos.R - this.maxPos.L) / 2 + (this.maxPos.T - this.maxPos.B) / 2;
+
+          // 원처럼 그렸을 때
+          if (size > 60) {
+            nodesize = Math.max(size / 2, 80);
+
+            const newid = new Date().getTime();
+            this.popupNodeId = newid;
+            this.nodes.push({
+              // eslint-disable-next-line max-len
+              id: newid, label: ' ', x: (this.maxPos.L + this.maxPos.R) / 2 + this.padding.x, y: (this.maxPos.T + this.maxPos.B) / 2 + this.padding.y, size: nodesize, type: newid % 4, link: false,
+            });
+
+            // 노드에 연결 안돼있는 엣지 제거
+            if (this.edgeId !== -1) {
+              // eslint-disable-next-line max-len
+              if (((this.maxPos.L + this.maxPos.R) / 2 + this.padding.x - nodesize < this.edgePos.x && this.edgePos.x < (this.maxPos.L + this.maxPos.R) / 2 + this.padding.x + nodesize) && ((this.maxPos.T + this.maxPos.B) / 2 + this.padding.y - nodesize < this.edgePos.y && this.edgePos.y < (this.maxPos.T + this.maxPos.B) / 2 + this.padding.y + nodesize)) {
+                const index = this.edges.findIndex((element) => element.id === this.edgeId);
+                if (this.edges[index].to === -1) this.edges[index].to = newid;
+                else this.edges[index].from = newid;
+                const nodeindex = this.nodes.findIndex((element) => element.id === newid);
+                this.nodes[nodeindex].link = true;
+              } else {
+                const index = this.edges.findIndex((element) => element.id === this.edgeId);
+                this.edges.splice(index, 1);
+              }
+            }
+            this.edgeId = -1;
+
+            this.reDrawAll(this.padding.x, this.padding.y);
+
+            const index = this.nodes.findIndex((element) => element.id === this.popupNodeId);
+            const node = this.nodes[index];
+            const fontsize = Math.max(node.size / 8, 20);
+
+            this.ctx[0].beginPath();
+            this.ctx[0].strokeStyle = 'black';
+            this.ctx[0].lineWidth = 3;
+            this.ctx[0].setLineDash([5, 2]);
+            // eslint-disable-next-line
+            this.ctx[0].rect(node.x - node.size / 1.5 - this.padding.x - fontsize, node.y - this.padding.y - fontsize * 1.5, node.size * (4 / 3) + fontsize * 2, fontsize * 1.5 * 1.8);
+            this.ctx[0].stroke();
+
+            this.inputNodeLabel('');
+          } else {
+            this.reDrawAll(this.padding.x, this.padding.y);
+          }
         }
         this.startPos.x = -1;
         this.startPos.y = -1;
@@ -652,8 +704,8 @@ export default {
         this.wordSelected = '';
         this.touchmode = 'drag';
         // tool reset
-        const pen = document.querySelector('#canvas-pen');
-        const select = document.querySelector('#canvas-select');
+        const pen = document.querySelector('#mindmap-tool-pen');
+        const select = document.querySelector('#mindmap-tool-select');
         pen.style.background = '#83b1b1';
         select.style.background = '#83b1b1';
 
@@ -663,14 +715,21 @@ export default {
         if (this.doubleSelectedNode === this.selectedNode) {
           if (this.doubleSelectedTime) {
             const node = this.nodes.find((element) => element.id === this.selectedNode);
+            const htmlInput = document.querySelector('#input-test');
+            htmlInput.focus();
+            htmlInput.value = '';
+            this.popupNodeId = this.selectedNode;
             this.selectedNodeLabel = node.label;
-            this.popupInput();
 
             this.doubleSelectedTime = false;
           } else {
             this.doubleSelectedTime = true;
             this.doubleSelectedNode = this.selectedNode;
             setTimeout(() => {
+              if (this.popupNodeId !== -1) {
+                const htmlInput = document.querySelector('#input-test');
+                htmlInput.focus();
+              }
               this.doubleSelectedTime = false;
             }, 200);
           }
@@ -678,6 +737,10 @@ export default {
           this.doubleSelectedTime = true;
           this.doubleSelectedNode = this.selectedNode;
           setTimeout(() => {
+            if (this.popupNodeId !== -1) {
+              const htmlInput = document.querySelector('#input-test');
+              htmlInput.focus();
+            }
             this.doubleSelectedTime = false;
           }, 200);
         }
@@ -749,11 +812,13 @@ export default {
     makeNode(x, y, size, type, text) {
       let fontsize = size / 4;
       let linesize = 1;
+      let textLength = 0;
       if (text !== undefined) {
-        if (text.length > 8) fontsize /= 2;
-        else if (text.length > 5) fontsize = size / (text.length - 1);
-        linesize = Math.floor(text.length / 10) + 1;
-        if (text.length % 10 === 0) linesize -= 1;
+        textLength = this.getTextLength(text);
+        if (textLength > 16) fontsize /= 2;
+        else if (textLength > 10) fontsize = size / (textLength / 2 - 1);
+        linesize = Math.floor(textLength / 20) + 1;
+        if (textLength % 20 === 0) linesize -= 1;
       }
 
       if (this.templateType === 1) {
@@ -776,14 +841,35 @@ export default {
           // eslint-disable-next-line max-len
           this.ctx[0].bezierCurveTo(x + size, y - size * 0.8, x, y - size * 0.8, x, y - size * 0.6);
           this.ctx[0].fill();
-          let textloc = ((linesize - 1) / 2) * -1;
-          for (let i = 0; i < linesize; i += 1) {
-            // eslint-disable-next-line prefer-template
-            this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
-            this.ctx[0].fillStyle = 'white';
-            // eslint-disable-next-line max-len
-            this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
-            textloc += 1;
+
+          let stringLine = 0;
+          let stringSIndex = 0;
+          let stringLength = 0;
+
+          // eslint-disable-next-line prefer-template
+          this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
+          this.ctx[0].fillStyle = 'white';
+
+          if (linesize !== 1) {
+            for (let i = 0; i < text.length; i += 1) {
+              if (escape(text.charAt(i)).length === 6) stringLength += 1;
+              stringLength += 1;
+              if (stringLength === 20 || i === text.length - 1) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              }
+            }
+          } else {
+            this.ctx[0].fillText(text, x - (fontsize / 2) * (textLength / 2), y + fontsize / 4);
           }
         } else if (type === 1) {
           // 나뭇잎2 그리기
@@ -804,14 +890,35 @@ export default {
           // eslint-disable-next-line max-len
           this.ctx[0].bezierCurveTo(x + size, y - size / 2, x + size * 0.2, y - size * 0.9, x, y - size / 2);
           this.ctx[0].fill();
-          let textloc = ((linesize - 1) / 2) * -1;
-          for (let i = 0; i < linesize; i += 1) {
-            // eslint-disable-next-line prefer-template
-            this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
-            this.ctx[0].fillStyle = 'white';
-            // eslint-disable-next-line max-len
-            this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
-            textloc += 1;
+
+          let stringLine = 0;
+          let stringSIndex = 0;
+          let stringLength = 0;
+
+          // eslint-disable-next-line prefer-template
+          this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
+          this.ctx[0].fillStyle = 'white';
+
+          if (linesize !== 1) {
+            for (let i = 0; i < text.length; i += 1) {
+              if (escape(text.charAt(i)).length === 6) stringLength += 1;
+              stringLength += 1;
+              if (stringLength === 20 || i === text.length - 1) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              }
+            }
+          } else {
+            this.ctx[0].fillText(text, x - (fontsize / 2) * (textLength / 2), y + fontsize / 4);
           }
         } else if (type === 2) {
           // 나뭇잎3 그리기
@@ -835,14 +942,35 @@ export default {
           // eslint-disable-next-line max-len
           this.ctx[0].bezierCurveTo(x + size * 1.1, y - size * 0.3, x + size * 0.35, y - size * 0.9, x + size * 0.2, y - size * 0.6);
           this.ctx[0].fill();
-          let textloc = ((linesize - 1) / 2) * -1;
-          for (let i = 0; i < linesize; i += 1) {
-            // eslint-disable-next-line prefer-template
-            this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
-            this.ctx[0].fillStyle = 'white';
-            // eslint-disable-next-line max-len
-            this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
-            textloc += 1;
+
+          let stringLine = 0;
+          let stringSIndex = 0;
+          let stringLength = 0;
+
+          // eslint-disable-next-line prefer-template
+          this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
+          this.ctx[0].fillStyle = 'white';
+
+          if (linesize !== 1) {
+            for (let i = 0; i < text.length; i += 1) {
+              if (escape(text.charAt(i)).length === 6) stringLength += 1;
+              stringLength += 1;
+              if (stringLength === 20 || i === text.length - 1) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              }
+            }
+          } else {
+            this.ctx[0].fillText(text, x - (fontsize / 2) * (textLength / 2), y + fontsize / 4);
           }
         } else if (type === 3) {
           // 나뭇잎4 그리기
@@ -869,14 +997,35 @@ export default {
           // eslint-disable-next-line max-len
           this.ctx[0].bezierCurveTo(x + size * 1.0, y - size * 0.8, x + size * 0.2, y - size * 0.7, x + size * 0.3, y - size * 0.6);
           this.ctx[0].fill();
-          let textloc = ((linesize - 1) / 2) * -1;
-          for (let i = 0; i < linesize; i += 1) {
-            // eslint-disable-next-line prefer-template
-            this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
-            this.ctx[0].fillStyle = 'white';
-            // eslint-disable-next-line max-len
-            this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2 - 0.2), y + textloc * (fontsize + (fontsize / 3)));
-            textloc += 1;
+
+          let stringLine = 0;
+          let stringSIndex = 0;
+          let stringLength = 0;
+
+          // eslint-disable-next-line prefer-template
+          this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
+          this.ctx[0].fillStyle = 'white';
+
+          if (linesize !== 1) {
+            for (let i = 0; i < text.length; i += 1) {
+              if (escape(text.charAt(i)).length === 6) stringLength += 1;
+              stringLength += 1;
+              if (stringLength === 20 || i === text.length - 1) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              }
+            }
+          } else {
+            this.ctx[0].fillText(text, x - (fontsize / 2) * (textLength / 2), y + fontsize / 4);
           }
         }
       } else if (this.templateType === 2) {
@@ -914,15 +1063,34 @@ export default {
           // eslint-disable-next-line max-len
           this.ctx[0].translate(-(x + r * Math.cos(lightRad)), -(y - r * Math.sin(lightRad)));
 
-          let textloc = ((linesize - 1) / 2) * -1;
-          for (let i = 0; i < linesize; i += 1) {
-            this.ctx[0].shadowColor = 'transparent';
-            // eslint-disable-next-line prefer-template
-            this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
-            this.ctx[0].fillStyle = 'white';
-            // eslint-disable-next-line max-len
-            this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
-            textloc += 1;
+          let stringLine = 0;
+          let stringSIndex = 0;
+          let stringLength = 0;
+
+          // eslint-disable-next-line prefer-template
+          this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
+          this.ctx[0].fillStyle = 'white';
+
+          if (linesize !== 1) {
+            for (let i = 0; i < text.length; i += 1) {
+              if (escape(text.charAt(i)).length === 6) stringLength += 1;
+              stringLength += 1;
+              if (stringLength === 20 || i === text.length - 1) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              }
+            }
+          } else {
+            this.ctx[0].fillText(text, x - (fontsize / 2) * (textLength / 2), y + fontsize / 4);
           }
         } else if (type === 1) {
           this.ctx[0].shadowOffsetX = 0;
@@ -955,15 +1123,34 @@ export default {
           // eslint-disable-next-line max-len
           this.ctx[0].translate(-(x + r * Math.cos(lightRad)), -(y - r * Math.sin(lightRad)));
 
-          let textloc = ((linesize - 1) / 2) * -1;
-          for (let i = 0; i < linesize; i += 1) {
-            this.ctx[0].shadowColor = 'transparent';
-            // eslint-disable-next-line prefer-template
-            this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
-            this.ctx[0].fillStyle = 'white';
-            // eslint-disable-next-line max-len
-            this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
-            textloc += 1;
+          let stringLine = 0;
+          let stringSIndex = 0;
+          let stringLength = 0;
+
+          // eslint-disable-next-line prefer-template
+          this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
+          this.ctx[0].fillStyle = 'white';
+
+          if (linesize !== 1) {
+            for (let i = 0; i < text.length; i += 1) {
+              if (escape(text.charAt(i)).length === 6) stringLength += 1;
+              stringLength += 1;
+              if (stringLength === 20 || i === text.length - 1) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              }
+            }
+          } else {
+            this.ctx[0].fillText(text, x - (fontsize / 2) * (textLength / 2), y + fontsize / 4);
           }
         } else if (type === 2) {
           this.ctx[0].shadowOffsetX = 0;
@@ -996,15 +1183,34 @@ export default {
           // eslint-disable-next-line max-len
           this.ctx[0].translate(-(x + r * Math.cos(lightRad)), -(y - r * Math.sin(lightRad)));
 
-          let textloc = ((linesize - 1) / 2) * -1;
-          for (let i = 0; i < linesize; i += 1) {
-            this.ctx[0].shadowColor = 'transparent';
-            // eslint-disable-next-line prefer-template
-            this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
-            this.ctx[0].fillStyle = 'white';
-            // eslint-disable-next-line max-len
-            this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
-            textloc += 1;
+          let stringLine = 0;
+          let stringSIndex = 0;
+          let stringLength = 0;
+
+          // eslint-disable-next-line prefer-template
+          this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
+          this.ctx[0].fillStyle = 'white';
+
+          if (linesize !== 1) {
+            for (let i = 0; i < text.length; i += 1) {
+              if (escape(text.charAt(i)).length === 6) stringLength += 1;
+              stringLength += 1;
+              if (stringLength === 20 || i === text.length - 1) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              }
+            }
+          } else {
+            this.ctx[0].fillText(text, x - (fontsize / 2) * (textLength / 2), y + fontsize / 4);
           }
         } else if (type === 3) {
           this.ctx[0].shadowOffsetX = 0;
@@ -1037,15 +1243,34 @@ export default {
           // eslint-disable-next-line max-len
           this.ctx[0].translate(-(x + r * Math.cos(lightRad)), -(y - r * Math.sin(lightRad)));
 
-          let textloc = ((linesize - 1) / 2) * -1;
-          for (let i = 0; i < linesize; i += 1) {
-            this.ctx[0].shadowColor = 'transparent';
-            // eslint-disable-next-line prefer-template
-            this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
-            this.ctx[0].fillStyle = 'white';
-            // eslint-disable-next-line max-len
-            this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
-            textloc += 1;
+          let stringLine = 0;
+          let stringSIndex = 0;
+          let stringLength = 0;
+
+          // eslint-disable-next-line prefer-template
+          this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
+          this.ctx[0].fillStyle = 'white';
+
+          if (linesize !== 1) {
+            for (let i = 0; i < text.length; i += 1) {
+              if (escape(text.charAt(i)).length === 6) stringLength += 1;
+              stringLength += 1;
+              if (stringLength === 20 || i === text.length - 1) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              }
+            }
+          } else {
+            this.ctx[0].fillText(text, x - (fontsize / 2) * (textLength / 2), y + fontsize / 4);
           }
         }
       }
@@ -1156,6 +1381,7 @@ export default {
     },
 
     drawEdge(x1, y1, x2, y2) {
+      this.ctx[0].setLineDash([0, 0]);
       if (this.templateType === 1) {
         this.ctx[0].beginPath();
         this.ctx[0].moveTo(x1, y1);
@@ -1178,41 +1404,34 @@ export default {
       this.ctx[0].lineWidth = 12;
       this.ctx[0].strokeStyle = '#836d4b';
 
-      const pen = document.querySelector('#canvas-pen');
+      const pen = document.querySelector('#mindmap-tool-pen');
       if (this.touchmode === 'pen') {
         this.touchmode = 'drag';
-        pen.classList.add('canvas-tool');
-        pen.classList.remove('canvas-tool-selected');
+        pen.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
       } else {
         this.touchmode = 'pen';
-        pen.classList.add('canvas-tool-selected');
-        pen.classList.remove('canvas-tool');
-        const select = document.querySelector('#canvas-select');
-        select.classList.remove('canvas-tool-selected');
-        select.classList.add('canvas-tool');
+        pen.parentElement.style.border = '3px solid rgba(255, 255, 255, 0.8)';
+        const select = document.querySelector('#mindmap-tool-select');
+        select.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
       }
     },
 
     modeSelect() {
       this.resetWordBackground();
 
-      const select = document.querySelector('#canvas-select');
+      const select = document.querySelector('#mindmap-tool-select');
       if (this.touchmode === 'select') {
         this.touchmode = 'drag';
-        select.classList.add('canvas-tool');
-        select.classList.remove('canvas-tool-selected');
+        select.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
       } else {
         this.touchmode = 'select';
-        select.classList.add('canvas-tool-selected');
-        select.classList.remove('canvas-tool');
-        const pen = document.querySelector('#canvas-pen');
-        pen.classList.remove('canvas-tool-selected');
-        pen.classList.add('canvas-tool');
+        select.parentElement.style.border = '3px solid rgba(255, 255, 255, 0.8)';
+        const pen = document.querySelector('#mindmap-tool-pen');
+        pen.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
       }
     },
 
-    deleteNode(nodeId) {
-      if (this.selectedNode === -1 && nodeId !== 0) this.selectedNode = nodeId;
+    deleteNode() {
       if (this.selectedNode !== -1 && this.selectedNode !== 0) {
         const index = this.nodes.findIndex((element) => element.id === this.selectedNode);
         this.nodes.splice(index, 1);
@@ -1320,7 +1539,6 @@ export default {
           num: 60, anc: JSON.stringify(ancWord),
         },
       }).then((res) => {
-        console.log('test');
         this.words = res.data.keywords;
         this.wordIndex = 0;
 
@@ -1446,7 +1664,10 @@ export default {
       this.$router.replace({
         name: 'FinishMindMap',
         // eslint-disable-next-line
-        params: { nodes: this.nodes, edges: this.edges, template: this.templateType, bookId: this.$route.params.bookId },
+        params: {
+          // eslint-disable-next-line
+          nodes: this.nodes, edges: this.edges, template: this.templateType, bookId: this.$route.params.bookId, thumbnail: this.bookThumbnail, bookTitle: this.bookTitle,
+        },
       });
     },
 
@@ -1456,70 +1677,226 @@ export default {
       this.recommendLoaded = false;
     },
 
-    popupInput() {
-      this.popup = true;
-    },
-
-    popupCancel() {
-      this.popup = false;// edge 없는 노드 삭제
-
-      if (this.popupNodeId !== -1) {
-        const nodeIndex = this.nodes.findIndex((element) => element.id === this.popupNodeId);
-        this.deleteNode(nodeIndex);
-        this.popupNodeId = -1;
-        this.reDrawAll(this.padding.x, this.padding.y);
+    inputNodeLabel(str) {
+      this.intervals.forEach(clearInterval);
+      this.intervals.length = 0;
+      for (let t = 0; t < this.timeouts.length; t += 1) {
+        clearTimeout(this.timeouts[t]);
+        this.timeouts.splice(t, 1);
       }
 
-      this.selectedNodeLabel = '';
-    },
+      // 초기 실행
+      const index = this.nodes.findIndex((element) => element.id === this.popupNodeId);
+      const node = this.nodes[index];
+      this.reDrawAll(this.padding.x, this.padding.y);
 
-    popupSuccess() {
-      if (this.popupNodeId !== -1) {
-        let nodeIndex = this.nodes.findIndex((element) => element.id === this.popupNodeId);
-        this.nodes[nodeIndex].label = this.selectedNodeLabel;
+      // eslint-disable-next-line
+      this.makeNode(node.x - this.padding.x, node.y - this.padding.y, node.size, node.type, '');
 
-        // eslint-disable-next-line
-        if (this.selectedNodeLabel != '') {
-          // edge 없는 노드 삭제
-          for (let i = 1; i < this.nodes.length; i += 1) {
-            if (this.nodes[i].link === false && i !== nodeIndex) {
-              // 노드 삭제
-              const deleteNodeid = this.nodes[i].id;
-              this.nodes.splice(i, 1);
-              nodeIndex -= 1;
+      // 작은 노드에서 위치 조정하기 위한 변수
+      let textpadding = 0;
 
-              for (let j = 0; j < this.edges.length; j += 1) {
-                if (this.edges[j].to === deleteNodeid || this.edges[j].from === deleteNodeid) {
-                  this.edges.splice(j, 1);
-                  j -= 1;
-                }
-              }
-              i -= 1;
+      const fontsize = Math.max(node.size / 8, 20);
+      if (node.size < 160 && node.size > 120) textpadding = 0.5;
+      else if (node.size <= 120) textpadding = 1;
+      const labelLength = this.getTextLength(str);
+      let linesize = Math.floor(labelLength / 20) + 1;
+      if (labelLength % 20 === 0 && labelLength !== 0) linesize -= 1;
+      console.log('check', textpadding, node.size);
+
+      this.ctx[0].beginPath();
+      this.ctx[0].strokeStyle = 'black';
+      this.ctx[0].lineWidth = 3;
+      this.ctx[0].setLineDash([5, 2]);
+      // eslint-disable-next-line
+      this.ctx[0].rect(node.x - node.size / 1.5 - this.padding.x - fontsize, node.y - this.padding.y - fontsize * 1.5, node.size * (4 / 3) + fontsize * 2, fontsize * 1.5 * (linesize + 0.8));
+      this.ctx[0].stroke();
+
+      let stringLine = 0;
+      let stringSIndex = 0;
+      let stringLength = 0;
+
+      this.ctx[0].fillStyle = 'black';
+      // eslint-disable-next-line
+      this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
+
+      if (str.length > 0) {
+        for (let i = 0; i < str.length; i += 1) {
+          if (escape(str.charAt(i)).length === 6) {
+            stringLength += 1;
+          }
+          stringLength += 1;
+          if (stringLength === 20) {
+            // eslint-disable-next-line
+            this.ctx[0].fillText(str.substring(stringSIndex, i + 1), node.x - node.size / 1.5 - this.padding.x, node.y - node.size / 6 + fontsize * 1.5 * stringLine - this.padding.y + fontsize * 1.5 - fontsize * 0.5 * textpadding);
+
+            stringLength = 0;
+            stringSIndex = i + 1;
+            stringLine += 1;
+          } else if (i === str.length - 1) {
+            // eslint-disable-next-line
+            this.ctx[0].fillText(str.substring(stringSIndex, i + 1), node.x - node.size / 1.5 - this.padding.x, node.y - node.size / 6 + fontsize * 1.5 * stringLine - this.padding.y + fontsize * 1.5 - fontsize * 0.5 * textpadding);
+
+            // 점선 그리기
+            // eslint-disable-next-line
+            const time = setTimeout(() => {
+              this.ctx[0].beginPath();
+              // eslint-disable-next-line
+              this.ctx[0].moveTo(node.x - node.size / 1.5 - this.padding.x + fontsize * stringLength / 2 + fontsize / 4, node.y - node.size / 6 + fontsize * 1.5 * stringLine - this.padding.y + fontsize * 0.6 - fontsize * 0.5 * textpadding);
+              // eslint-disable-next-line
+              this.ctx[0].lineTo(node.x - node.size / 1.5 - this.padding.x + fontsize * stringLength / 2 + fontsize / 4, node.y - node.size / 6 + fontsize * 1.5 * stringLine - this.padding.y + fontsize * 1.6 - fontsize * 0.5 * textpadding);
+              this.ctx[0].stroke();
+            }, 300);
+            this.timeouts.push(time);
+          } else if (stringLength === 19 && escape(str.charAt(i + 1).length === 6)) {
+            // eslint-disable-next-line
+            this.ctx[0].fillText(str.substring(stringSIndex, i + 1), node.x - node.size / 1.5 - this.padding.x, node.y - node.size / 6 + fontsize * 1.5 * stringLine - this.padding.y + fontsize * 1.5 - fontsize * 0.5 * textpadding);
+            stringLength = 0;
+            stringSIndex = i + 1;
+            stringLine += 1;
+          }
+        }
+
+        // 위치 표시를 위한 점선 깜빡임
+        const interval = setInterval(() => {
+          for (let t = 0; t < this.timeouts.length; t += 1) {
+            clearTimeout(this.timeouts[t]);
+            this.timeouts.splice(t, 1);
+          }
+          this.reDrawAll(this.padding.x, this.padding.y);
+
+          // eslint-disable-next-line
+          this.makeNode(node.x - this.padding.x, node.y - this.padding.y, node.size, node.type, '');
+
+          this.ctx[0].beginPath();
+          this.ctx[0].strokeStyle = 'black';
+          this.ctx[0].lineWidth = 3;
+          this.ctx[0].setLineDash([5, 2]);
+          // eslint-disable-next-line
+          this.ctx[0].rect(node.x - node.size / 1.5 - this.padding.x - fontsize, node.y - this.padding.y - fontsize * 1.5, node.size * (4 / 3) + fontsize * 2, fontsize * 1.5 * (linesize + 0.8));
+          this.ctx[0].stroke();
+
+          stringLine = 0;
+          stringSIndex = 0;
+          stringLength = 0;
+
+          this.ctx[0].fillStyle = 'black';
+          // eslint-disable-next-line
+          this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
+
+          for (let i = 0; i < str.length; i += 1) {
+            if (escape(str.charAt(i)).length === 6) {
+              stringLength += 1;
+            }
+            stringLength += 1;
+            if (stringLength === 20) {
+              // eslint-disable-next-line
+              this.ctx[0].fillText(str.substring(stringSIndex, i + 1), node.x - node.size / 1.5 - this.padding.x, node.y - node.size / 6 + fontsize * 1.5 * stringLine - this.padding.y + fontsize * 1.5 - fontsize * 0.5 * textpadding);
+
+              stringLength = 0;
+              stringSIndex = i + 1;
+              stringLine += 1;
+            } else if (i === str.length - 1) {
+              // eslint-disable-next-line
+              this.ctx[0].fillText(str.substring(stringSIndex, i + 1), node.x - node.size / 1.5 - this.padding.x, node.y - node.size / 6 + fontsize * 1.5 * stringLine - this.padding.y + fontsize * 1.5 - fontsize * 0.5 * textpadding);
+
+              // 점선 그리기
+              // eslint-disable-next-line
+              const time = setTimeout(() => {
+                this.ctx[0].beginPath();
+                // eslint-disable-next-line
+                this.ctx[0].moveTo(node.x - node.size / 1.5 - this.padding.x + fontsize * stringLength / 2 + fontsize / 4, node.y - node.size / 6 + fontsize * 1.5 * stringLine - this.padding.y + fontsize * 0.6 - fontsize * 0.5 * textpadding);
+                // eslint-disable-next-line
+                this.ctx[0].lineTo(node.x - node.size / 1.5 - this.padding.x + fontsize * stringLength / 2 + fontsize / 4, node.y - node.size / 6 + fontsize * 1.5 * stringLine - this.padding.y + fontsize * 1.6 - fontsize * 0.5 * textpadding);
+                this.ctx[0].stroke();
+              }, 300);
+              this.timeouts.push(time);
+            } else if (stringLength === 19 && escape(str.charAt(i + 1).length === 6)) {
+              // eslint-disable-next-line
+              this.ctx[0].fillText(str.substring(stringSIndex, i + 1), node.x - node.size / 1.5 - this.padding.x, node.y - node.size / 6 + fontsize * 1.5 * stringLine - this.padding.y + fontsize * 1.5 - fontsize * 0.5 * textpadding);
+              stringLength = 0;
+              stringSIndex = i + 1;
+              stringLine += 1;
             }
           }
-          this.popupNodeId = -1;
-          this.selectedNodeLabel = '';
-          this.reDrawAll(this.padding.x, this.padding.y);
-        } else {
-          this.nodes.splice(nodeIndex, 1);
-          this.reDrawAll(this.padding.x, this.padding.y);
-        }
-      } else if (this.selectedNode !== -1) {
-        const nodeIndex = this.nodes.findIndex((element) => element.id === this.selectedNode);
-
+        }, 1000);
+        this.intervals.push(interval);
         // eslint-disable-next-line
-        if (this.selectedNodeLabel != null) {
-          this.nodes[nodeIndex].label = this.selectedNodeLabel;
-        }
+      } else if (str.length == 0) {
+        stringLength = 0;
+        console.log('test', stringLength, node, fontsize, stringLine, textpadding);
 
-        const node = this.nodes[nodeIndex];
-        this.reDrawAll(this.padding.x, this.padding.y);
-        this.highlightNode(node.x - this.padding.x, node.y - this.padding.y, node.size, node.type);
+        const firsttime = setTimeout(() => {
+          this.ctx[0].beginPath();
+          this.ctx[0].strokeStyle = 'black';
+          this.ctx[0].lineWidth = 3;
+          this.ctx[0].setLineDash([5, 2]);
+          // eslint-disable-next-line
+          this.ctx[0].moveTo(node.x - node.size / 1.5 - this.padding.x + fontsize * stringLength / 2 + fontsize / 4, node.y - node.size / 6 + fontsize * 1.5 * stringLine - this.padding.y + fontsize * 0.6 - fontsize * 0.5 * textpadding);
+          // eslint-disable-next-line
+          this.ctx[0].lineTo(node.x - node.size / 1.5 - this.padding.x + fontsize * stringLength / 2 + fontsize / 4, node.y - node.size / 6 + fontsize * 1.5 * stringLine - this.padding.y + fontsize * 1.6 - fontsize * 0.5 * textpadding);
+          this.ctx[0].stroke();
+        }, 300);
+        this.timeouts.push(firsttime);
+
+        const interval = setInterval(() => {
+          for (let t = 0; t < this.timeouts.length; t += 1) {
+            clearTimeout(this.timeouts[t]);
+            this.timeouts.splice(t, 1);
+          }
+          this.reDrawAll(this.padding.x, this.padding.y);
+
+          // eslint-disable-next-line
+          this.makeNode(node.x - this.padding.x, node.y - this.padding.y, node.size, node.type, '');
+
+          this.ctx[0].beginPath();
+          this.ctx[0].strokeStyle = 'black';
+          this.ctx[0].lineWidth = 3;
+          this.ctx[0].setLineDash([5, 2]);
+          // eslint-disable-next-line
+          this.ctx[0].rect(node.x - node.size / 1.5 - this.padding.x - fontsize, node.y - this.padding.y - fontsize * 1.5, node.size * (4 / 3) + fontsize * 2, fontsize * 1.5 * (linesize + 0.8));
+          this.ctx[0].stroke();
+
+          const time = setTimeout(() => {
+            this.ctx[0].beginPath();
+            // eslint-disable-next-line
+            this.ctx[0].moveTo(node.x - node.size / 1.5 - this.padding.x + fontsize * stringLength / 2 + fontsize / 4, node.y - node.size / 6 + fontsize * 1.5 * stringLine - this.padding.y + fontsize * 0.6 - fontsize * 0.5 * textpadding);
+            // eslint-disable-next-line
+            this.ctx[0].lineTo(node.x - node.size / 1.5 - this.padding.x + fontsize * stringLength / 2 + fontsize / 4, node.y - node.size / 6 + fontsize * 1.5 * stringLine - this.padding.y + fontsize * 1.6 - fontsize * 0.5 * textpadding);
+            this.ctx[0].stroke();
+          }, 300);
+          this.timeouts.push(time);
+        }, 1000);
+        this.intervals.push(interval);
       }
-
-      this.popup = false;
     },
 
+    getTextLength(str) {
+      let len = 0;
+      for (let i = 0; i < str.length; i += 1) {
+        if (escape(str.charAt(i)).length === 6) {
+          len += 1;
+        }
+        len += 1;
+        if (len % 10 === 9 && i < str.length - 1) {
+          if (escape(str.charAt(i)).length === 6) {
+            len += 1;
+          }
+        }
+      }
+      return len;
+    },
+  },
+
+  watch: {
+    selectedNodeLabel() {
+      // eslint-disable-next-line
+      if (this.popupNodeId != -1) {
+        this.inputNodeLabel(this.selectedNodeLabel);
+        const htmlInput = document.querySelector('#input-test');
+        htmlInput.focus();
+      }
+    },
   },
 };
 </script>
@@ -1534,6 +1911,68 @@ export default {
   border-radius: 1vw;
   top: 0;
   left: 0;
+}
+
+#mindmap-tool-bar {
+  position: absolute;
+  width: 6vw;
+  height: 31vw;
+  background: rgba(184, 182, 172, 0.5);
+  z-index: 20;
+  border-radius: 1vw;
+  top: calc(50% - 15.5vw);
+  left: calc(100% - 7vw);
+}
+.mindmap-tools {
+  width: 5vw;
+  height: 5vw;
+  padding: calc(0.5vw - 1.5px);
+  margin: 0.5vw;
+  margin-top: 1vw;
+  margin-bottom: 1vw;
+  background: rgba(184, 182, 172, 0.8);
+  border: 3px solid rgba(184, 182, 172, 0.8);
+  border-radius: 1vw;
+}
+
+#mindmap-tool-pen {
+  width: 4vw;
+  height: 4vw;
+  background-image: url('../../../assets/mindmap/pen.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+#mindmap-tool-select {
+  width: 4vw;
+  height: 4vw;
+  background-image: url('../../../assets/mindmap/select.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center center;
+}
+#mindmap-tool-zoomin {
+  width: 4vw;
+  height: 4vw;
+  background-image: url('../../../assets/mindmap/zoom-in.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center center;
+}
+#mindmap-tool-zoomout {
+  width: 4vw;
+  height: 4vw;
+  background-image: url('../../../assets/mindmap/zoom-out.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center center;
+}
+#mindmap-tool-delete {
+  width: 4vw;
+  height: 4vw;
+  background-image: url('../../../assets/mindmap/delete.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center center;
 }
 
 #center-recommend {
@@ -1753,10 +2192,11 @@ export default {
   background-size: cover;
 }
 
-.canvas-tool {
-  background: #FFAE00 !important;
-}
-.canvas-tool-selected {
-  background: #24b1a1 !important;
+#input-test {
+  position: absolute;
+  background: orange;
+  top: 20vh;
+  left: 20vw;
+  z-index: 1;
 }
 </style>
