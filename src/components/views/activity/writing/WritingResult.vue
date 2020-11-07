@@ -22,14 +22,28 @@ export default {
   data() {
     return {
       imageSrc: '',
-      content: JSON.parse(this.work.content),
     };
   },
-  async created() {
-    this.imageSrc = await this.$store.dispatch('downloadBookMainImage', {
-      bid: this.work.bid,
-      rank: this.content.rank,
-    });
+  computed: {
+    content() {
+      return JSON.parse(this.work.content);
+    },
+  },
+  watch: {
+    work() {
+      this.loadWork();
+    },
+  },
+  created() {
+    this.loadWork();
+  },
+  methods: {
+    async loadWork() {
+      this.imageSrc = await this.$store.dispatch('downloadBookMainImage', {
+        bid: this.work.bid,
+        rank: this.content.rank,
+      });
+    },
   },
 };
 </script>

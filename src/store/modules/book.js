@@ -88,7 +88,7 @@ const bookModule = {
           const cover = localCover || (await util.base64(`/api/book/${bid}/cover`));
 
           commit('setBookCover', { bid, cover });
-          resolve();
+          resolve(cover);
 
           if (!localCover) localForage.setItem(`book-${bid}-cover`, cover);
         });
