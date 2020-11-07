@@ -33,6 +33,7 @@ export default new Vuex.Store({
       category: b.category,
       thumbnail: `/api/book/${b.bid}/cover`,
       pageNum: b.page_num,
+      imageNum: b.image_num,
     })),
     isBookLoaded: (ctx) => ctx.books.length > 0,
     isLoading: (ctx) => ctx.appLoading,

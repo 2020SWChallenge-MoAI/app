@@ -37,8 +37,11 @@
 </template>
 
 <script>
-import axios from 'axios';
+import _ from 'lodash';
 import CharacterTextBubble from '../../../components/CharacterTextBubble.vue';
+import util from '../../../util';
+
+const imagesPerPage = 4;
 
 export default {
   components: {
@@ -47,6 +50,7 @@ export default {
   data() {
     return {
       images: [],
+      page: 0,
     };
   },
   computed: {
@@ -54,15 +58,35 @@ export default {
       return this.$store.getters.getCurrentBook;
     },
   },
+  watch: {
+    book() {
+      this.page = 0;
+      this.loadImages();
+    },
+    page() {
+      this.loadImages();
+    },
+  },
   created() {
-    this.$store.commit('loadStart');
-    axios
-      .get(`/api/book/${this.book.bid}/main-image`)
-      .then(({ data }) => {
-        this.images = data.main_images.map((b) => `data:image/png;base64,${b}`);
-        this.$store.commit('loadFinish');
-      })
-      .catch();
+    this.loadImages();
+  },
+  methods: {
+    async loadImages() {
+      this.$store.commit('loadStart');
+
+      const range = _.range(
+        imagesPerPage * this.page + 1,
+        Math.min(this.book.imageNum + 1, imagesPerPage * (this.page + 1) + 1),
+      );
+
+      this.images = await Promise.all(
+        range
+          .map((k) => `/api/book/${this.book.bid}/main-image?rank=${k}`)
+          .map(async (uri) => util.base64(uri)),
+      );
+
+      this.$store.commit('loadFinish');
+    },
   },
 };
 </script>

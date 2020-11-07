@@ -20,10 +20,8 @@
       id="left-column"
       class="column"
     >
-      <div class="scroll">
-        <slot name="left" />
-        <recent-book-items v-if="recentBooks" />
-      </div>
+      <slot name="left" />
+      <recent-book-items v-if="recentBooks" />
     </div>
     <div
       id="mid-column"
@@ -101,10 +99,9 @@ export default {
   position: relative;
   flex-flow: column;
   width: 6vw;
-  overflow-y: scroll;
 }
 
-#left-column .scroll > *:not(:last-child) {
+#left-column > *:not(:last-child) {
   margin-bottom: 1vh;
 }
 
