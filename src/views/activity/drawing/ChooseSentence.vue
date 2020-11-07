@@ -1,24 +1,24 @@
 <template>
-  <sub-layout title="그림그리기" tooltip="그림으로 그리고 싶은 문장을 선택해보자!">
+  <sub-layout title="그림그리기" :tooltip="tooltip">
     <template v-slot:left>
-      <!-- 왼쪽 버튼은 이렇게 입력 -->
-      <left-menu-button icon="mdi-help" text="테스트" />
     </template>
 
-    <div class="drawing-recommend" id="drawing-recommend1" v-ripple>
-    </div>
-    <hr id="drawing-recommend1-line1">
-    <hr id="drawing-recommend1-line2">
+    <div v-show="currentState == 1" style="height: 100%; width: 100%;">
+      <div class="drawing-recommend" id="drawing-recommend1" v-ripple>
+      </div>
 
-    <div class="drawing-recommend" id="drawing-recommend2" v-ripple>
-    </div>
-    <hr id="drawing-recommend2-line1">
-    <hr id="drawing-recommend2-line2">
+      <div class="drawing-recommend" id="drawing-recommend2" v-ripple>
+      </div>
 
-    <div class="drawing-recommend" id="drawing-recommend3" v-ripple>
+      <div class="drawing-recommend" id="drawing-recommend3" v-ripple>
+      </div>
     </div>
-    <hr id="drawing-recommend3-line1">
-    <hr id="drawing-recommend3-line2">
+
+    <div v-show="currentState == -1">
+      책을 선택해줘!
+    </div>
+
+    <div id="sentence-loading" v-show="currentState == 0" />
 
   </sub-layout>
 </template>
@@ -29,31 +29,39 @@ import axios from 'axios';
 export default {
   data() {
     return {
+      tooltip: '그림으로 그리고 싶은 문장을 선택해보자!',
+      currentState: 0,
       mainSentence: [],
       doubleTabTimer: 0,
       clickedSentenceId: '',
       selectedSentence: '',
-      bookId: 3,
       sentenceIndex: 0,
     };
   },
 
   mounted() {
-    // eslint-disable-next-line
-    axios.get('/api/book/' + this.bookId + '/main-sentence')
-      .then((res) => {
-        this.mainSentence = res.data.main_sentences;
+    if (this.book !== null) {
+      this.currentState = 0;
+      // eslint-disable-next-line
+      axios.get('/api/book/' + this.book.bid + '/main-sentence')
+        .then((res) => {
+          this.mainSentence = res.data.main_sentences;
+          this.currentState = 1;
 
-        const recommends = document.querySelectorAll('.drawing-recommend');
-        recommends.forEach((recommend) => {
-          recommend.addEventListener('click', this.changeRecommend);
-          const r = recommend;
-          r.innerHTML = this.mainSentence[this.sentenceIndex];
-          this.sentenceIndex += 1;
-        }, true);
-      }).catch((err) => {
-        console.warn('ERROR!!!!: ', err);
-      });
+          const recommends = document.querySelectorAll('.drawing-recommend');
+          recommends.forEach((recommend) => {
+            recommend.addEventListener('click', this.changeRecommend);
+            const r = recommend;
+            r.innerHTML = this.mainSentence[this.sentenceIndex];
+            this.sentenceIndex += 1;
+          }, true);
+        }).catch((err) => {
+          console.error(err);
+        });
+    } else {
+      this.tooltip = '그림을 그릴 책을 선택해보자!';
+      this.currentState = -1;
+    }
   },
 
   methods: {
@@ -62,7 +70,7 @@ export default {
         // 페이지 이동
         this.$router.push({
           name: 'Drawing',
-          params: { sentence: this.selectedSentence },
+          params: { sentence: this.selectedSentence, bid: this.book.bid },
         });
       } else {
         // eslint-disable-next-line no-lonely-if
@@ -102,6 +110,40 @@ export default {
         t.style.border = '5px solid rgba(156, 138, 108, 0.85)';
         t.style.background = '#fffdf2';
       });
+    },
+  },
+
+  computed: {
+    book() {
+      return this.$store.getters.getCurrentBook;
+    },
+  },
+
+  watch: {
+    book() {
+      this.currentState = 0;
+      if (this.book !== null) {
+        // eslint-disable-next-line
+        axios.get('/api/book/' + this.book.bid + '/main-sentence')
+          .then((res) => {
+            this.mainSentence = res.data.main_sentences;
+            this.sentenceIndex = 0;
+            this.currentState = 1;
+
+            const recommends = document.querySelectorAll('.drawing-recommend');
+            recommends.forEach((recommend) => {
+              recommend.addEventListener('click', this.changeRecommend);
+              const r = recommend;
+              r.innerHTML = this.mainSentence[this.sentenceIndex];
+              this.sentenceIndex += 1;
+            }, true);
+          }).catch((err) => {
+            console.error(err);
+          });
+      } else {
+        this.tooltip = '그림을 그릴 책을 선택해보자!';
+        this.currentState = -1;
+      }
     },
   },
 };
@@ -183,5 +225,24 @@ export default {
   height: 3px;
   border: 0;
   background: rgba(156, 138, 108, 0.85);
+}
+
+#sentence-loading {
+  position: absolute;
+  top: calc(50% - 5vw);
+  left: calc(50% - 5vw);
+  width: 10vw;
+  height: 10vw;
+  border: 10px solid rgba(255,174,0,.3);
+  border-radius: 50%;
+  border-top-color: #FFAE00;
+  animation: spin 1s ease-in-out infinite;
+  -webkit-animation: spin 1s ease-in-out infinite;
+}
+@keyframes spin {
+  to { -webkit-transform: rotate(360deg); }
+}
+@-webkit-keyframes spin {
+  to { -webkit-transform: rotate(360deg); }
 }
 </style>
