@@ -3,18 +3,6 @@
     title="독서퀴즈"
     :tooltip="book ? book.title : '책 선택 안 됨'"
   >
-    <template v-slot:left>
-      <left-menu-button
-        icon="mdi-check-bold"
-        text="완료"
-        @click.native="submit"
-      />
-      <left-menu-button
-        icon="mdi-trash-can"
-        text="다시쓰기"
-        @click.native="reset"
-      />
-    </template>
     <div class="wrapper">
       <div class="content">
         <div class="question">
@@ -157,6 +145,22 @@
               검사하기
             </v-btn>
           </v-textarea>
+        </div>
+      </div>
+      <div class="btns">
+        <div
+          v-ripple
+          class="btn btn-reset"
+          @click="reset"
+        >
+          <span>다시 쓰기</span>
+        </div>
+        <div
+          v-ripple
+          class="btn btn-submit"
+          @click="submit"
+        >
+          <span>제출하기</span>
         </div>
       </div>
     </div>

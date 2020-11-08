@@ -3,68 +3,72 @@
     title="독서퀴즈"
     :tooltip="book ? book.title : '책 선택 안 됨'"
   >
-    <template v-slot:left>
-      <left-menu-button
-        text="완료"
-        icon="mdi-check-bold"
-        @click.native="submit"
-      />
-      <left-menu-button
-        text="다시하기"
-        icon="mdi-delete"
-        @click.native="reset"
-      />
-      <left-menu-button
-        text="다른문제"
-        icon="mdi-refresh"
-        @click.native="reload"
-      />
-    </template>
-    <div class="question">
-      <div class="question-text">
-        <span>{{ question.text }}</span>
-      </div>
-      <div class="question-type">
-        <span v-show="question.type === 0">객관식</span>
-        <span v-show="question.type === 1">주관식</span>
-      </div>
-    </div>
-    <div class="answer">
-      <img
-        class="answer-character"
-        src="@/assets/img/views/activity/quiz-game/solving-button-background.png"
-      >
-      <v-textarea
-        v-show="question.type === 1"
-        v-model="answer"
-        class="answer-text answer-essay"
-        auto-grow
-        clearable
-        flat
-        solo
-        hide-details
-        rows="2"
-        color="#668d8d"
-        label="정답을 입력해 줘!"
-      />
-      <div
-        v-show="question.type === 0"
-        class="answer-text answer-choice"
-      >
-        <span class="tooltip">정답을 선택해 줘!</span>
-        <div class="answer-options">
-          <div
-            v-for="(option, index) in question.options"
-            :key="index"
-            class="answer-option"
-            :class="{ active: answer === option }"
-            @click="answer = option"
+    <div class="wrapper">
+      <div class="content">
+        <div class="question">
+          <div class="question-text">
+            <span>{{ question.text }}</span>
+          </div>
+          <div class="question-type">
+            <span v-show="question.type === 0">객관식</span>
+            <span v-show="question.type === 1">주관식</span>
+          </div>
+        </div>
+        <div class="answer">
+          <img
+            class="answer-character"
+            src="@/assets/img/views/activity/quiz-game/solving-button-background.png"
           >
-            <span>{{ option }}</span>
+          <v-textarea
+            v-show="question.type === 1"
+            v-model="answer"
+            class="answer-text answer-essay"
+            auto-grow
+            clearable
+            flat
+            solo
+            hide-details
+            rows="2"
+            color="#668d8d"
+            label="정답을 입력해 줘!"
+          />
+          <div
+            v-show="question.type === 0"
+            class="answer-text answer-choice"
+          >
+            <span class="tooltip">정답을 선택해 줘!</span>
+            <div class="answer-options">
+              <div
+                v-for="(option, index) in question.options"
+                :key="index"
+                class="answer-option"
+                :class="{ active: answer === option }"
+                @click="answer = option"
+              >
+                <span>{{ option }}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+      <div class="btns">
+        <div
+          v-ripple
+          class="btn btn-reload"
+          @click="reload"
+        >
+          <span>다른문제</span>
+        </div>
+        <div
+          v-ripple
+          class="btn btn-submit"
+          @click="submit"
+        >
+          <span>제출하기</span>
+        </div>
+      </div>
     </div>
+
     <finish-overlay
       v-show="submitted && correct"
       :success="true"
@@ -198,10 +202,21 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.wrapper {
+  display: flex;
+  flex-flow: column;
+  justify-content: space-between;
+  flex: 1;
+  padding: 2vw;
+}
+
+.content > div:not(:last-child) {
+  margin-bottom: 1vw;
+}
+
 .question {
   display: flex;
   align-items: flex-start;
-  margin: 2vw;
 }
 
 .question-type {
@@ -247,7 +262,6 @@ export default {
 .answer {
   display: flex;
   align-items: flex-start;
-  margin: 2vw;
 }
 
 .answer-character {
@@ -314,5 +328,45 @@ export default {
     color: white;
     background: #668d8d;
   }
+}
+
+.btns {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btns > :not(:last-child) {
+  margin-right: 1vw;
+}
+
+.btn {
+  width: 20vw;
+  height: 7vw;
+  border-radius: 1vw;
+  display: flex;
+  align-items: center;
+  align-self: flex-end;
+}
+
+.btn span {
+  display: block;
+  font-size: 3vw;
+  margin-left: 2vw;
+}
+
+.btn-submit {
+  background: url('~@/assets/img/views/activity/quiz-game/submit-button-background.png')
+    #668d8d;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: right;
+  color: white;
+}
+
+.btn-reload {
+  background: url('~@/assets/img/views/activity/quiz-game/refresh.png') #f0ebd7;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: right;
 }
 </style>
