@@ -2,12 +2,9 @@
   <sub-layout title="그림그리기" tooltip="그림그리기 설명">
     <template v-slot:left>
       <left-menu-button icon="mdi-check-bold" text="완료" id="drawing-finish" />
-      <left-menu-button icon="mdi-pencil" text="연필" id="drawing-pen"
-        class="canvas-tool"
-      />
-      <left-menu-button icon="mdi-eraser" text="지우개" id="drawing-eraser"
-        class="canvas-tool"
-      />
+      <left-menu-button icon="mdi-pencil" text="연필" id="drawing-pen" />
+      <left-menu-button icon="mdi-eraser" text="지우개" id="drawing-eraser" />
+      <left-menu-button icon="mdi-backup-restore" text="초기화" id="drawing-rest" />
       <!-- 툴바 -->
       <div v-show="showToolBar" id="drawing-tool-triangle" />
       <div v-show="showToolBar" id="drawing-tool-bar">
@@ -146,6 +143,11 @@ export default {
     if (finish) {
       finish.addEventListener('click', this.finishBtnClicked);
     }
+
+    const reset = document.querySelector('#drawing-rest');
+    if (reset) {
+      reset.addEventListener('click', this.resetBtnClicked);
+    }
   },
 
   methods: {
@@ -253,6 +255,10 @@ export default {
         console.warn('ERROR!!!!: ', err);
       });
       /* eslint-disable */
+    },
+
+    resetBtnClicked() {
+      this.ctx[0].clearRect(0, 0, this.canvas.width / 0.1, this.canvas.height / 0.1);
     },
   },
 };
