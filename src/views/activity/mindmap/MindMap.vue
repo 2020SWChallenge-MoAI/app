@@ -373,6 +373,8 @@ export default {
     },
 
     startDraw(event) {
+      this.ctx[0].shadowOffsetX = 0;
+      this.ctx[0].shadowOffsetY = 0;
       this.intervals.forEach(clearInterval);
       this.intervals.length = 0;
       for (let t = 0; t < this.timeouts.length; t += 1) {
@@ -791,6 +793,8 @@ export default {
       this.ctx[0].clearRect(0, 0, 100000, 100000);
       this.ctx[0].beginPath();
       this.ctx[0].setLineDash([]);
+      this.ctx[0].shadowOffsetX = 0;
+      this.ctx[0].shadowOffsetY = 0;
 
       if (this.templateType === 1) {
         // edge 먼저 그리기
@@ -1086,6 +1090,7 @@ export default {
           this.ctx[0].fillStyle = 'white';
           this.ctx[0].shadowOffsetX = 0;
           this.ctx[0].shadowOffsetY = 0;
+          this.ctx[0].shadowBlur = 0;
           this.ctx[0].beginPath();
           // eslint-disable-next-line max-len
           this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
@@ -1146,6 +1151,7 @@ export default {
           this.ctx[0].fillStyle = 'white';
           this.ctx[0].shadowOffsetX = 0;
           this.ctx[0].shadowOffsetY = 0;
+          this.ctx[0].shadowBlur = 0;
           this.ctx[0].beginPath();
           // eslint-disable-next-line max-len
           this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
@@ -1206,6 +1212,7 @@ export default {
           this.ctx[0].fillStyle = 'white';
           this.ctx[0].shadowOffsetX = 0;
           this.ctx[0].shadowOffsetY = 0;
+          this.ctx[0].shadowBlur = 0;
           this.ctx[0].beginPath();
           // eslint-disable-next-line max-len
           this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
@@ -1266,6 +1273,7 @@ export default {
           this.ctx[0].fillStyle = 'white';
           this.ctx[0].shadowOffsetX = 0;
           this.ctx[0].shadowOffsetY = 0;
+          this.ctx[0].shadowBlur = 0;
           this.ctx[0].beginPath();
           // eslint-disable-next-line max-len
           this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));

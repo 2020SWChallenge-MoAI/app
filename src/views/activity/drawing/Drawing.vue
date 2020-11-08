@@ -234,9 +234,10 @@ export default {
     },
 
     finishBtnClicked() {
+      /* eslint-disable */
       const data = {
         sentence: this.$route.params.sentence,
-      }
+      };
 
       axios.post('/api/user/work/save', {
         bid: this.$route.params.bid, type: 2, thumbnail: this.canvas.toDataURL(), content: JSON.stringify(data),
