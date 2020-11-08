@@ -61,24 +61,29 @@ const bookModule = {
         });
     },
     downloadBookPage({ commit }, { bid, page }) {
-      return localForage
-        .getItem(`book-${bid}-page-${page}`)
-        .then((localBookPage) => {
-          if (localBookPage) return Promise.resolve(localBookPage);
-          return util.base64(`/api/book/${bid}/${page}`).then((bookPage) => {
-            localForage.setItem(`book-${bid}-page-${page}`, bookPage);
-            return Promise.resolve(bookPage);
-          });
+      return localForage.getItem(`book-${bid}-page-${page}`).then((localBookPage) => {
+        if (localBookPage) return Promise.resolve(localBookPage);
+        return util.base64(`/api/book/${bid}/${page}`).then((bookPage) => {
+          localForage.setItem(`book-${bid}-page-${page}`, bookPage);
+          return Promise.resolve(bookPage);
         });
+      });
     },
-    downloadBookMainImage({ commit }, { bid, rank }) {
+    downloadBookMainImage({ commit }, { bid, rank, thumbnail }) {
+      const localForageKey = thumbnail
+        ? `book-${bid}-mainimage-${rank}-thumbnail`
+        : `book-${bid}-mainimage-${rank}`;
+      const downloadUrl = thumbnail
+        ? `/api/book/${bid}/main-image?rank=${rank}&thumbnail=true`
+        : `/api/book/${bid}/main-image?rank=${rank}`;
+
       return new Promise((resolve, reject) => {
-        localForage.getItem(`book-${bid}-mainimage-${rank}`).then(async (localMainImage) => {
-          const mainImage = localMainImage || (await util.base64(`/api/book/${bid}/main-image?rank=${rank}`));
+        localForage.getItem(localForageKey).then(async (localMainImage) => {
+          const mainImage = localMainImage || (await util.base64(downloadUrl));
 
           resolve(mainImage);
 
-          if (!localMainImage) localForage.setItem(`book-${bid}-mainimage-${rank}`, mainImage);
+          if (!localMainImage) localForage.setItem(localForageKey, mainImage);
         });
       });
     },

@@ -103,7 +103,7 @@ export default {
 
       this.images = await Promise.all(
         range.map(async (rank) => ({
-          rank, uri: await this.$store.dispatch('downloadBookMainImage', { rank, bid: this.book.bid }),
+          rank, uri: await this.$store.dispatch('downloadBookMainImage', { rank, bid: this.book.bid, thumbnail: true }),
         })),
       );
     },

@@ -38,6 +38,7 @@ export default {
       this.imageSrc = await this.$store.dispatch('downloadBookMainImage', {
         bid: this.work.bid,
         rank: this.content.rank,
+        thumbnail: true,
       });
     },
   },
