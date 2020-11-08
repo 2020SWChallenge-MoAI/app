@@ -1,11 +1,13 @@
 <template>
-  <router-link class="btn-right-menu" :to="url" v-ripple>
+  <div class="btn-right-menu" v-ripple @click="route">
     <img class="btn-image" :src="image">
     <span class="btn-text">{{ text }}</span>
-  </router-link>
+  </div>
 </template>
 
 <script>
+const activities = ['writing', 'mindmap', 'quiz-game', 'drawing'];
+
 export default {
   props: {
     text: {
@@ -21,13 +23,18 @@ export default {
       type: String,
     },
   },
+  methods: {
+    route() {
+      if (activities.some((a) => this.$route.path.includes(a))) this.$router.replace(this.url);
+      else this.$router.push(this.url);
+    },
+  },
 };
 </script>
 
 <style scoped>
 .btn-right-menu {
   width: 6vw;
-  display: block;
   overflow: hidden;
   border-radius: 1vw;
 }
