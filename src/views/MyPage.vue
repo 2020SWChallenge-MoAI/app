@@ -18,7 +18,7 @@
           name="slide-up"
           mode="out-in"
         >
-          <div>
+          <div :key="widIndex">
             {{ book.title }}
           </div>
         </transition>
@@ -27,39 +27,57 @@
         name="fade"
         mode="out-in"
       >
-        <div id="mypage-activity-left-date">
+        <div
+          id="mypage-activity-left-date"
+          :key="widIndex"
+        >
           {{ work.date }}
         </div>
       </transition>
 
-      <v-icon
+      <v-btn
         id="mypage-activity-left-arrow"
+        icon
+        color="#668d8d"
         x-large
+        :disabled="isStart"
         @click="prevWork"
       >
-        mdi-arrow-left-drop-circle
-      </v-icon>
-      <div id="mypage-activity">
-        <mind-map-result
-          v-if="work.type === 0"
-          :work="work"
-        />
-        <quiz-game-result
-          v-if="work.type === 1"
-          :work="work"
-        />
-        <writing-result
-          v-if="work.type === 3"
-          :work="work"
-        />
-      </div>
-      <v-icon
+        <v-icon>mdi-arrow-left-drop-circle</v-icon>
+      </v-btn>
+
+      <transition
+        :name="slideDirection"
+        mode="out-in"
+      >
+        <div
+          id="mypage-activity"
+          :key="widIndex"
+        >
+          <mind-map-result
+            v-if="work.type === 0"
+            :work="work"
+          />
+          <quiz-game-result
+            v-if="work.type === 1"
+            :work="work"
+          />
+          <writing-result
+            v-if="work.type === 3"
+            :work="work"
+          />
+        </div>
+      </transition>
+      <v-btn
         id="mypage-activity-right-arrow"
+        icon
+        color="#668d8d"
         x-large
+        :disabled="isEnd"
         @click="nextWork"
       >
-        mdi-arrow-right-drop-circle
-      </v-icon>
+        <v-icon>mdi-arrow-right-drop-circle</v-icon>
+      </v-btn>
     </div>
   </sub-layout>
 </template>
@@ -91,6 +109,7 @@ export default {
       widIndex: 0,
       work: {},
       showWork: false,
+      slideDirection: 'slide-left',
     };
   },
   computed: {
@@ -101,6 +120,7 @@ export default {
       return this.widIndex === (this.wids.length - 1);
     },
     book() {
+      if (!Object.keys(this.work).length) return {};
       return this.$store.getters.book(this.work.bid);
     },
   },
@@ -113,17 +133,19 @@ export default {
   },
   methods: {
     prevWork() {
+      this.slideDirection = 'slide-left';
       if (this.isStart) return;
       this.widIndex -= 1;
       this.loadWork();
     },
     nextWork() {
+      this.slideDirection = 'slide-right';
       if (this.isEnd) return;
       this.widIndex += 1;
       this.loadWork();
     },
     async loadWork() {
-      if (!this.wids) return;
+      if (!this.wids.length) return;
       const { data } = await axios.get(`/api/user/work/${this.wids[this.widIndex]}`);
       this.work = {
         bid: data.bid,
@@ -140,6 +162,8 @@ export default {
 .top {
   width: 100%;
   height: 40vh;
+  display: flex;
+  justify-content: space-between;
 }
 
 .bottom {
@@ -255,30 +279,6 @@ export default {
 .fade-enter, .fade-leave-to { opacity: 0; }
 
 @keyframes fadein {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-@-moz-keyframes fadein {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-@-webkit-keyframes fadein {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-@-o-keyframes fadein {
   from {
     opacity: 1;
   }

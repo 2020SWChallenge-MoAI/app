@@ -1,10 +1,12 @@
 <template>
   <div class="profile">
-    <div class="profile-image" />
-    <div class="profile-user-age">
-      {{ user.age }}세
+    <div class="profile-header">
+      <div class="profile-image" />
+      <div class="profile-age">
+        {{ user.age }}세
+      </div>
     </div>
-    <div class="profile-user-name">
+    <div class="profile-name">
       {{ user.nickname }}
     </div>
   </div>
@@ -17,24 +19,32 @@ export default {
 </script>
 
 <style scoped>
+.profile {
+  display: flex;
+  flex-flow: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.profile-header {
+  position: relative;
+}
 
 .profile-image {
   width: 20vw;
   height: 20vw;
   border-radius: 20vw;
-  margin-left: 1vw;
-  margin-top: 3vh;
   border: 1px solid lightskyblue;
   background-image: url('~@/assets/userImg.png');
   background-size: cover;
 }
 
-.profile-user-age {
+.profile-age {
   position: absolute;
   width: 7vw;
   height: 7vw;
-  top: 26.5vh;
-  left: 15.5vw;
+  bottom: 0;
+  right: 0;
   text-align: center;
   font-size: 3vw;
   font-weight: 900;
@@ -43,10 +53,9 @@ export default {
   padding-top: 1vw;
   border-radius: 20vw;
   background: orange;
-
 }
 
-.profile-user-name {
+.profile-name {
   width: 22vw;
   height: 7vh;
   border-radius: 3vw;

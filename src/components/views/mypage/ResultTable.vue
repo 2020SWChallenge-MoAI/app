@@ -83,14 +83,9 @@ export default {
 
 <style lang="scss" scoped>
 .result {
-  position: absolute;
-  display: inline-block;
   width: 50vw;
   height: 39vh;
-  z-index: 100;
-  top: 6vh;
-  left: 24vw;
-  border-radius: 4vw;
+  border-radius: 3vw;
   background: lightblue;
 }
 
