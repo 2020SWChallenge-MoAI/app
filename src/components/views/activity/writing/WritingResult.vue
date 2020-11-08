@@ -1,9 +1,10 @@
 <template>
   <div class="wrapper">
-    <main-image
+    <v-img
       :src="imageSrc"
-      width="80%"
-      class="main-image"
+      width="100%"
+      cover
+      gradient="to top, #ffffffbb, #ffffffbb"
     />
     <div class="description">
       {{ content.description }}
@@ -12,12 +13,7 @@
 </template>
 
 <script>
-import MainImage from './MainImage.vue';
-
 export default {
-  components: {
-    MainImage,
-  },
   props: ['work'],
   data() {
     return {
@@ -55,16 +51,17 @@ export default {
     justify-content: center;
     align-items: center;
     background: #fffdf2;
+    width: 100%;
+    height: 100%;
 }
 
 .description {
-  width: 80%;
-  line-height: 4vh;
-  margin-top: 4vh;
-  background: repeating-linear-gradient(
-    rgb(255, 253, 242) 0px,
-    rgb(255, 253, 242) calc(4vh - 3px),
-    rgb(131, 177, 177) 4vh
-  );
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  padding: 2vw;
+  word-wrap: break-word;
 }
 </style>

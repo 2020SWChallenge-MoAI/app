@@ -297,12 +297,14 @@ export default {
         return;
       }
 
-      axios
+      const doSubmit = axios
         .post(`/api/book/${this.book.bid}/qna/submit`, {
           question: this.question.text,
           type: this.question.type,
           answer: this.encodeAnswer(),
-        })
+        });
+
+      doSubmit
         .then(() => { this.submitted = true; })
         .catch(() => {
           this.$store.dispatch('showMessage', {
@@ -310,6 +312,18 @@ export default {
             message: '문제가 있는 것 같아. 다시 한 번 시도해 보자!',
           });
         });
+
+      doSubmit.then(() => axios.post('/api/user/work/save', {
+        bid: this.book.bid,
+        type: 1,
+        content: JSON.stringify({
+          work: 0, // 만들기: 0, 풀기: 1
+          question: this.question.text,
+          answer: this.question.type === 0
+            ? this.question.options[this.question.answer]
+            : this.question.answer,
+        }),
+      }));
     },
     changeQuestionType(type) {
       this.question.type = type;

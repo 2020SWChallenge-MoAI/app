@@ -90,7 +90,6 @@ export default {
       wids: [],
       widIndex: 0,
       work: {},
-      book: {},
       showWork: false,
     };
   },
@@ -101,13 +100,16 @@ export default {
     isEnd() {
       return this.widIndex === (this.wids.length - 1);
     },
+    book() {
+      return this.$store.getters.book(this.work.bid);
+    },
   },
   async created() {
     const { data } = await axios.get('/api/user');
     this.user = data;
     this.wids = data.wids;
 
-    await this.loadWork();
+    this.loadWork();
   },
   methods: {
     prevWork() {
@@ -129,7 +131,6 @@ export default {
         content: data.content,
         date: moment(data.created_at).format('yyyy-MM-DD HH:mm:ss'),
       };
-      this.book = this.$store.getters.book(this.work.bid);
     },
   },
 };
@@ -196,6 +197,7 @@ export default {
   border: 2px solid gray;
   background: #fffdf2;
   z-index: 10;
+  overflow: hidden;
 }
 
 #mypage-activity-cover {

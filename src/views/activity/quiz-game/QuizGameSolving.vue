@@ -170,6 +170,19 @@ export default {
 
       this.correct = this.question.answer === this.answer;
       this.submitted = true;
+
+      if (this.correct) {
+        axios.post('/api/user/work/save', {
+          bid: this.book.bid,
+          type: 1,
+          content: JSON.stringify({
+            work: 1, // 만들기: 0, 풀기: 1
+            question: this.question.text,
+            type: this.question.type,
+            answer: this.question.answer,
+          }),
+        });
+      }
     },
     reset() {
       this.submitted = false;
