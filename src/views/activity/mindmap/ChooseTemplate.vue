@@ -66,9 +66,9 @@ export default {
     this.ctx[0].scale(1, 1);
 
     // eslint-disable-next-line
-    this.leaf1Img.src = require('../../../assets/mindmap/grape-leaf1.png');
+    this.leaf1Img.src = require('../../../assets/img/views/activity/mindmap/grape-leaf1.png');
     // eslint-disable-next-line
-    this.leaf2Img.src = require('../../../assets/mindmap/grape-leaf2.png');
+    this.leaf2Img.src = require('../../../assets/img/views/activity/mindmap/grape-leaf2.png');
 
     const templates = document.querySelectorAll('.choose-template');
 
@@ -535,13 +535,13 @@ export default {
 }
 
 #template1 {
-  background-image: url('../../../assets/mindmap/tree.png');
+  background-image: url('../../../assets/img/views/activity/mindmap/tree.png');
   background-position: center;
   background-size: contain;
   background-repeat: no-repeat;
 }
 #template2 {
-  background-image: url('../../../assets/mindmap/grape.png');
+  background-image: url('../../../assets/img/views/activity/mindmap/grape.png');
   background-position: center;
   background-size: contain;
   background-repeat : no-repeat;

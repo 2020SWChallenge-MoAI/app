@@ -89,9 +89,9 @@ export default {
 
     this.bookImg.src = this.$route.params.thumbnail;
     // eslint-disable-next-line
-    this.leaf1Img.src = require('../../../assets/mindmap/grape-leaf1.png');
+    this.leaf1Img.src = require('../../../assets/img/views/activity/mindmap/grape-leaf1.png');
     // eslint-disable-next-line
-    this.leaf2Img.src = require('../../../assets/mindmap/grape-leaf2.png');
+    this.leaf2Img.src = require('../../../assets/img/views/activity/mindmap/grape-leaf2.png');
 
     setTimeout(() => {
       this.reDrawAll(this.padding.x, this.padding.y);
@@ -865,9 +865,10 @@ export default {
     },
 
     submitBtnClicked() {
+      console.log(this.$route.params.aiSupportCount);
       const data = {
         // eslint-disable-next-line
-        nodes: this.nodes, edges: this.edges, templateType: this.templateType, bookId: this.$route.params.bookId, bookTitle: this.$route.params.bookTitle,
+        nodes: this.nodes, edges: this.edges, templateType: this.templateType, bookId: this.$route.params.bookId, bookTitle: this.$route.params.bookTitle, aiSupportCount: this.$route.params.aiSupportCount,
       };
 
       axios.post('/api/user/work/save', {
@@ -968,7 +969,7 @@ export default {
 #mindmap-tool-zoomin {
   width: 4vw;
   height: 4vw;
-  background-image: url('../../../assets/mindmap/zoom-in.png');
+  background-image: url('../../../assets/img/views/activity/mindmap/zoom-in.png');
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center center;
@@ -976,7 +977,7 @@ export default {
 #mindmap-tool-zoomout {
   width: 4vw;
   height: 4vw;
-  background-image: url('../../../assets/mindmap/zoom-out.png');
+  background-image: url('../../../assets/img/views/activity/mindmap/zoom-out.png');
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center center;

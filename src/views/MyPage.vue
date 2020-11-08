@@ -147,9 +147,9 @@ export default {
     this.ctx[0].scale(1, 1);
 
     // eslint-disable-next-line
-    this.leaf1Img.src = require('../assets/mindmap/grape-leaf1.png');
+    this.leaf1Img.src = require('../assets/img/views/activity/mindmap/grape-leaf1.png');
     // eslint-disable-next-line
-    this.leaf2Img.src = require('../assets/mindmap/grape-leaf2.png');
+    this.leaf2Img.src = require('../assets/img/views/activity/mindmap/grape-leaf2.png');
 
     axios.get('/api/user/work', {
     }).then((res) => {

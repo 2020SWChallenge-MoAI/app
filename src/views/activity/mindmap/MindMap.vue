@@ -1,8 +1,6 @@
 <template>
   <sub-layout title="마인드맵" tooltip="떠오르는 단어를 적어 커다란 나무를 완성해보자!">
     <template v-slot:left>
-      <!-- 왼쪽 버튼은 이렇게 입력 -->
-      <left-menu-button icon="mdi-thought-bubble-outline" text="불러오기" />
       <left-menu-button icon="mdi-check-bold" text="완료" id="canvas-finish" />
     </template>
 
@@ -123,6 +121,8 @@ export default {
 
       intervals: [],
       timeouts: [],
+
+      aiSupportCount: 0,
     };
   },
 
@@ -142,9 +142,9 @@ export default {
 
     this.bookImg.src = this.bookThumbnail;
     // eslint-disable-next-line
-    this.leaf1Img.src = require('../../../assets/mindmap/grape-leaf1.png');
+    this.leaf1Img.src = require('../../../assets/img/views/activity/mindmap/grape-leaf1.png');
     // eslint-disable-next-line
-    this.leaf2Img.src = require('../../../assets/mindmap/grape-leaf2.png');
+    this.leaf2Img.src = require('../../../assets/img/views/activity/mindmap/grape-leaf2.png');
 
     this.canvas.addEventListener('touchstart', (e) => {
       this.startDraw(e);
@@ -230,45 +230,45 @@ export default {
 
     if (this.templateType === 1) {
       this.nodes.push({
-        id: 0, x: width, y: height, size: 125, type: -1, link: true,
+        id: 0, x: width, y: height, size: 125, type: -1, link: true, parent: -1,
       });
 
       this.nodes.push({
         // eslint-disable-next-line max-len
-        id: 1, label: '등장인물', x: width - 240, y: height - 100, size: 80, type: 0, link: true,
+        id: 1, label: '등장인물', x: width - 240, y: height - 100, size: 80, type: 0, link: true, parent: 0,
       });
       this.nodes.push({
         // eslint-disable-next-line max-len
-        id: 2, label: '줄거리', x: width + 240, y: height - 100, size: 80, type: 1, link: true,
+        id: 2, label: '줄거리', x: width + 240, y: height - 100, size: 80, type: 1, link: true, parent: 0,
       });
       this.nodes.push({
         // eslint-disable-next-line max-len
-        id: 3, label: '느낀점', x: width - 240, y: height + 100, size: 80, type: 2, link: true,
+        id: 3, label: '느낀점', x: width - 240, y: height + 100, size: 80, type: 2, link: true, parent: 0,
       });
       this.nodes.push({
         // eslint-disable-next-line max-len
-        id: 4, label: '인상장면', x: width + 240, y: height + 100, size: 80, type: 3, link: true,
+        id: 4, label: '인상장면', x: width + 240, y: height + 100, size: 80, type: 3, link: true, parent: 0,
       });
     } else if (this.templateType === 2) {
       this.nodes.push({
-        id: 0, x: width, y: 0 + 100, size: 150, type: -1, link: true,
+        id: 0, x: width, y: 0 + 100, size: 150, type: -1, link: true, parent: -1,
       });
 
       this.nodes.push({
         // eslint-disable-next-line max-len
-        id: 1, label: '등장인물', x: width - 320, y: 120, size: 80, type: 0, link: true,
+        id: 1, label: '등장인물', x: width - 320, y: 120, size: 80, type: 0, link: true, parent: 0,
       });
       this.nodes.push({
         // eslint-disable-next-line max-len
-        id: 2, label: '줄거리', x: width - 150, y: 300, size: 80, type: 1, link: true,
+        id: 2, label: '줄거리', x: width - 150, y: 300, size: 80, type: 1, link: true, parent: 0,
       });
       this.nodes.push({
         // eslint-disable-next-line max-len
-        id: 3, label: '느낀점', x: width + 120, y: 250, size: 80, type: 2, link: true,
+        id: 3, label: '느낀점', x: width + 120, y: 250, size: 80, type: 2, link: true, parent: 0,
       });
       this.nodes.push({
         // eslint-disable-next-line max-len
-        id: 4, label: '인상장면', x: width + 300, y: 150, size: 80, type: 3, link: true,
+        id: 4, label: '인상장면', x: width + 300, y: 150, size: 80, type: 3, link: true, parent: 0,
       });
     }
 
@@ -547,8 +547,13 @@ export default {
 
             const nodeindex1 = this.nodes.findIndex((element) => element.id === edgeFrom);
             const nodeindex2 = this.nodes.findIndex((element) => element.id === edgeTo);
-            this.nodes[nodeindex1].link = true;
-            this.nodes[nodeindex2].link = true;
+            if (this.nodes[nodeindex1].link === false) {
+              this.nodes[nodeindex1].link = true;
+              this.nodes[nodeindex1].parent = edgeTo;
+            } else {
+              this.nodes[nodeindex2].link = true;
+              this.nodes[nodeindex2].parent = edgeFrom;
+            }
             this.reDrawAll(this.padding.x, this.padding.y);
           }
 
@@ -600,7 +605,7 @@ export default {
             this.popupNodeId = newid;
             this.nodes.push({
               // eslint-disable-next-line max-len
-              id: newid, label: ' ', x: (this.maxPos.L + this.maxPos.R) / 2 + this.padding.x, y: (this.maxPos.T + this.maxPos.B) / 2 + this.padding.y, size: nodesize, type: newid % 4, link: false,
+              id: newid, label: ' ', x: (this.maxPos.L + this.maxPos.R) / 2 + this.padding.x, y: (this.maxPos.T + this.maxPos.B) / 2 + this.padding.y, size: nodesize, type: newid % 4, link: false, parent: -1,
             });
 
             // 노드에 연결 안돼있는 엣지 제거
@@ -608,10 +613,16 @@ export default {
               // eslint-disable-next-line max-len
               if (((this.maxPos.L + this.maxPos.R) / 2 + this.padding.x - nodesize < this.edgePos.x && this.edgePos.x < (this.maxPos.L + this.maxPos.R) / 2 + this.padding.x + nodesize) && ((this.maxPos.T + this.maxPos.B) / 2 + this.padding.y - nodesize < this.edgePos.y && this.edgePos.y < (this.maxPos.T + this.maxPos.B) / 2 + this.padding.y + nodesize)) {
                 const index = this.edges.findIndex((element) => element.id === this.edgeId);
-                if (this.edges[index].to === -1) this.edges[index].to = newid;
-                else this.edges[index].from = newid;
                 const nodeindex = this.nodes.findIndex((element) => element.id === newid);
-                this.nodes[nodeindex].link = true;
+                if (this.edges[index].to === -1) {
+                  this.edges[index].to = newid;
+                  this.nodes[nodeindex].parent = this.edges[index].from;
+                  this.nodes[nodeindex].link = true;
+                } else {
+                  this.edges[index].from = newid;
+                  this.nodes[nodeindex].parent = this.edges[index].to;
+                  this.nodes[nodeindex].link = true;
+                }
               } else {
                 const index = this.edges.findIndex((element) => element.id === this.edgeId);
                 this.edges.splice(index, 1);
@@ -690,18 +701,25 @@ export default {
 
         this.nodes.push({
           // eslint-disable-next-line max-len
-          id: newid, label: '', x: nodex + this.padding.x, y: nodey + this.padding.y, size: nodesize, type: nodetype, link: false,
+          id: newid, label: '', x: nodex + this.padding.x, y: nodey + this.padding.y, size: nodesize, type: nodetype, link: false, parent: -1,
         });
+        this.aiSupportCount += 1;
 
         // 노드에 연결 안돼있는 엣지 제거
         if (this.edgeId !== -1) {
           // eslint-disable-next-line max-len
           if ((nodex + this.padding.x - nodesize < this.edgePos.x && this.edgePos.x < nodex + this.padding.x + nodesize) && (nodey + this.padding.y - nodesize < this.edgePos.y && this.edgePos.y < nodey + this.padding.y + nodesize)) {
             const index = this.edges.findIndex((element) => element.id === this.edgeId);
-            if (this.edges[index].to === -1) this.edges[index].to = newid;
-            else this.edges[index].from = newid;
             const nodeindex = this.nodes.findIndex((element) => element.id === newid);
-            this.nodes[nodeindex].link = true;
+            if (this.edges[index].to === -1) {
+              this.edges[index].to = newid;
+              this.nodes[nodeindex].parent = this.edges[index].from;
+              this.nodes[nodeindex].link = true;
+            } else {
+              this.edges[index].from = newid;
+              this.nodes[nodeindex].parent = this.edges[index].to;
+              this.nodes[nodeindex].link = true;
+            }
           } else {
             const index = this.edges.findIndex((element) => element.id === this.edgeId);
             this.edges.splice(index, 1);
@@ -1554,6 +1572,12 @@ export default {
       const node = this.nodes.find((element) => element.id === this.selectedNode);
       const ancWord = [];
       if (this.selectedNode >= 5) ancWord.push(node.label);
+      if (node !== undefined) {
+        if (node.parent >= 5) {
+          const parentNode = this.nodes.find((element) => element.id === node.parent);
+          ancWord.push(parentNode.label);
+        }
+      }
 
       // eslint-disable-next-line
       axios.get('/api/book/' + this.$route.params.bookId + '/keyword', {
@@ -1696,7 +1720,7 @@ export default {
         // eslint-disable-next-line
         params: {
           // eslint-disable-next-line
-          nodes: this.nodes, edges: this.edges, template: this.templateType, bookId: this.$route.params.bookId, thumbnail: this.bookThumbnail, bookTitle: this.bookTitle,
+          nodes: this.nodes, edges: this.edges, template: this.templateType, bookId: this.$route.params.bookId, thumbnail: this.bookThumbnail, bookTitle: this.bookTitle, aiSupportCount: this.aiSupportCount,
         },
       });
     },
@@ -1976,14 +2000,14 @@ export default {
 #mindmap-tool-pen {
   width: 4vw;
   height: 4vw;
-  background-image: url('../../../assets/mindmap/pen.png');
+  background-image: url('../../../assets/img/views/activity/mindmap/pen.png');
   background-size: cover;
   background-repeat: no-repeat;
 }
 #mindmap-tool-select {
   width: 4vw;
   height: 4vw;
-  background-image: url('../../../assets/mindmap/select.png');
+  background-image: url('../../../assets/img/views/activity/mindmap/select.png');
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center center;
@@ -1991,7 +2015,7 @@ export default {
 #mindmap-tool-zoomin {
   width: 4vw;
   height: 4vw;
-  background-image: url('../../../assets/mindmap/zoom-in.png');
+  background-image: url('../../../assets/img/views/activity/mindmap/zoom-in.png');
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center center;
@@ -1999,7 +2023,7 @@ export default {
 #mindmap-tool-zoomout {
   width: 4vw;
   height: 4vw;
-  background-image: url('../../../assets/mindmap/zoom-out.png');
+  background-image: url('../../../assets/img/views/activity/mindmap/zoom-out.png');
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center center;
@@ -2007,7 +2031,7 @@ export default {
 #mindmap-tool-delete {
   width: 4vw;
   height: 4vw;
-  background-image: url('../../../assets/mindmap/delete.png');
+  background-image: url('../../../assets/img/views/activity/mindmap/delete.png');
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center center;
@@ -2026,7 +2050,7 @@ export default {
 }
 #ai-img {
   position: absolute;
-  background-image: url('../../../assets/mindmap/ai-recommend.png');
+  background-image: url('../../../assets/img/views/activity/mindmap/ai-recommend.png');
   background-size: cover;
   width: 12vw;
   height: 18vh;
@@ -2226,7 +2250,7 @@ export default {
   height: 18vh;
   margin-left: 83%;
   padding: 0;
-  background-image: url('../../../assets/mindmap/next.png');
+  background-image: url('../../../assets/img/views/activity/mindmap/next.png');
   background-size: cover;
 }
 
