@@ -240,7 +240,10 @@ export default {
       };
 
       axios.post('/api/user/work/save', {
-        bid: this.$route.params.bid, type: 2, thumbnail: this.canvas.toDataURL(), content: JSON.stringify(data),
+        bid: this.$route.params.bid,
+        type: 2,
+        thumbnail: this.canvas.toDataURL(),
+        content: JSON.stringify(data),
       }).then(() => {
         this.$router.replace({
           name: 'Main',
