@@ -51,12 +51,12 @@ axios.interceptors.response.use(
             config.headers['x-access-token'] = token;
             return config;
           })
-          .then((config) => axios.request(config))
-          .then(resolve)
           .catch((reason) => {
             if (reason === 'refreshing') setTimeout(refresh, 1000);
             else reject();
-          });
+          })
+          .then((config) => axios.request(config))
+          .then(resolve);
       });
     }
 
