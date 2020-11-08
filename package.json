@@ -10,8 +10,13 @@
   "dependencies": {
     "axios": "^0.20.0",
     "core-js": "^3.6.5",
+    "flipbook-vue": "^0.10.1",
+    "localforage": "^1.9.0",
+    "lodash": "^4.17.20",
+    "moment": "^2.29.1",
     "register-service-worker": "^1.7.1",
     "vue": "^2.6.11",
+    "vue-auth-image": "0.0.3",
     "vue-d3-network": "^0.1.28",
     "vue-router": "^3.2.0",
     "vuetify": "^2.2.11",

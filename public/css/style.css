@@ -1,0 +1,11 @@
+/* global style overrides */
+
+/* disable body scrolling effect */
+html, body {
+  overflow: hidden !important;
+  position: fixed;
+}
+
+body {
+  background-color: #a6d6cd;
+}
