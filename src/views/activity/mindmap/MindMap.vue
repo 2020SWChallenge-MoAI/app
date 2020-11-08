@@ -790,6 +790,7 @@ export default {
     reDrawAll(paddingX, paddingY) {
       this.ctx[0].clearRect(0, 0, 100000, 100000);
       this.ctx[0].beginPath();
+      this.ctx[0].setLineDash([]);
 
       if (this.templateType === 1) {
         // edge 먼저 그리기
