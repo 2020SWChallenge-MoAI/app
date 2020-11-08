@@ -18,7 +18,7 @@
     <right-menu-button
       text="그림그리기"
       url="/activity/drawing"
-      :image="require('@/assets/img/layouts/base/right/writing.svg')"
+      :image="require('@/assets/img/layouts/base/right/drawing.svg')"
     />
     <right-menu-button
       text="독서퀴즈"
