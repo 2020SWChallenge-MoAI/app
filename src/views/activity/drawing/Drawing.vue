@@ -234,13 +234,6 @@ export default {
     },
 
     finishBtnClicked() {
-      /* eslint-disable */
-      var a = document.createElement('a');
-      a.href = this.canvas.toDataURL('image/png');
-      a.download = 'test.png';
-      document.body.appendChild(a);
-      a.click();
-
       const data = {
         sentence: this.$route.params.sentence,
       }
