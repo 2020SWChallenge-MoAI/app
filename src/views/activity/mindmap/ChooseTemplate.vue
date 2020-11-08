@@ -468,6 +468,8 @@ export default {
 
     book() {
       this.tooltip = this.book.title;
+      if (this.book == null) this.ifBookExist = false;
+      else this.ifBookExist = true;
     },
   },
 };
