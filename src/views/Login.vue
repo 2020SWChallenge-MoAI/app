@@ -1,30 +1,58 @@
 <template>
   <auth-layout>
     <template v-slot:buttons>
-      <v-btn rounded x-large dark color="light-green" @click="login">로그인</v-btn>
-      <v-btn rounded x-large dark color="light-green" @click="signup">회원가입</v-btn>
+      <v-btn
+        rounded
+        x-large
+        dark
+        color="light-green"
+        @click="login"
+      >
+        로그인
+      </v-btn>
+      <v-btn
+        rounded
+        x-large
+        dark
+        color="light-green"
+        @click="signup"
+      >
+        회원가입
+      </v-btn>
     </template>
-    <img id="logo" src="img/logo.svg" />
-    <v-form v-model="valid" ref="form" lazy-validation autocomplete="off">
+    <img
+      id="logo"
+      src="img/logo.svg"
+    >
+    <v-form
+      ref="form"
+      v-model="valid"
+      lazy-validation
+      autocomplete="off"
+    >
       <v-text-field
+        v-model="id"
         rounded
         filled
         color="light-green"
-        v-model="id"
         label="아이디"
         :rules="rules"
       />
       <v-text-field
+        v-model="pw"
         rounded
         filled
         color="light-green"
-        v-model="pw"
         label="비밀번호"
         type="password"
         :rules="rules"
       />
     </v-form>
-    <v-snackbar rounded="pill" type="error" v-model="loginErrorAlert">
+    <v-snackbar
+      v-model="loginErrorAlert"
+      rounded="pill"
+      type="error"
+    >
       <v-icon>mdi-alert-circle</v-icon> 로그인 정보가 일치하지 않아요!
     </v-snackbar>
   </auth-layout>

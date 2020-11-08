@@ -18,7 +18,8 @@
 
     <div v-show="currentState == -1" id="no-book-text">
       <img src="../../../assets/noBooks.png" id="no-book-img" />
-      선택할 책이 없어. 책을 읽고 와야해!
+      책이 선택되지 않았어! <br>
+      그림 그릴 책을 선택해보자!
     </div>
 
     <div id="sentence-loading" v-show="currentState == 0" />
@@ -44,7 +45,8 @@ export default {
   },
 
   mounted() {
-    if (this.book !== null) {
+    console.log(this.book);
+    if (this.book !== undefined) {
       this.currentState = 0;
       // eslint-disable-next-line
       axios.get('/api/book/' + this.book.bid + '/main-sentence')
@@ -97,7 +99,7 @@ export default {
 
   computed: {
     book() {
-      return this.$store.getters.getCurrentBook;
+      return this.$store.getters.currentBook;
     },
   },
 

@@ -1,18 +1,21 @@
 <template>
-  <sub-layout title="독서퀴즈" :tooltip="book.title">
+  <sub-layout
+    title="독서퀴즈"
+    :tooltip="book ? book.title : '책 선택 안 됨'"
+  >
     <div class="wrapper">
       <div class="btn-wrapper">
         <router-link
+          v-ripple
           class="btn-quiz btn-creation"
           to="/activity/quiz-game/creation"
-          v-ripple
         >
           <span>문제 내기</span>
         </router-link>
         <router-link
+          v-ripple
           class="btn-quiz btn-solving"
           to="/activity/quiz-game/solving"
-          v-ripple
         >
           <span>문제 풀기</span>
         </router-link>
@@ -32,7 +35,7 @@ export default {
   computed: {
     book() {
       return (
-        this.$store.getters.getCurrentBook || { title: '책을 선택해 보자!' }
+        this.$store.getters.currentBook || { title: '책을 선택해 보자!' }
       );
     },
   },
@@ -65,22 +68,23 @@ export default {
   border-radius: 1vw;
   text-decoration: none;
   color: #202937;
+  display: flex;
+  align-items: center;
 }
 
 .btn-quiz span {
   display: block;
   font-size: 2em;
   color: white;
+  margin-left: 3vw;
 }
 
 .btn-creation {
   background: url('~@/assets/img/views/activity/quiz-game/creation-button-background.png')
     #202937;
-  background-size: cover;
-}
-
-.btn-creation span {
-  margin: 5vh 5vw;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: right;
 }
 
 .btn-solving {
@@ -89,9 +93,5 @@ export default {
   background-size: contain;
   background-repeat: no-repeat;
   background-position: right;
-}
-
-.btn-solving span {
-  margin: 12vh 2vw;
 }
 </style>

@@ -1,7 +1,22 @@
 <template>
-  <div class="btn-left-menu" color="#83b1b1" v-ripple="{class: 'btn-active'}">
-    <v-icon color="white" class="btn-image" v-if="icon">{{ icon }}</v-icon>
-    <img class="btn-image" v-if="image" :src="image">
+  <div
+    v-ripple="{class: 'btn-active'}"
+    class="btn-left-menu"
+    :color="color"
+    :style="{ 'background-color': color }"
+  >
+    <v-icon
+      v-if="icon"
+      color="white"
+      class="btn-image"
+    >
+      {{ icon }}
+    </v-icon>
+    <img
+      v-if="image"
+      class="btn-image"
+      :src="image"
+    >
     <span class="btn-text">{{ text }}</span>
   </div>
 </template>
@@ -21,6 +36,10 @@ export default {
       default: null,
       type: String,
     },
+    color: {
+      default: '#83b1b1',
+      type: String,
+    },
   },
 };
 </script>
@@ -33,17 +52,13 @@ export default {
   border-radius: 1vw;
   text-align: center;
   padding: 1vw;
-  background: #83b1b1;
   color: white;
   box-shadow: none;
 }
 
-.btn-left-menu:active, .btn-left-menu.active {
-  background-color: #668d8d;
-}
-
 .btn-image {
   height: 3vw;
+  font-size: 2.5vw;
   display: inline-block;
 }
 

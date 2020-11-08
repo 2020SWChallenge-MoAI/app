@@ -1,20 +1,14 @@
 <template>
   <div id="container">
     <v-snackbar
-      v-model="$store.state.success"
-      top
+      v-model="popup"
+      centered
       rounded="pill"
-      type="success"
+      :type="popupType"
+      timeout="3000"
+      @click.native="popup = false"
     >
-      <v-icon>mdi-alert-circle</v-icon> {{ successMessage }}
-    </v-snackbar>
-    <v-snackbar
-      v-model="$store.state.error"
-      top
-      rounded="pill"
-      type="error"
-    >
-      <v-icon>mdi-alert-circle</v-icon> {{ errorMessage }}
+      <v-icon>mdi-alert-circle</v-icon> {{ popupMessage }}
     </v-snackbar>
     <div
       id="left-column"
@@ -54,6 +48,8 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex';
+
 export default {
   props: {
     recentBooks: {
@@ -66,14 +62,10 @@ export default {
     },
   },
   computed: {
-    successMessage() {
-      return this.$store.state.successMessage;
-    },
-    errorMessage() {
-      return this.$store.state.errorMessage;
-    },
-    appLoading() {
-      return this.$store.state.appLoading;
+    ...mapGetters(['popupMessage', 'popupType', 'appLoading']),
+    popup: {
+      get() { return this.$store.getters.popup; },
+      set(value) { this.$store.commit('setPopup', value); },
     },
   },
 };

@@ -1,8 +1,20 @@
 <template>
   <sub-layout
     title="독서퀴즈"
-    :tooltip="book.title"
+    :tooltip="book ? book.title : '책 선택 안 됨'"
   >
+    <template v-slot:left>
+      <left-menu-button
+        icon="mdi-check-bold"
+        text="완료"
+        @click.native="submit"
+      />
+      <left-menu-button
+        icon="mdi-trash-can"
+        text="다시쓰기"
+        @click.native="reset"
+      />
+    </template>
     <div class="wrapper">
       <div class="content">
         <div class="question">
@@ -14,7 +26,6 @@
               v-model="question.text"
               class="question-text"
               auto-grow
-              clearable
               flat
               solo
               hide-details
@@ -22,6 +33,11 @@
               color="#668d8d"
               label="문제를 입력해 줘!"
               prefix="Q."
+              :class="{
+                error: questionValidated && !questionValid,
+                success: questionValidated && questionValid
+              }"
+              @input="questionValidated = false"
             >
               <v-btn
                 slot="append"
@@ -37,141 +53,127 @@
             </v-textarea>
           </div>
           <div class="question-type">
-            <span
-              v-show="question.type === 0"
-              @click="
-                question.type = 1;
-                question.answer = null;
-              "
+            <v-btn-toggle
+              v-model="question.type"
+              color="#668d8d"
+              dense
+              borderless
+              mandatory
+              @change="changeQuestionType"
             >
-              객관식
-            </span>
-            <span
-              v-show="question.type === 1"
-              @click="
-                question.type = 0;
-                question.answer = null;
-              "
-            >
-              주관식
-            </span>
+              <v-btn :value="0">
+                객관식
+              </v-btn>
+              <v-btn :value="1">
+                주관식
+              </v-btn>
+            </v-btn-toggle>
           </div>
         </div>
-        <div
-          v-show="question.type == 0"
-          class="answer answer-choice"
-        >
-          <p>A. 답을 입력해 줘!</p>
-          <v-radio-group
-            v-model="question.answer"
-            hide-details
-            row
-            class="mt-0"
+        <div class="answer">
+          <div
+            v-show="question.type == 0"
+            class="answer-text answer-choice"
+            :class="{
+              error: answerValidated && !answerValid,
+              success: answerValidated && answerValid
+            }"
           >
-            <div
-              v-for="(option, index) in question.options"
-              :key="index"
-              class="answer-option"
+            <p>A. 답을 입력해 줘!</p>
+            <v-radio-group
+              v-model="question.answer"
+              hide-details
+              row
+              class="mt-0"
             >
-              <v-text-field
-                v-model="option.text"
-                clearable
-                flat
-                solo
-                hide-details
-                x-small
-                color="#668d8d"
-                class="answer-option-text"
+              <div
+                v-for="(option, index) in question.options"
+                :key="index"
+                class="answer-option"
               >
-                <v-radio
-                  slot="prepend"
+                <v-text-field
+                  v-model="option.text"
+                  flat
+                  solo
                   hide-details
-                  label="정답"
-                  :value="index + 1"
+                  x-small
                   color="#668d8d"
-                  class="answer-option-radio"
-                />
-              </v-text-field>
+                  class="answer-option-text"
+                  @input="answerValidated = false"
+                >
+                  <v-radio
+                    slot="prepend"
+                    hide-details
+                    :label="`보기 ${index + 1}`"
+                    :value="index + 1"
+                    color="#668d8d"
+                    class="answer-option-radio"
+                    @change="answerValidated = false"
+                  />
+                </v-text-field>
+              </div>
+            </v-radio-group>
+            <div class="answer-choice-btns">
+              <v-btn
+                depressed
+                rounded
+                filled
+                color="#668d8d"
+                dark
+                class="answer-choice-btn"
+                @click="verifyAnswer"
+              >
+                검사하기
+              </v-btn>
             </div>
-          </v-radio-group>
-          <div class="answer-choice-btns">
+          </div>
+          <v-textarea
+            v-show="question.type == 1"
+            v-model="question.answer"
+            class="answer-text answer-essay"
+            auto-grow
+            flat
+            solo
+            hide-details
+            rows="2"
+            color="#668d8d"
+            label="답을 입력해 줘!"
+            prefix="A."
+            :class="{
+              error: answerValidated && !answerValid,
+              success: answerValidated && answerValid
+            }"
+            @input="answerValidated = false"
+          >
             <v-btn
-              color="#ee8f89"
-              dark
-              icon
-              :disabled="question.options.length <= 2"
-              class="answer-choice-btn"
-              @click="removeOption"
-            >
-              <v-icon>mdi-minus-circle</v-icon>
-            </v-btn>
-            <v-btn
-              icon
-              color="#668d8d"
-              dark
-              :disabled="question.options.length >= 4"
-              class="answer-choice-btn"
-              @click="addOption"
-            >
-              <v-icon>mdi-plus-circle</v-icon>
-            </v-btn>
-            <v-btn
+              slot="append"
               depressed
-              rounded
               filled
-              color="#668d8d"
+              rounded
               dark
-              class="answer-choice-btn"
+              color="#668d8d"
               @click="verifyAnswer"
             >
               검사하기
             </v-btn>
-          </div>
-        </div>
-        <v-textarea
-          v-show="question.type == 1"
-          v-model="question.answer"
-          class="answer answer-essay answer-text"
-          auto-grow
-          clearable
-          flat
-          solo
-          hide-details
-          rows="2"
-          color="#668d8d"
-          label="답을 입력해 줘!"
-          prefix="A."
-        >
-          <v-btn
-            slot="append"
-            depressed
-            filled
-            rounded
-            dark
-            color="#668d8d"
-            @click="verifyAnswer"
-          >
-            검사하기
-          </v-btn>
-        </v-textarea>
-      </div>
-      <div class="btns">
-        <div
-          v-ripple
-          class="btn btn-reset"
-          @click="reset"
-        >
-          <span>다시 쓰기</span>
-        </div>
-        <div
-          v-ripple
-          class="btn btn-submit"
-          @click="submit"
-        >
-          <span>제출하기</span>
+          </v-textarea>
         </div>
       </div>
     </div>
+    <finish-overlay
+      v-show="submitted"
+      :success="true"
+      message="좋았어!"
+    >
+      <overlay-button
+        text="다른 문제 만들기"
+        @click.native="reset"
+      />
+      <overlay-button
+        text="활동 마치기"
+        @click.native="$router.replace('/')"
+      />
+    </finish-overlay>
   </sub-layout>
 </template>
 
@@ -184,20 +186,23 @@ export default {
       question: {
         text: '',
         type: 0, // 0(choice) 1(essay)
-        options: [{ text: '' }, { text: '' }],
+        options: [{ text: '' }, { text: '' }, { text: '' }, { text: '' }],
         answer: '',
       },
-      valid: false,
+      questionValidated: false,
+      questionValid: true,
+      answerValidated: false,
+      answerValid: true,
+      submitted: false,
     };
   },
   computed: {
     book() {
       return (
-        this.$store.getters.getCurrentBook || { title: '책을 선택해 보자!' }
+        this.$store.getters.currentBook || { title: '책을 선택해 보자!' }
       );
     },
   },
-  watch: {},
   methods: {
     encodeAnswer() {
       if (this.question.type === 0) {
@@ -218,12 +223,16 @@ export default {
           question: this.question.text,
         })
         .then(() => {
+          this.questionValidated = true;
+          this.questionValid = true;
           this.$store.dispatch('showMessage', {
             mode: 'success',
             message: '좋은 질문이야!',
           });
         })
         .catch(() => {
+          this.questionValidated = true;
+          this.questionValid = false;
           this.$store.dispatch('showMessage', {
             mode: 'error',
             message: '질문에 문제가 있는 것 같아. 다시 만들어 보자!',
@@ -238,12 +247,16 @@ export default {
           answer: this.encodeAnswer(),
         })
         .then(() => {
+          this.answerValidated = true;
+          this.answerValid = true;
           this.$store.dispatch('showMessage', {
             mode: 'success',
             message: '좋은 답이야!',
           });
         })
         .catch(() => {
+          this.answerValidated = true;
+          this.answerValid = false;
           this.$store.dispatch('showMessage', {
             mode: 'error',
             message: '질문과 답이 맞지 않는 것 같아. 다시 만들어 보자!',
@@ -260,24 +273,72 @@ export default {
     },
     reset() {
       this.question.text = '';
-      this.question.options = [{ text: '' }, { text: '' }];
+      this.question.options = [{ text: '' }, { text: '' }, { text: '' }, { text: '' }];
       this.question.answer = '';
+      this.questionValid = true;
+      this.questionValidated = false;
+      this.answerValid = true;
+      this.answerValidated = false;
+      this.submitted = false;
     },
     submit() {
-      axios
+      if (!this.questionValidated || !this.questionValidated) {
+        this.$store.dispatch('showMessage', {
+          mode: 'error',
+          message: '질문과 답이 아직 검사되지 않았어. 검사하기 버튼을 눌러서 문제를 검사하자!',
+        });
+        return;
+      }
+      if (!this.questionValid || !this.answerValid) {
+        this.$store.dispatch('showMessage', {
+          mode: 'error',
+          message: '질문과 답에 문제가 있는 것 같아. 내용을 수정하고 검사하기 버튼을 눌러 줘!',
+        });
+        return;
+      }
+
+      const doSubmit = axios
         .post(`/api/book/${this.book.bid}/qna/submit`, {
           question: this.question.text,
           type: this.question.type,
           answer: this.encodeAnswer(),
-        })
-        .then()
-        .catch();
+        });
+
+      doSubmit
+        .then(() => { this.submitted = true; })
+        .catch(() => {
+          this.$store.dispatch('showMessage', {
+            mode: 'error',
+            message: '문제가 있는 것 같아. 다시 한 번 시도해 보자!',
+          });
+        });
+
+      doSubmit.then(() => axios.post('/api/user/work/save', {
+        bid: this.book.bid,
+        type: 1,
+        content: JSON.stringify({
+          work: 0, // 만들기: 0, 풀기: 1
+          question: this.question.text,
+          answer: this.question.type === 0
+            ? this.question.options[this.question.answer]
+            : this.question.answer,
+        }),
+      }));
+    },
+    changeQuestionType(type) {
+      this.question.type = type;
+      this.question.options = [{ text: '' }, { text: '' }, { text: '' }, { text: '' }];
+      this.question.answer = '';
+      this.questionValid = true;
+      this.questionValidated = false;
+      this.answerValid = true;
+      this.answerValidated = false;
     },
   },
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .wrapper {
   display: flex;
   flex-flow: column;
@@ -293,6 +354,16 @@ export default {
 .question {
   display: flex;
   align-items: flex-start;
+}
+
+.question-text.error, .answer-text.error {
+  background-color: #f0ebd7 !important;
+  border: 2px solid #e98d89 !important;
+}
+
+.question-text.success, .answer-text.success {
+  background-color: #f0ebd7 !important;
+  border: 2px solid #8bc673 !important;
 }
 
 .question-text-wrapper {
@@ -332,10 +403,10 @@ export default {
 .question-type {
   width: 12vw;
   height: 15vw;
-  background: url('~@/assets/img/views/activity/quiz-game/question-type-background.png');
+  background: url('~@/assets/img/views/activity/quiz-game/creation-button-background.png');
   background-size: contain;
   background-repeat: no-repeat;
-  text-align: center;
+  text-align: right;
 }
 
 .question-type span {
@@ -343,7 +414,7 @@ export default {
   margin-top: 60%;
 }
 
-.answer {
+.answer-text {
   background-color: #f0ebd7;
   border-radius: 1vw;
   padding: 2vw;
@@ -358,12 +429,12 @@ export default {
   margin-right: 2vw;
 }
 
-/deep/ .answer-option .v-radio {
+::v-deep .answer-option .v-radio {
   align-items: flex-start !important;
 }
 
-/deep/ .answer-text .v-input__slot,
-/deep/ .question-text .v-input__slot {
+::v-deep .answer-text.answer-essay .v-input__slot,
+::v-deep .question-text .v-input__slot {
   background: none !important;
 }
 

@@ -1,7 +1,23 @@
 <template>
   <div class="book">
-    <img v-auth-image="book.thumbnail">
-    <div class="book-click-overlay" v-if="clicked" @click="$emit('read')">
+    <v-img :src="book.thumbnail">
+      <template v-slot:placeholder>
+        <v-row
+          class="fill-height ma-0"
+          align="center"
+          justify="center"
+        >
+          <v-progress-circular
+            indeterminate
+            color="grey lighten-5"
+          />
+        </v-row>
+      </template>
+    </v-img>
+    <div
+      v-if="clicked"
+      class="book-click-overlay"
+    >
       <div class="book-click-overlay-icon">
         <v-icon>mdi-book-open-page-variant</v-icon>
       </div>
@@ -25,13 +41,8 @@ export default {
   box-shadow: 0px 15px 10px 0px rgba(0, 0, 0, 0.3);
   overflow: hidden;
   position: relative;
-}
-
-.book img {
-  position: absolute;
-  top: 0;
-  width: 100%;
-  height: 100%;
+  background: #83b1b1;
+  transform: translateZ(0);
 }
 
 .book-click-overlay {

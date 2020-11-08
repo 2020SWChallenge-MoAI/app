@@ -1,102 +1,84 @@
 <template>
-  <sub-layout title="마이페이지" tooltip="나의 활동 기록을 살펴보자!" :recent-books="false">
-
-    <div id="mypage-top">
-      <div id="mypage-profile">
-        <div
-          id="mypage-user-img"
-        />
-        <div id="mypage-user-age">{{ userAge }}세</div>
-        <div id="mypage-user-name">{{ userName }}</div>
-      </div>
-
-      <div id="mypage-result">
-        <div id="mypage-result-title">
-          <v-icon x-large @click="month -= 1; slide = 'slide-left';"> mdi-menu-left </v-icon>
-
-          <transition :name="slide" mode="out-in" enter="enter">
-            <div v-bind:key="month" id="mypage-result-label">{{ month }}월 마인드맵 평가</div>
-          </transition>
-
-          <v-icon x-large @click="month += 1; slide = 'slide-right';"> mdi-menu-right </v-icon>
-        </div>
-
-        <transition :name="slide" mode="out-in">
-          <table v-bind:key="month" id="mypage-result-table" style="background: lightblue;">
-            <thead>
-              <tr>
-                <th> </th>
-                <th>1주</th>
-                <th>2주</th>
-                <th>3주</th>
-                <th>4주</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              <tr>
-                <td>이해도</td>
-                <td>10</td>
-                <td>21</td>
-                <td>10</td>
-                <td>21</td>
-              </tr>
-
-              <tr>
-                <td>성실성</td>
-                <td>10</td>
-                <td>21</td>
-                <td>10</td>
-                <td>21</td>
-              </tr>
-
-              <tr>
-                <td style="border-radius: 0 0 0 2vw;">창의성</td>
-                <td>10</td>
-                <td>21</td>
-                <td>10</td>
-                <td style="border-radius: 0 0 2vw 0;">21</td>
-              </tr>
-            </tbody>
-          </table>
-        </transition>
-
-      </div>
+  <sub-layout
+    title="마이페이지"
+    tooltip="나의 활동 기록을 살펴보자!"
+    :recent-books="false"
+  >
+    <div class="top">
+      <profile :user="user" />
+      <result-table
+        :month="month"
+        @prev="month -= 1"
+        @next="month += 1"
+      />
     </div>
-
-    <div id="mypage-bot">
+    <div class="bottom">
       <div id="mypage-activity-left-bookname">
-
-        <transition name="slide-up" mode="out-in">
-          <div v-bind:key="activityIdIndex">
-            {{ activity.bookname }}
+        <transition
+          name="slide-up"
+          mode="out-in"
+        >
+          <div :key="widIndex">
+            {{ book.title }}
           </div>
         </transition>
-
       </div>
-
-      <transition name="fade" mode="out-in">
-        <div v-bind:key="activityIdIndex" id="mypage-activity-left-date">
-          {{ activity.date }}
+      <transition
+        name="fade"
+        mode="out-in"
+      >
+        <div
+          id="mypage-activity-left-date"
+          :key="widIndex"
+        >
+          {{ work.date }}
         </div>
       </transition>
 
-      <v-icon
+      <v-btn
         id="mypage-activity-left-arrow"
-        @click="activityBefore" x-large
-      > mdi-arrow-left-drop-circle </v-icon>
+        icon
+        color="#668d8d"
+        x-large
+        :disabled="isStart"
+        @click="prevWork"
+      >
+        <v-icon>mdi-arrow-left-drop-circle</v-icon>
+      </v-btn>
 
-      <transition name="fade">
-        <div v-if="!showNextActivity" id="mypage-activity-cover" />
+      <transition
+        :name="slideDirection"
+        mode="out-in"
+      >
+        <div
+          id="mypage-activity"
+          :key="widIndex"
+        >
+          <mind-map-result
+            v-if="work.type === 0"
+            :work="work"
+          />
+          <quiz-game-result
+            v-if="work.type === 1"
+            :work="work"
+          />
+          <writing-result
+            v-if="work.type === 3"
+            :work="work"
+          />
+        </div>
       </transition>
-      <canvas id="mypage-activity"></canvas>
-
-      <v-icon
+      <v-btn
         id="mypage-activity-right-arrow"
-        @click="activityNext" x-large
-      > mdi-arrow-right-drop-circle </v-icon>
+        icon
+        color="#668d8d"
+        x-large
+        :disabled="isEnd"
+        @click="nextWork"
+      >
+        <v-icon>mdi-arrow-right-drop-circle</v-icon>
+      </v-btn>
     </div>
-
   </sub-layout>
 </template>
 
@@ -104,36 +86,30 @@
 import axios from 'axios';
 import moment from 'moment';
 
+import Profile from '../components/views/mypage/Profile.vue';
+import ResultTable from '../components/views/mypage/ResultTable.vue';
+
+import WritingResult from '../components/views/activity/writing/WritingResult.vue';
+import QuizGameResult from '../components/views/activity/quiz-game/QuizGameResult.vue';
+import MindMapResult from '../components/views/activity/mindmap/MindMapResult.vue';
+
 export default {
+  components: {
+    Profile,
+    ResultTable,
+    MindMapResult,
+    QuizGameResult,
+    WritingResult,
+  },
   data() {
     return {
-      userName: '',
-      userAge: '',
-      userImg: '',
+      user: {},
       month: new Date().getMonth() + 1,
-      activityIdIndex: 0,
-      slide: '',
-
-      canvas: document.getElementById(''),
-      ctx: [],
-      scale: 0.5,
-
-      activity: {
-        nodes: [],
-        edges: [],
-        templateType: -1,
-        date: '',
-        bookname: '',
-      },
-      padding: { x: 0, y: 0 },
-      activityIdList: [],
-
-      showNextActivity: true,
-
-      lightPos: { x: 0, y: 0 },
-      bookImg: new Image(),
-      leaf1Img: new Image(),
-      leaf2Img: new Image(),
+      wids: [],
+      widIndex: 0,
+      work: {},
+      showWork: false,
+      slideDirection: 'slide-left',
     };
   },
 
@@ -276,683 +252,60 @@ export default {
       }
     },
 
-    reDrawAll() {
-      this.ctx[0].clearRect(0, 0, 100000, 100000);
-      this.ctx[0].beginPath();
-
-      if (this.activity.templateType === 1) {
-        this.padding.x = this.activity.nodes[0].x - (this.canvas.width / 2) / 0.2;
-        // eslint-disable-next-line max-len
-        this.padding.y = this.activity.nodes[0].y * 0.75 - this.canvas.height / (0.4 * 0.75);
-
-        this.canvas.style.background = '#FFFDF2';
-
-        // edge 먼저 그리기
-        // eslint-disable-next-line no-plusplus
-        for (let i = 0; i < this.activity.edges.length; i++) {
-          // eslint-disable-next-line max-len
-          const from = this.activity.nodes.find((element) => element.id === this.activity.edges[i].from);
-          // eslint-disable-next-line max-len
-          const to = this.activity.nodes.find((element) => element.id === this.activity.edges[i].to);
-          // eslint-disable-next-line max-len
-          this.drawEdge(from.x - this.padding.x, from.y - this.padding.y, to.x - this.padding.x, to.y - this.padding.y);
-        }
-
-        // 템플릿 그리기
-        this.initSetting(0, 0);
-
-        // node 그리기
-        // eslint-disable-next-line no-plusplus
-        for (let i = 0; i < this.activity.nodes.length; i++) {
-          // eslint-disable-next-line max-len
-          this.makeNode(this.activity.nodes[i].x - this.padding.x, this.activity.nodes[i].y - this.padding.y, this.activity.nodes[i].size, this.activity.nodes[i].type, this.activity.nodes[i].label);
-        }
-      } else if (this.activity.templateType === 2) {
-        this.padding.x = this.activity.nodes[0].x - this.canvas.width / (0.2 * 2);
-        this.padding.y = this.activity.nodes[0].y * 0.75 - this.canvas.height;
-
-        this.lightPos.x = this.activity.nodes[0].x - this.padding.x;
-        this.lightPos.y = -100 - this.padding.y;
-
-        this.initSetting(0, 0);
-
-        // edge 먼저 그리기
-        // eslint-disable-next-line no-plusplus
-        for (let i = 0; i < this.activity.edges.length; i++) {
-          // eslint-disable-next-line
-          const from = this.activity.nodes.find((element) => element.id === this.activity.edges[i].from);
-          // eslint-disable-next-line
-          const to = this.activity.nodes.find((element) => element.id === this.activity.edges[i].to);
-          // eslint-disable-next-line max-len
-          this.drawEdge(from.x - this.padding.x, from.y - this.padding.y, to.x - this.padding.x, to.y - this.padding.y);
-        }
-
-        // eslint-disable-next-line
-        this.ctx[0].drawImage(this.bookImg, this.activity.nodes[0].x - this.padding.x - 75, 0 - this.padding.y, 150, 200);
-
-        // node 그리기
-        // eslint-disable-next-line no-plusplus
-        for (let i = 0; i < this.activity.nodes.length; i++) {
-          // eslint-disable-next-line max-len
-          this.makeNode(this.activity.nodes[i].x - this.padding.x, this.activity.nodes[i].y - this.padding.y, this.activity.nodes[i].size, this.activity.nodes[i].type, this.activity.nodes[i].label);
-        }
-      }
+    prevWork() {
+      this.slideDirection = 'slide-left';
+      if (this.isStart) return;
+      this.widIndex -= 1;
+      this.loadWork();
     },
-
-    getPosition(event) {
-      const touches = event.changedTouches;
-      const x = (touches[0].clientX - this.canvas.offsetLeft);
-      const y = (touches[0].clientY - this.canvas.offsetTop);
-      const bound = this.canvas.getBoundingClientRect();
-      return { X: (x - bound.left) / this.scale, Y: (y - bound.top) / this.scale };
+    nextWork() {
+      this.slideDirection = 'slide-right';
+      if (this.isEnd) return;
+      this.widIndex += 1;
+      this.loadWork();
     },
-
-    makeNode(x, y, size, type, text) {
-      let fontsize = size / 4;
-      let linesize = 1;
-      if (text !== undefined) {
-        if (text.length > 8) fontsize /= 2;
-        else if (text.length > 5) fontsize = size / (text.length - 1);
-        linesize = Math.floor(text.length / 10) + 1;
-        if (text.length % 10 === 0) linesize -= 1;
-      }
-
-      if (this.activity.templateType === 1) {
-        if (type === 0) {
-          // 나뭇잎1 그리기
-          this.ctx[0].beginPath();
-          // 기본 세팅
-          this.ctx[0].fillStyle = '#7ed221';
-
-          this.ctx[0].moveTo(x, y - size * 0.6);
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x - size / 2, y - size * 0.9, x - size * 1.2, y - size * 0.7, x - size * 0.8, y);
-
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x - size * 1.2, y + size * 0.6, x, y + size * 0.8, x + size / 4, y + size * 0.4);
-
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x + size * 0.8, y + size * 0.6, x + size * 0.9, y + size / 8, x + size * 0.75, y);
-
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x + size, y - size * 0.8, x, y - size * 0.8, x, y - size * 0.6);
-          this.ctx[0].fill();
-          let textloc = ((linesize - 1) / 2) * -1;
-          for (let i = 0; i < linesize; i += 1) {
-            // eslint-disable-next-line prefer-template
-            this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
-            this.ctx[0].fillStyle = 'white';
-            // eslint-disable-next-line max-len
-            this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
-            textloc += 1;
-          }
-        } else if (type === 1) {
-          // 나뭇잎2 그리기
-          this.ctx[0].beginPath();
-          // 기본 세팅
-          this.ctx[0].fillStyle = '#7ed221';
-
-          this.ctx[0].moveTo(x, y - size / 2);
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x - size / 4, y - size * 0.9, x - size, y - size * 0.6, x - size * 0.8, y - size * 0.2);
-
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x - size * 1.3, y + size / 4, x - size / 2, y + size * 0.8, x - size / 4, y + size / 2);
-
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x + size / 2, y + size * 0.9, x + size * 1, y + size * 0.3, x + size * 0.75, y - 5);
-
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x + size, y - size / 2, x + size * 0.2, y - size * 0.9, x, y - size / 2);
-          this.ctx[0].fill();
-          let textloc = ((linesize - 1) / 2) * -1;
-          for (let i = 0; i < linesize; i += 1) {
-            // eslint-disable-next-line prefer-template
-            this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
-            this.ctx[0].fillStyle = 'white';
-            // eslint-disable-next-line max-len
-            this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
-            textloc += 1;
-          }
-        } else if (type === 2) {
-          // 나뭇잎3 그리기
-          this.ctx[0].beginPath();
-          // 기본 세팅
-          this.ctx[0].fillStyle = '#7ed221';
-
-          this.ctx[0].moveTo(x + size * 0.2, y - size * 0.6);
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x, y - size * 0.8, x - size * 0.4, y - size * 0.8, x - size * 0.5, y - size * 0.6);
-
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x - size * 1, y - size * 0.7, x - size * 1.2, y, x - size * 0.7, y + size * 0.1);
-
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x - size * 0.9, y + size * 0.6, x - size * 0.2, y + size * 0.8, x, y + size * 0.5);
-
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x + size * 0.7, y + size * 0.7, x + size * 0.9, y + size * 0.2, x + size * 0.7, y);
-
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x + size * 1.1, y - size * 0.3, x + size * 0.35, y - size * 0.9, x + size * 0.2, y - size * 0.6);
-          this.ctx[0].fill();
-          let textloc = ((linesize - 1) / 2) * -1;
-          for (let i = 0; i < linesize; i += 1) {
-            // eslint-disable-next-line prefer-template
-            this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
-            this.ctx[0].fillStyle = 'white';
-            // eslint-disable-next-line max-len
-            this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
-            textloc += 1;
-          }
-        } else if (type === 3) {
-          // 나뭇잎4 그리기
-          this.ctx[0].beginPath();
-          // 기본 세팅
-          this.ctx[0].fillStyle = '#7ed221';
-
-          this.ctx[0].moveTo(x + size * 0.3, y - size * 0.6);
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x + size * 0.1, y - size * 0.75, x - size * 0.2, y - size * 0.75, x - size * 0.4, y - size * 0.5);
-
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x - size * 0.8, y - size * 0.7, x - size * 1, y - size * 0.2, x - size * 0.7, y);
-
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x - size * 1.1, y + size * 0.4, x - size * 0.3, y + size * 0.8, x - size * 0.1, y + size * 0.5);
-
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x + size * 0.15, y + size * 0.65, x + size * 0.3, y + size * 0.55, x + size * 0.4, y + size * 0.5);
-
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x + size * 0.9, y + size * 0.7, x + size * 1.2, y, x + size * 0.8, y - size * 0.1);
-
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(x + size * 1.0, y - size * 0.8, x + size * 0.2, y - size * 0.7, x + size * 0.3, y - size * 0.6);
-          this.ctx[0].fill();
-          let textloc = ((linesize - 1) / 2) * -1;
-          for (let i = 0; i < linesize; i += 1) {
-            // eslint-disable-next-line prefer-template
-            this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
-            this.ctx[0].fillStyle = 'white';
-            // eslint-disable-next-line max-len
-            this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2 - 0.2), y + textloc * (fontsize + (fontsize / 3)));
-            textloc += 1;
-          }
-        }
-      } else if (this.activity.templateType === 2) {
-        // eslint-disable-next-line
-        var lightRad = Math.atan2(y - this.lightPos.y, this.lightPos.x - x);
-        const r = size * 0.8;
-        if (type === 0) {
-          this.ctx[0].shadowOffsetX = 0;
-          this.ctx[0].shadowOffsetY = 4;
-          this.ctx[0].shadowColor = 'rgba(0, 0, 0, 0.25)';
-          this.ctx[0].shadowBlur = 4;
-          this.ctx[0].fillStyle = '#7159BA';
-          this.ctx[0].beginPath();
-          this.ctx[0].arc(x, y, size, 0, Math.PI * 2);
-          this.ctx[0].fill();
-
-          this.ctx[0].fillStyle = 'white';
-          this.ctx[0].shadowOffsetX = 0;
-          this.ctx[0].shadowOffsetY = 0;
-          this.ctx[0].beginPath();
-          // eslint-disable-next-line max-len
-          this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
-          this.ctx[0].rotate(-lightRad);
-          this.ctx[0].moveTo(0, -size * 0.15);
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(-size * 0.05, -size * 0.15, -size * 0.1, -size * 0.075, -size * 0.1, 0);
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(-size * 0.1, size * 0.075, -size * 0.05, size * 0.15, 0, size * 0.15);
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(size * 0.05, size * 0.15, size * 0.1, size * 0.075, size * 0.1, 0);
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(size * 0.1, -size * 0.075, size * 0.05, -size * 0.15, 0, -size * 0.15);
-          this.ctx[0].fill();
-          this.ctx[0].rotate(+lightRad);
-          // eslint-disable-next-line max-len
-          this.ctx[0].translate(-(x + r * Math.cos(lightRad)), -(y - r * Math.sin(lightRad)));
-
-          let textloc = ((linesize - 1) / 2) * -1;
-          for (let i = 0; i < linesize; i += 1) {
-            this.ctx[0].shadowColor = 'transparent';
-            // eslint-disable-next-line prefer-template
-            this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
-            this.ctx[0].fillStyle = 'white';
-            // eslint-disable-next-line max-len
-            this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
-            textloc += 1;
-          }
-        } else if (type === 1) {
-          this.ctx[0].shadowOffsetX = 0;
-          this.ctx[0].shadowOffsetY = 4;
-          this.ctx[0].shadowColor = 'rgba(0, 0, 0, 0.25)';
-          this.ctx[0].shadowBlur = 4;
-          this.ctx[0].fillStyle = '#AC92EB';
-          this.ctx[0].beginPath();
-          this.ctx[0].arc(x, y, size, 0, Math.PI * 2);
-          this.ctx[0].fill();
-
-          this.ctx[0].fillStyle = 'white';
-          this.ctx[0].shadowOffsetX = 0;
-          this.ctx[0].shadowOffsetY = 0;
-          this.ctx[0].beginPath();
-          // eslint-disable-next-line max-len
-          this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
-          this.ctx[0].rotate(-lightRad);
-          this.ctx[0].moveTo(0, -size * 0.18);
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(-size * 0.05, -size * 0.18, -size * 0.1, -size * 0.15, -size * 0.1, 0);
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(-size * 0.1, size * 0.15, -size * 0.05, size * 0.18, 0, size * 0.18);
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(size * 0.05, size * 0.18, size * 0.1, size * 0.15, size * 0.1, 0);
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(size * 0.1, -size * 0.15, size * 0.05, -size * 0.18, 0, -size * 0.18);
-          this.ctx[0].fill();
-          this.ctx[0].rotate(+lightRad);
-          // eslint-disable-next-line max-len
-          this.ctx[0].translate(-(x + r * Math.cos(lightRad)), -(y - r * Math.sin(lightRad)));
-
-          let textloc = ((linesize - 1) / 2) * -1;
-          for (let i = 0; i < linesize; i += 1) {
-            this.ctx[0].shadowColor = 'transparent';
-            // eslint-disable-next-line prefer-template
-            this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
-            this.ctx[0].fillStyle = 'white';
-            // eslint-disable-next-line max-len
-            this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
-            textloc += 1;
-          }
-        } else if (type === 2) {
-          this.ctx[0].shadowOffsetX = 0;
-          this.ctx[0].shadowOffsetY = 4;
-          this.ctx[0].shadowColor = 'rgba(0, 0, 0, 0.25)';
-          this.ctx[0].shadowBlur = 4;
-          this.ctx[0].fillStyle = '#B8AAD1';
-          this.ctx[0].beginPath();
-          this.ctx[0].arc(x, y, size, 0, Math.PI * 2);
-          this.ctx[0].fill();
-
-          this.ctx[0].fillStyle = 'white';
-          this.ctx[0].shadowOffsetX = 0;
-          this.ctx[0].shadowOffsetY = 0;
-          this.ctx[0].beginPath();
-          // eslint-disable-next-line max-len
-          this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
-          this.ctx[0].rotate(-lightRad);
-          this.ctx[0].moveTo(0, -size * 0.18);
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(-size * 0.05, -size * 0.18, -size * 0.1, -size * 0.15, -size * 0.1, 0);
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(-size * 0.1, size * 0.15, -size * 0.05, size * 0.18, 0, size * 0.18);
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(size * 0.05, size * 0.18, size * 0.1, size * 0.15, size * 0.1, 0);
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(size * 0.1, -size * 0.15, size * 0.05, -size * 0.18, 0, -size * 0.18);
-          this.ctx[0].fill();
-          this.ctx[0].rotate(+lightRad);
-          // eslint-disable-next-line max-len
-          this.ctx[0].translate(-(x + r * Math.cos(lightRad)), -(y - r * Math.sin(lightRad)));
-
-          let textloc = ((linesize - 1) / 2) * -1;
-          for (let i = 0; i < linesize; i += 1) {
-            this.ctx[0].shadowColor = 'transparent';
-            // eslint-disable-next-line prefer-template
-            this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
-            this.ctx[0].fillStyle = 'white';
-            // eslint-disable-next-line max-len
-            this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
-            textloc += 1;
-          }
-        } else if (type === 3) {
-          this.ctx[0].shadowOffsetX = 0;
-          this.ctx[0].shadowOffsetY = 4;
-          this.ctx[0].shadowColor = 'rgba(0, 0, 0, 0.25)';
-          this.ctx[0].shadowBlur = 4;
-          this.ctx[0].fillStyle = '#784DFF';
-          this.ctx[0].beginPath();
-          this.ctx[0].arc(x, y, size, 0, Math.PI * 2);
-          this.ctx[0].fill();
-
-          this.ctx[0].fillStyle = 'white';
-          this.ctx[0].shadowOffsetX = 0;
-          this.ctx[0].shadowOffsetY = 0;
-          this.ctx[0].beginPath();
-          // eslint-disable-next-line max-len
-          this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
-          this.ctx[0].rotate(-lightRad);
-          this.ctx[0].moveTo(0, -size * 0.15);
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(-size * 0.05, -size * 0.15, -size * 0.1, -size * 0.075, -size * 0.1, 0);
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(-size * 0.1, size * 0.075, -size * 0.05, size * 0.15, 0, size * 0.15);
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(size * 0.05, size * 0.15, size * 0.1, size * 0.075, size * 0.1, 0);
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(size * 0.1, -size * 0.075, size * 0.05, -size * 0.15, 0, -size * 0.15);
-          this.ctx[0].fill();
-          this.ctx[0].rotate(+lightRad);
-          // eslint-disable-next-line max-len
-          this.ctx[0].translate(-(x + r * Math.cos(lightRad)), -(y - r * Math.sin(lightRad)));
-
-          let textloc = ((linesize - 1) / 2) * -1;
-          for (let i = 0; i < linesize; i += 1) {
-            this.ctx[0].shadowColor = 'transparent';
-            // eslint-disable-next-line prefer-template
-            this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
-            this.ctx[0].fillStyle = 'white';
-            // eslint-disable-next-line max-len
-            this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
-            textloc += 1;
-          }
-        }
-      }
+    async loadWork() {
+      if (!this.wids.length) return;
+      const { data } = await axios.get(`/api/user/work/${this.wids[this.widIndex]}`);
+      this.work = {
+        bid: data.bid,
+        type: data.type,
+        content: data.content,
+        date: moment(data.created_at).format('yyyy-MM-DD HH:mm:ss'),
+      };
     },
-
-    drawEdge(x1, y1, x2, y2) {
-      if (this.activity.templateType === 1) {
-        this.ctx[0].beginPath();
-        this.ctx[0].moveTo(x1, y1);
-        this.ctx[0].lineWidth = 12;
-        this.ctx[0].strokeStyle = '#baad93';
-        this.ctx[0].lineTo(x2, y2);
-        this.ctx[0].stroke();
-      } else if (this.activity.templateType === 2) {
-        this.ctx[0].beginPath();
-        this.ctx[0].moveTo(x1, y1);
-        this.ctx[0].lineWidth = 12;
-        this.ctx[0].strokeStyle = '#9A8653';
-        this.ctx[0].lineTo(x2, y2);
-        this.ctx[0].stroke();
-      }
+  },
+  computed: {
+    isStart() {
+      return this.widIndex === 0;
     },
-
-    drawCloud(x, y, paddingX, paddingY) {
-      const width = 389;
-      const height = 207.5;
-
-      // 구름 그리기
-      this.ctx[0].fillStyle = '#e5f6ff';
-      this.ctx[0].beginPath();
-      // eslint-disable-next-line max-len
-      this.ctx[0].moveTo(width - paddingX - x, height - 165 - paddingY - y);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width - 40 - paddingX - x, height - 240 - paddingY - y, width - 165 - paddingX - x, height - 240 - paddingY - y, width - 190 - paddingX - x, height - 140 - paddingY - y);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width - 270 - paddingX - x, height - 150 - paddingY - y, width - 315 - paddingX - x, height - 65 - paddingY - y, width - 250 - paddingX - x, height - 15 - paddingY - y);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width - 190 - paddingX - x, height - 10 - paddingY - y, width + 0 - paddingX - x, height - 10 - paddingY - y, width + 90 - paddingX - x, height - 15 - paddingY - y);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 140 - paddingX - x, height - 30 - paddingY - y, width + 140 - paddingX - x, height - 90 - paddingY - y, width + 65 - paddingX - x, height - 110 - paddingY - y);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 50 - paddingX - x, height - 170 - paddingY - y, width - paddingX - x, height - 170 - paddingY - y, width - 0 - paddingX - x, height - 165 - paddingY - y);
-      this.ctx[0].fill();
-
-      this.ctx[0].fillStyle = '#caedff';
-      this.ctx[0].beginPath();
-      // eslint-disable-next-line max-len
-      this.ctx[0].moveTo(width - paddingX - x, height - 165 - paddingY - y + 30);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width - 40 - paddingX - x, height - 240 - paddingY - y + 30, width - 165 - paddingX - x, height - 240 - paddingY - y + 30, width - 190 - paddingX - x, height - 140 - paddingY - y + 30);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width - 270 - paddingX - x, height - 150 - paddingY - y + 30, width - 315 - paddingX - x, height - 65 - paddingY - y + 30, width - 250 - paddingX - x, height - 15 - paddingY - y + 30);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width - 190 - paddingX - x, height - 10 - paddingY - y + 30, width + 0 - paddingX - x, height - 10 - paddingY - y + 30, width + 90 - paddingX - x, height - 15 - paddingY - y + 30);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 140 - paddingX - x, height - 30 - paddingY - y + 30, width + 140 - paddingX - x, height - 90 - paddingY - y + 30, width + 65 - paddingX - x, height - 110 - paddingY - y + 30);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 50 - paddingX - x, height - 170 - paddingY - y + 30, width - paddingX - x, height - 170 - paddingY - y + 30, width - 0 - paddingX - x, height - 165 - paddingY - y + 30);
-      this.ctx[0].fill();
-
-      // 옆 작은 구름
-      this.ctx[0].fillStyle = '#ebf7f7';
-      this.ctx[0].beginPath();
-      // eslint-disable-next-line max-len
-      this.ctx[0].moveTo(width + 65 - paddingX - x, height - 110 - paddingY - y);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 30 - paddingX - x, height - 140 - paddingY - y, width - 10 - paddingX - x, height - 80 - paddingY - y, width + 40 - paddingX - x, height - 60 - paddingY - y);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 45 - paddingX - x, height - 25 - paddingY - y, width + 85 - paddingX - x, height - 30 - paddingY - y, width + 100 - paddingX - x, height - 40 - paddingY - y);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 120 - paddingX - x, height - 30 - paddingY - y, width + 140 - paddingX - x, height - 30 - paddingY - y, width + 160 - paddingX - x, height - 45 - paddingY - y);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 230 - paddingX - x, height + 0 - paddingY - y, width + 280 - paddingX - x, height - 120 - paddingY - y, width + 180 - paddingX - x, height - 120 - paddingY - y);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 170 - paddingX - x, height - 170 - paddingY - y, width + 80 - paddingX - x, height - 170 - paddingY - y, width + 65 - paddingX - x, height - 110 - paddingY - y);
-      this.ctx[0].fill();
-
-      this.ctx[0].fillStyle = '#e1f6fb';
-      this.ctx[0].beginPath();
-      // eslint-disable-next-line max-len
-      this.ctx[0].moveTo(width + 65 - paddingX - x - 10, height - 110 - paddingY - y + 20);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 30 - paddingX - x + 10, height - 140 - paddingY - y + 20, width - 10 - paddingX - x + 10, height - 80 - paddingY - y + 20, width + 40 - paddingX - x + 10, height - 60 - paddingY - y + 20);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 45 - paddingX - x + 10, height - 25 - paddingY - y + 20, width + 85 - paddingX - x + 10, height - 30 - paddingY - y + 20, width + 100 - paddingX - x + 10, height - 40 - paddingY - y + 20);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 120 - paddingX - x + 10, height - 30 - paddingY - y + 20, width + 140 - paddingX - x + 10, height - 30 - paddingY - y + 20, width + 160 - paddingX - x + 10, height - 45 - paddingY - y + 20);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 230 - paddingX - x + 10, height + 0 - paddingY - y + 20, width + 280 - paddingX - x + 10, height - 120 - paddingY - y + 20, width + 180 - paddingX - x + 10, height - 120 - paddingY - y + 20);
-      // eslint-disable-next-line max-len
-      this.ctx[0].bezierCurveTo(width + 170 - paddingX - x + 10, height - 170 - paddingY - y + 20, width + 80 - paddingX - x + 10, height - 170 - paddingY - y + 20, width + 65 - paddingX - x + 10, height - 110 - paddingY - y + 20);
-      this.ctx[0].fill();
+    isEnd() {
+      return this.widIndex === (this.wids.length - 1);
     },
-
-    activityBefore() {
-      if (this.activityIdIndex > 0) {
-        this.activityIdIndex -= 1;
-        setTimeout(() => {
-          this.showNextActivity = false;
-        }, 100);
-        setTimeout(() => {
-          this.showNextActivity = true;
-        }, 900);
-      } else {
-        this.activityIdIndex = 0;
-      }
-
-      // eslint-disable-next-line
-      axios.get('/api/user/work/' + this.activityIdList[this.activityIdIndex], {
-      }).then((res) => {
-        // eslint-disable-next-line
-        const content = JSON.parse(res.data.content);
-        const data = {
-          // eslint-disable-next-line
-          nodes: content.nodes, edges: content.edges, templateType: content.templateType, date: moment(new Date(res.data.created_at)).format("yyyy-MM-DD HH:mm:ss"), bookname: content.bookTitle, bid: res.data.bid, type: res.data.type,
-        };
-        this.activity = data;
-        // eslint-disable-next-line
-        this.bookImg.src = '/api/book/' + res.data.bid + '/cover';
-
-        if (this.activity.type === 0) {
-          setTimeout(() => {
-            this.reDrawAll();
-          }, 100);
-        } else {
-          this.ctx[0].clearRect(0, 0, 100000, 100000);
-          this.showNextActivity = false;
-        }
-      }).catch((err1) => {
-        console.warn('ERROR!!!!: ', err1);
-      });
+    book() {
+      if (!Object.keys(this.work).length) return {};
+      return this.$store.getters.book(this.work.bid);
     },
+  },
+  async created() {
+    const { data } = await axios.get('/api/user');
+    this.user = data;
+    this.wids = data.wids;
 
-    activityNext() {
-      if (this.activityIdIndex < this.activityIdList.length - 1) {
-        this.activityIdIndex += 1;
-        setTimeout(() => {
-          this.showNextActivity = false;
-        });
-        setTimeout(() => {
-          this.showNextActivity = true;
-        }, 900);
-      } else {
-        this.activityIdIndex = this.activityIdList.length - 1;
-      }
-
-      // eslint-disable-next-line
-      axios.get('/api/user/work/' + this.activityIdList[this.activityIdIndex], {
-      }).then((res) => {
-        // eslint-disable-next-line
-        const content = JSON.parse(res.data.content);
-        const data = {
-          // eslint-disable-next-line
-          nodes: content.nodes, edges: content.edges, templateType: content.templateType, date: moment(new Date(res.data.created_at)).format("yyyy-MM-DD HH:mm:ss"), bookname: content.bookTitle, bid: res.data.bid, type: res.data.type,
-        };
-        this.activity = data;
-        // eslint-disable-next-line
-        this.bookImg.src = '/api/book/' + res.data.bid + '/cover';
-
-        if (this.activity.type === 0) {
-          setTimeout(() => {
-            this.reDrawAll();
-          }, 100);
-        } else {
-          this.ctx[0].clearRect(0, 0, 100000, 100000);
-          this.showNextActivity = false;
-        }
-      }).catch((err1) => {
-        console.warn('ERROR!!!!: ', err1);
-      });
-    },
-
-    drawGrape(paddingX, paddingY) {
-      const r = 100;
-      const width = this.activity.nodes[0].x;
-
-      this.ctx[0].fillStyle = 'rgba(172, 146, 235, 0.08)';
-      for (let j = 0; j < 7; j += 1) {
-        this.ctx[0].beginPath();
-        // eslint-disable-next-line
-        this.ctx[0].arc(width - 150 * (3 - j) - paddingX, -paddingY, r, 0, Math.PI * 2);
-        this.ctx[0].fill();
-      }
-
-      for (let i = 0; i < 2; i += 1) {
-        for (let j = 0; j < 8; j += 1) {
-          this.ctx[0].beginPath();
-          // eslint-disable-next-line
-          this.ctx[0].arc(width - 150 * (3 - j) - 75 - paddingX, 150 * (i + 1) - paddingY, r, 0, Math.PI * 2);
-          this.ctx[0].fill();
-        }
-      }
-
-      for (let i = 7; i > 1; i -= 1) {
-        for (let j = 0; j < i; j += 1) {
-          this.ctx[0].beginPath();
-          // eslint-disable-next-line
-          this.ctx[0].arc(width - 150 * (i / 2 - j) + 75 - paddingX, 150 * (10 - i) - paddingY, r, 0, Math.PI * 2);
-          this.ctx[0].fill();
-        }
-      }
-    },
+    this.loadWork();
   },
 };
 </script>
 
 <style scoped>
-#mypage-top {
-  width: 74vw;
+.top {
+  width: 100%;
   height: 40vh;
+  display: flex;
+  justify-content: space-between;
 }
 
-#mypage-profile {
-  display: inline-block;
-  width: 30%;
-  height: 100%;
-}
-
-#mypage-user-img {
-  width: 20vw;
-  height: 20vw;
-  border-radius: 20vw;
-  margin-left: 1vw;
-  margin-top: 3vh;
-  border: 1px solid lightskyblue;
-  background-image: url('../assets/userImg.png');
-  background-size: cover;
-}
-
-#mypage-user-age {
-  position: absolute;
-  width: 7vw;
-  height: 7vw;
-  top: 26.5vh;
-  left: 15.5vw;
-  text-align: center;
-  font-size: 3vw;
-  font-weight: 900;
-  font-family: 'Tmoney';
-  letter-spacing: -0.5vw;
-  padding-top: 1vw;
-  border-radius: 20vw;
-  background: orange;
-
-}
-
-#mypage-user-name {
-  width: 22vw;
-  height: 7vh;
-  border-radius: 3vw;
-  text-align: center;
-  font-size: 2.8vw;
-  font-weight: 900;
-  letter-spacing: -0.2vw;
-  padding-top: 0.5vh;
-  margin-top: 2vh;
-  color: white;
-  font-family: BM HANNA_TTF;
-  background: lightblue;
-}
-
-#mypage-result {
-  position: absolute;
-  display: inline-block;
-  width: 50vw;
-  height: 39vh;
-  z-index: 100;
-  top: 6vh;
-  left: 24vw;
-  border-radius: 4vw;
-  background: lightblue;
-}
-
-#mypage-result-title {
-  width: 48vw;
-  margin-left: 1vw;
-  margin-top: 2vh;
-}
-
-#mypage-result-label {
-  width: 40vw;
-  height: 4vh;
-  text-align: center;
-  font-size: 2.5vw;
-  display: inline-block;
-}
-
-#mypage-result-table {
-  width: 48vw;
-  height: 26vh;
-  margin-left: 1vw;
-  margin-top: 3vh;
-  text-align: center;
-}
-
-#mypage-result-table th {
-  background: lightcyan;
-  font-size: 2.2vw;
-}
-
-#mypage-result-table td{
-  background: #fffdf2;
-  font-size: 2.2vw;
-}
-
-#mypage-bot {
+.bottom {
   width: 100%;
   height: 49%;
   margin-top: 1%;
@@ -1007,6 +360,7 @@ export default {
   border: 2px solid gray;
   background: #fffdf2;
   z-index: 10;
+  overflow: hidden;
 }
 
 #mypage-activity-cover {
@@ -1064,30 +418,6 @@ export default {
 .fade-enter, .fade-leave-to { opacity: 0; }
 
 @keyframes fadein {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-@-moz-keyframes fadein {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-@-webkit-keyframes fadein {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-@-o-keyframes fadein {
   from {
     opacity: 1;
   }

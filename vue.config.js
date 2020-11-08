@@ -3,7 +3,7 @@ module.exports = {
   pwa: {
     name: 'Ttokdok',
     appleMobileWebAppCapable: 'yes',
-    appleMobileWebAppStatusBarStyle: 'black',
+    appleMobileWebAppStatusBarStyle: 'black-translucent',
   },
   devServer: {
     disableHostCheck: true,
@@ -11,9 +11,6 @@ module.exports = {
       '/api': {
         target: 'http://127.0.0.1:7002/',
         changeOrigin: true,
-        pathRewrite: {
-          //'^/api': ''
-        }
       },
     },
   },

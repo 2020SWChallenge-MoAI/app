@@ -1,5 +1,5 @@
 <template>
-  <base-layout :loading-overlay="true">
+  <base-layout :loading-overlay="false">
     <template v-slot:left>
       <left-menu-button
         text="로그아웃"
@@ -51,9 +51,8 @@
               v-for="book in page"
               :key="book.bid"
               :book="book"
-              :clicked="book.bid === currentBook"
-              @click.native="currentBook = book.bid"
-              @read="read(book)"
+              :clicked="book.bid === selectedBook"
+              @click.native="read(book.bid)"
             />
           </div>
         </v-carousel-item>
@@ -75,12 +74,15 @@ export default {
     return {
       currentPage: 0,
       currentCategory: 0,
-      currentBook: null,
+      selectedBook: null,
     };
   },
   computed: {
     categories() {
-      return this.$store.getters.getCategories;
+      return this.$store.getters.categories;
+    },
+    books() {
+      return this.$store.getters.categoryBooks(this.categories[this.currentCategory]);
     },
     totalPages() {
       return Math.ceil(this.books.length / booksPerPage);
@@ -93,9 +95,6 @@ export default {
 
       return pages;
     },
-    books() {
-      return this.$store.getters.getCategoryBooks(this.categories[this.currentCategory]);
-    },
   },
   watch: {
     currentCategory() {
@@ -103,17 +102,22 @@ export default {
     },
   },
   async created() {
-    this.$store.commit('loadStart');
-    if (!this.$store.getters.isBookLoaded) await this.$store.dispatch('getBooks');
-    this.$store.commit('loadFinish');
+    this.$store.dispatch('loadStart');
+    if (!this.$store.getters.bookLoaded) await this.$store.dispatch('downloadBooks');
+    this.$store.dispatch('loadFinish');
   },
   methods: {
     logout() {
       this.$store.dispatch('logout');
       this.$router.replace('/login');
     },
-    read(book) {
-      this.$store.commit('setCurrentBook', book);
+    read(bid) {
+      if (this.selectedBook !== bid) {
+        this.selectedBook = bid;
+        return;
+      }
+
+      this.$store.dispatch('readBook', bid);
       this.$router.push('/read');
     },
   },
@@ -219,10 +223,10 @@ export default {
 }
 
 /* change v-carousel navigator button color */
-/deep/ .v-carousel__controls .v-btn .v-icon {
+::v-deep .v-carousel__controls .v-btn .v-icon {
   color: #24b1a1 !important;
 }
-/deep/ .v-carousel__controls__item {
+::v-deep .v-carousel__controls__item {
   color: #24b1a1 !important;
 }
 </style>
