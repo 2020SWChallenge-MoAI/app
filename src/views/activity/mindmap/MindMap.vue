@@ -250,6 +250,9 @@ export default {
         id: 4, label: '인상장면', x: width + 240, y: height + 100, size: 80, type: 3, link: true, parent: 0,
       });
     } else if (this.templateType === 2) {
+      this.edges.push({
+        id: 5, from: 0, to: 5,
+      });
       this.nodes.push({
         id: 0, x: width, y: 0 + 100, size: 150, type: -1, link: true, parent: -1,
       });
@@ -269,6 +272,10 @@ export default {
       this.nodes.push({
         // eslint-disable-next-line max-len
         id: 4, label: '인상장면', x: width + 300, y: 150, size: 80, type: 3, link: true, parent: 0,
+      });
+      this.nodes.push({
+        // eslint-disable-next-line max-len
+        id: 5, label: '사건', x: width + 30, y: 400, size: 80, type: 3, link: true, parent: 0,
       });
     }
 
@@ -1573,7 +1580,7 @@ export default {
       const ancWord = [];
       if (this.selectedNode >= 1) ancWord.push(node.label);
       if (node !== undefined) {
-        if (node.parent >= 5) {
+        if (node.parent >= 10) {
           const parentNode = this.nodes.find((element) => element.id === node.parent);
           ancWord.push(parentNode.label);
         }
