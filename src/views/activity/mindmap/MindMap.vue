@@ -1571,7 +1571,7 @@ export default {
       this.recommendLoaded = false;
       const node = this.nodes.find((element) => element.id === this.selectedNode);
       const ancWord = [];
-      if (this.selectedNode >= 5) ancWord.push(node.label);
+      if (this.selectedNode >= 1) ancWord.push(node.label);
       if (node !== undefined) {
         if (node.parent >= 5) {
           const parentNode = this.nodes.find((element) => element.id === node.parent);
