@@ -668,9 +668,7 @@ export default {
       } else if (this.touchmode === 'word') {
         const htmlInput = document.querySelector('#input-test');
         htmlInput.value = '';
-        htmlInput.focus();
         this.selectedNodeLabel = '';
-        this.selectedNodeLabel = this.wordSelected;
         this.popupNodeId = -1;
 
         this.reDrawAll(this.padding.x, this.padding.y);
@@ -678,11 +676,16 @@ export default {
         const nodex = (coors.X + this.startPos.x) / 2;
         const nodey = (coors.Y + this.startPos.y) / 2;
         // eslint-disable-next-line max-len
-        let nodesize = Math.abs(coors.X - this.startPos.x) / 2 + Math.abs(coors.Y - this.startPos.y) / 2;
-        nodesize = Math.max(nodesize, 80);
+        let nodesize = Math.max(Math.abs(coors.X - this.startPos.x) / 2 + Math.abs(coors.Y - this.startPos.y) / 2, 80);
+        console.log(nodesize, (Math.min(this.wordSelected.length - 1, 8)));
+
+        // nodesize 조정
+        if (nodesize / (Math.min(this.wordSelected.length - 1, 8)) < 20) {
+          nodesize = (Math.min(this.wordSelected.length - 1, 8)) * 20;
+        }
+        console.log(nodesize);
         const nodetype = Math.floor(this.startPos.x + this.startPos.y) % 4;
         const newid = new Date().getTime();
-        this.popupNodeId = newid;
 
         // edge 없는 노드 삭제
         for (let i = 1; i < this.nodes.length; i += 1) {
@@ -703,7 +706,7 @@ export default {
 
         this.nodes.push({
           // eslint-disable-next-line max-len
-          id: newid, label: '', x: nodex + this.padding.x, y: nodey + this.padding.y, size: nodesize, type: nodetype, link: false, parent: -1,
+          id: newid, label: this.wordSelected, x: nodex + this.padding.x, y: nodey + this.padding.y, size: nodesize, type: nodetype, link: false, parent: -1,
         });
         this.aiSupportCount += 1;
 
@@ -727,20 +730,7 @@ export default {
             this.edges.splice(index, 1);
           }
         }
-
-        const index = this.nodes.findIndex((element) => element.id === this.popupNodeId);
-        const node = this.nodes[index];
-        const fontsize = Math.max(node.size / 8, 20);
-
-        this.ctx[0].beginPath();
-        this.ctx[0].strokeStyle = 'black';
-        this.ctx[0].lineWidth = 3;
-        this.ctx[0].setLineDash([5, 2]);
-        // eslint-disable-next-line
-        this.ctx[0].rect(node.x - node.size / 1.5 - this.padding.x - fontsize, node.y - this.padding.y - fontsize * 1.5, node.size * (4 / 3) + fontsize * 2, fontsize * 1.5 * 1.8);
-        this.ctx[0].stroke();
-
-        this.inputNodeLabel(this.wordSelected);
+        this.reDrawAll(this.padding.x, this.padding.y);
 
         this.edgeId = -1;
         this.wordSelected = false;
