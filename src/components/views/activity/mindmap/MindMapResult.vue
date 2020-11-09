@@ -16,6 +16,7 @@ export default {
       leaf2Img: new Image(),
       scale: 1.0,
       padding: { x: 0, y: 0 },
+      lightPos: { x: 0, y: 0 },
     };
   },
   watch: {

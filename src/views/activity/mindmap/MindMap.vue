@@ -274,7 +274,7 @@ export default {
 
     setTimeout(() => {
       this.reDrawAll(this.padding.x, this.padding.y);
-    }, 100);
+    }, 200);
   },
 
   methods: {

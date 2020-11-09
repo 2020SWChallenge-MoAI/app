@@ -135,7 +135,6 @@ export default {
     async loadWork() {
       if (!this.wids.length) return;
       const { data } = await axios.get(`/api/user/work/${this.wids[this.widIndex]}`);
-      console.log(data.type);
       this.work = {
         bid: data.bid,
         type: data.type,

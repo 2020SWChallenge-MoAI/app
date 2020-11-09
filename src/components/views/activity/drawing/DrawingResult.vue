@@ -37,5 +37,9 @@ export default {
   margin-left: 2.5%;
   margin-top: 0;
   overflow-y: scroll;
+  -ms-overflow-style: none;
+}
+.drawing-result-text::-webkit-scrollbar {
+  display: none;
 }
 </style>
