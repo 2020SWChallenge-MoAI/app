@@ -837,6 +837,7 @@ export default {
     },
 
     getPosition(event) {
+      event.preventDefault();
       const touches = event.changedTouches;
       const x = (touches[0].clientX - this.canvas.offsetLeft);
       const y = (touches[0].clientY - this.canvas.offsetTop);
