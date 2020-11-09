@@ -12,6 +12,17 @@
       <div class="mindmap-tools" v-ripple><div id="mindmap-tool-zoomout" /></div>
     </div>
 
+    <finish-overlay
+      v-show="submitted"
+      :success="true"
+      message="좋았어!"
+    >
+      <overlay-button
+        text="활동 마치기"
+        @click.native="$router.replace('/')"
+      />
+    </finish-overlay>
+
     <!-- TODO: Implementation -->
   </sub-layout>
 </template>
@@ -39,10 +50,11 @@ export default {
       bookImg: new Image(),
       leaf1Img: new Image(),
       leaf2Img: new Image(),
+      submitted: false,
     };
   },
 
-  mounted() {
+  async mounted() {
     this.canvas = document.getElementById('center-canvas');
     this.ctx.push(this.canvas.getContext('2d'));
 
@@ -874,9 +886,7 @@ export default {
       axios.post('/api/user/work/save', {
         bid: this.$route.params.bookId, type: 0, thumbnail: btoa('string'), content: JSON.stringify(data),
       }).then(() => {
-        this.$router.replace({
-          name: 'Main',
-        });
+        this.submitted = true;
       }).catch((err) => {
         console.warn('ERROR!!!!: ', err);
       });

@@ -74,6 +74,17 @@
       {{ mainSentence }}
     </div>
 
+    <finish-overlay
+      v-show="submitted"
+      :success="true"
+      message="좋았어!"
+    >
+      <overlay-button
+        text="활동 마치기"
+        @click.native="$router.replace('/')"
+      />
+    </finish-overlay>
+
   </sub-layout>
 </template>
 
@@ -90,6 +101,8 @@ export default {
       showToolBar: false,
       strokeColor: 'black',
       scale: 1,
+      submitted: false,
+      eraser: false,
     };
   },
 
@@ -218,6 +231,10 @@ export default {
       eraser.style.backgroundColor = '#83b1b1';
       this.ctx[0].strokeStyle = this.strokeColor;
       this.showToolBar = !this.showToolBar;
+      if (this.eraser === true) {
+        this.eraser = false;
+        this.ctx[0].lineWidth /= 2;
+      }
     },
 
     eraserBtnClicked() {
@@ -227,9 +244,13 @@ export default {
       if (eraser.style.backgroundColor !== 'rgb(36, 177, 161)') {
         this.ctx[0].strokeStyle = 'white';
         eraser.style.backgroundColor = '#24b1a1';
+        this.eraser = true;
+        this.ctx[0].lineWidth *= 2;
       } else {
         this.ctx[0].strokeStyle = this.strokeColor;
         eraser.style.backgroundColor = '#83b1b1';
+        this.eraser = false;
+        this.ctx[0].lineWidth /= 2;
       }
     },
 
@@ -237,17 +258,15 @@ export default {
       /* eslint-disable */
       const data = {
         sentence: this.$route.params.sentence,
+        thumbnail: this.canvas.toDataURL(),
       };
 
       axios.post('/api/user/work/save', {
         bid: this.$route.params.bid,
         type: 2,
-        thumbnail: this.canvas.toDataURL(),
         content: JSON.stringify(data),
       }).then(() => {
-        this.$router.replace({
-          name: 'Main',
-        });
+        this.submitted = true;
       }).catch((err) => {
         console.warn('ERROR!!!!: ', err);
       });
@@ -256,6 +275,7 @@ export default {
 
     resetBtnClicked() {
       this.ctx[0].clearRect(0, 0, this.canvas.width / 0.1, this.canvas.height / 0.1);
+      this.submitted = false;
     },
   },
 };

@@ -62,6 +62,10 @@
             v-if="work.type === 1"
             :work="work"
           />
+          <drawing-result
+            v-if="work.type === 2"
+            :work="work"
+          />
           <writing-result
             v-if="work.type === 3"
             :work="work"
@@ -92,6 +96,7 @@ import ResultTable from '../components/views/mypage/ResultTable.vue';
 import WritingResult from '../components/views/activity/writing/WritingResult.vue';
 import QuizGameResult from '../components/views/activity/quiz-game/QuizGameResult.vue';
 import MindMapResult from '../components/views/activity/mindmap/MindMapResult.vue';
+import DrawingResult from '../components/views/activity/drawing/DrawingResult.vue';
 
 export default {
   components: {
@@ -100,6 +105,7 @@ export default {
     MindMapResult,
     QuizGameResult,
     WritingResult,
+    DrawingResult,
   },
   data() {
     return {
@@ -113,145 +119,7 @@ export default {
     };
   },
 
-  async mounted() {
-    this.canvas = document.getElementById('mypage-activity');
-    this.ctx.push(this.canvas.getContext('2d'));
-
-    this.canvas.width = this.canvas.clientWidth;
-    this.canvas.height = this.canvas.clientHeight;
-    this.ctx[0].scale(0.2, 0.2);
-    this.ctx[0].scale(1, 1);
-
-    // eslint-disable-next-line
-    this.leaf1Img.src = require('../assets/img/views/activity/mindmap/grape-leaf1.png');
-    // eslint-disable-next-line
-    this.leaf2Img.src = require('../assets/img/views/activity/mindmap/grape-leaf2.png');
-
-    axios.get('/api/user/work', {
-    }).then((res) => {
-      this.activityIdList = res.data.wids;
-      // eslint-disable-next-line
-      axios.get('/api/user/work/' + this.activityIdList[0], {
-      }).then((res1) => {
-        // eslint-disable-next-line
-        const content = JSON.parse(res1.data.content);
-        const data = {
-          // eslint-disable-next-line
-          nodes: content.nodes, edges: content.edges, templateType: content.templateType, date: moment(new Date(res1.data.created_at)).format("yyyy-MM-DD HH:mm:ss"), bookname: content.bookTitle, bid: res1.data.bid, type: res1.data.type,
-        };
-        this.activity = data;
-        console.log(res1);
-
-        // eslint-disable-next-line
-        this.bookImg.src = '/api/book/' + res1.data.bid + '/cover';
-
-        if (this.activity.type === 0) {
-          setTimeout(() => {
-            this.reDrawAll();
-          }, 100);
-        } else {
-          this.showNextActivity = false;
-          this.ctx[0].clearRect(0, 0, 100000, 100000);
-        }
-      }).catch((err1) => {
-        console.warn('ERROR!!!!: ', err1);
-      });
-    }).catch((err) => {
-      console.warn('ERROR!!!!: ', err);
-    });
-
-    axios.get('/api/user', {}).then((res) => {
-      this.userName = res.data.nickname;
-      this.userAge = res.data.age;
-    });
-  },
-
   methods: {
-    initSetting(changeX, changeY) {
-      const paddingX = changeX + this.padding.x;
-      const paddingY = changeY + this.padding.y;
-
-      // 나무 템플릿
-      if (this.activity.templateType === 1) {
-        const width = this.activity.nodes[0].x;
-        const height = this.activity.nodes[0].y;
-
-        // 땅 그리기
-        this.ctx[0].fillStyle = '#44A508';
-        this.ctx[0].beginPath();
-        this.ctx[0].moveTo(width - 1500 - paddingX, height + 1000 - paddingY);
-        this.ctx[0].lineTo(width - 1500 - paddingX, height + 400 - paddingY);
-        // eslint-disable-next-line max-len
-        this.ctx[0].bezierCurveTo(width - 500 - paddingX, height + 100 - paddingY, width + 500 - paddingX, height + 100 - paddingY, width + 1500 - paddingX, height + 400 - paddingY);
-        this.ctx[0].lineTo(width + 1500 - paddingX, height + 1000 - paddingY);
-        this.ctx[0].closePath();
-        this.ctx[0].fill();
-
-        // 구름 1 그리기
-        this.drawCloud(400, 300, paddingX, paddingY);
-
-        // 구름 2 그리기
-        this.drawCloud(-400, 600, paddingX, paddingY);
-
-        // 템플릿(나무) 그리기
-        this.ctx[0].beginPath();
-        // eslint-disable-next-line max-len
-        this.ctx[0].moveTo(width - paddingX, height - 80 - paddingY);
-        this.ctx[0].strokeStyle = '#7ed221';
-        this.ctx[0].fillStyle = '#7ed221';
-        // eslint-disable-next-line max-len
-        this.ctx[0].bezierCurveTo(width - 250 - paddingX, height - 200 - paddingY, width - 250 - paddingX, height + 180 - paddingY, width - paddingX, height + 120 - paddingY);
-        // eslint-disable-next-line max-len
-        this.ctx[0].moveTo(width - 5 - paddingX, height + 120 - paddingY);
-        // eslint-disable-next-line max-len
-        this.ctx[0].bezierCurveTo(width + 200 - paddingX, height + 180 - paddingY, width + 200 - paddingX, height - 150 - paddingY, width - 5 - paddingX, height - 80 - paddingY);
-        this.ctx[0].fill();
-
-        // 나무 줄기 그리기
-        this.ctx[0].beginPath();
-        this.ctx[0].fillStyle = '#836d4b';
-        // eslint-disable-next-line max-len
-        this.ctx[0].fillRect(width - 20 - paddingX, height * 0.9 - paddingY + height / 3, 40, 120);
-        this.ctx[0].lineWidth = 12;
-        this.ctx[0].strokeStyle = '#836d4b';
-        // eslint-disable-next-line max-len
-        this.ctx[0].arc(width - paddingX, height * 0.9 - paddingY, height / 3, Math.PI * 0.25, Math.PI * 0.75);
-        this.ctx[0].stroke();
-
-        // eslint-disable-next-line
-        this.ctx[0].drawImage(this.bookImg, width - 80 - paddingX, height - 150 - paddingY, 150, 200);
-        // 우주배경 템플릿
-      } else if (this.activity.templateType === 2) {
-        // 배경 포도 그리기
-        this.drawGrape(paddingX, paddingY);
-
-        const width = this.activity.nodes[0].x;
-        // const height = this.activity.nodes[0].y;
-
-        // 줄기 그리기
-        this.ctx[0].beginPath();
-        this.ctx[0].strokeStyle = '#7b6b42';
-        this.ctx[0].lineWidth = 40;
-        this.ctx[0].moveTo(-width - paddingX - 450, 0 - paddingY - 200);
-        // eslint-disable-next-line
-        this.ctx[0].bezierCurveTo(- paddingX - 450, 0 - paddingY - 500, width * 3 - paddingX - 500, 0 - paddingY - 250,  width - paddingX + 50, 0 - paddingY - 50);
-        // eslint-disable-next-line
-        this.ctx[0].bezierCurveTo(- paddingX, 0 - paddingY - 250, width * 2 - paddingX, 0 - paddingY - 500,  width * 3 - paddingX + 450, 0 - paddingY - 200);
-        this.ctx[0].stroke();
-
-        // 잎2
-        // eslint-disable-next-line
-        this.ctx[0].drawImage(this.leaf1Img, width - paddingX - 450, 0 - paddingY - 300, 700, 600);
-
-        // 잎2
-        // eslint-disable-next-line
-        this.ctx[0].drawImage(this.leaf2Img, width - paddingX - 150, 0 - paddingY - 300, 700, 600);
-
-        // eslint-disable-next-line
-        this.ctx[0].drawImage(this.bookImg, width - paddingX - 75, 0 - paddingY, 150, 200);
-      }
-    },
-
     prevWork() {
       this.slideDirection = 'slide-left';
       if (this.isStart) return;
@@ -267,6 +135,7 @@ export default {
     async loadWork() {
       if (!this.wids.length) return;
       const { data } = await axios.get(`/api/user/work/${this.wids[this.widIndex]}`);
+      console.log(data.type);
       this.work = {
         bid: data.bid,
         type: data.type,

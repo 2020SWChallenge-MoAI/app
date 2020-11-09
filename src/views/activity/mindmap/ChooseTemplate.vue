@@ -47,7 +47,6 @@ export default {
       aiHelp: false,
       canvas: document.getElementById(''),
       ctx: [],
-      doubleTabTimer: false,
       template: -1,
       clickedTemplate: '',
 
@@ -56,7 +55,7 @@ export default {
     };
   },
 
-  mounted() {
+  async mounted() {
     this.canvas = document.getElementById('center-canvas');
     this.ctx.push(this.canvas.getContext('2d'));
 
@@ -84,7 +83,7 @@ export default {
     changeToTemplate(event) {
       this.ctx[0].clearRect(0, 0, 100000, 100000);
 
-      if (this.doubleTabTimer && event.target.id === this.clickedTemplate) {
+      if (event.target.id === this.clickedTemplate) {
         if (this.$store.getters.currentBook === null) {
           this.$store.dispatch('showMessage', {
             mode: 'error',
@@ -140,11 +139,6 @@ export default {
           this.clickedTemplate = 'template-change';
         }
       }
-
-      this.doubleTabTimer = true;
-      setTimeout(() => {
-        this.doubleTabTimer = false;
-      }, 200);
     },
 
     makeNode(x, y, size, type, text, template) {

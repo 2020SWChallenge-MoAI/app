@@ -36,7 +36,6 @@ export default {
       tooltip: '그림으로 그리고 싶은 문장을 선택해보자!',
       currentState: 0,
       mainSentence: [],
-      doubleTabTimer: 0,
       clickedSentenceId: '',
       selectedSentence: '',
       sentenceIndex: 0,
@@ -45,7 +44,6 @@ export default {
   },
 
   mounted() {
-    console.log(this.book);
     if (this.book !== undefined) {
       this.currentState = 0;
       // eslint-disable-next-line
@@ -64,7 +62,7 @@ export default {
 
   methods: {
     changeRecommend(event) {
-      if (this.doubleTabTimer && event.target.id === this.clickedSentenceId) {
+      if (event.target.id === this.clickedSentenceId) {
         // 페이지 이동
         this.$router.push({
           name: 'Drawing',
@@ -80,11 +78,6 @@ export default {
         recommend.style.background = 'rgba(255, 174, 0, 0.2)';
         this.clickedSentenceId = rid;
       }
-
-      this.doubleTabTimer = true;
-      setTimeout(() => {
-        this.doubleTabTimer = false;
-      }, 200);
     },
 
     recommendStyleClear() {
@@ -113,7 +106,6 @@ export default {
           .then((res) => {
             this.recommendStyleClear();
             this.clickedSentenceId = '';
-            this.doubleTabTimer = false;
             this.mainSentence = res.data.main_sentences;
             this.sentenceIndex = 0;
             this.currentState = 1;

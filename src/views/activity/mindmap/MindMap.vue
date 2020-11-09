@@ -126,7 +126,7 @@ export default {
     };
   },
 
-  mounted() {
+  async mounted() {
     this.canvas = document.getElementById('center-canvas');
     this.ctx.push(this.canvas.getContext('2d'));
 
