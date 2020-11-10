@@ -62,6 +62,10 @@
             v-if="work.type === 1"
             :work="work"
           />
+          <drawing-result
+            v-if="work.type === 2"
+            :work="work"
+          />
           <writing-result
             v-if="work.type === 3"
             :work="work"
@@ -92,6 +96,7 @@ import ResultTable from '../components/views/mypage/ResultTable.vue';
 import WritingResult from '../components/views/activity/writing/WritingResult.vue';
 import QuizGameResult from '../components/views/activity/quiz-game/QuizGameResult.vue';
 import MindMapResult from '../components/views/activity/mindmap/MindMapResult.vue';
+import DrawingResult from '../components/views/activity/drawing/DrawingResult.vue';
 
 export default {
   components: {
@@ -100,6 +105,7 @@ export default {
     MindMapResult,
     QuizGameResult,
     WritingResult,
+    DrawingResult,
   },
   data() {
     return {
@@ -112,25 +118,7 @@ export default {
       slideDirection: 'slide-left',
     };
   },
-  computed: {
-    isStart() {
-      return this.widIndex === 0;
-    },
-    isEnd() {
-      return this.widIndex === (this.wids.length - 1);
-    },
-    book() {
-      if (!Object.keys(this.work).length) return {};
-      return this.$store.getters.book(this.work.bid);
-    },
-  },
-  async created() {
-    const { data } = await axios.get('/api/user');
-    this.user = data;
-    this.wids = data.wids;
 
-    this.loadWork();
-  },
   methods: {
     prevWork() {
       this.slideDirection = 'slide-left';
@@ -154,6 +142,25 @@ export default {
         date: moment(data.created_at).format('yyyy-MM-DD HH:mm:ss'),
       };
     },
+  },
+  computed: {
+    isStart() {
+      return this.widIndex === 0;
+    },
+    isEnd() {
+      return this.widIndex === (this.wids.length - 1);
+    },
+    book() {
+      if (!Object.keys(this.work).length) return {};
+      return this.$store.getters.book(this.work.bid);
+    },
+  },
+  async created() {
+    const { data } = await axios.get('/api/user');
+    this.user = data;
+    this.wids = data.wids;
+
+    this.loadWork();
   },
 };
 </script>

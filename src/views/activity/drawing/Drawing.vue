@@ -1,13 +1,10 @@
 <template>
-  <sub-layout title="그림그리기" tooltip="그림그리기 설명">
+  <sub-layout title="그림그리기" :tooltip="tooltip">
     <template v-slot:left>
       <left-menu-button icon="mdi-check-bold" text="완료" id="drawing-finish" />
-      <left-menu-button icon="mdi-pencil" text="연필" id="drawing-pen"
-        class="canvas-tool"
-      />
-      <left-menu-button icon="mdi-eraser" text="지우개" id="drawing-eraser"
-        class="canvas-tool"
-      />
+      <left-menu-button icon="mdi-pencil" text="연필" id="drawing-pen" />
+      <left-menu-button icon="mdi-eraser" text="지우개" id="drawing-eraser" />
+      <left-menu-button icon="mdi-backup-restore" text="초기화" id="drawing-rest" />
       <!-- 툴바 -->
       <div v-show="showToolBar" id="drawing-tool-triangle" />
       <div v-show="showToolBar" id="drawing-tool-bar">
@@ -67,15 +64,31 @@
 
       </div>
     </template>
-    <!-- TODO: Implementation -->
+
+    <div v-show="!ifBookSelected" id="no-book-text">
+      <img src="../../../assets/noBooks.png" id="no-book-img" />
+      책이 선택되지 않았어! <br>
+      그림 그릴 책을 선택해보자!
+    </div>
 
     <!-- 캔버스 -->
-    <canvas id="drawing-canvas" />
+    <canvas id="drawing-canvas" v-show="ifBookSelected"/>
 
     <!-- 줄노트 -->
-    <div id="drawing-text">
-      {{ mainSentence }}
+    <div id="drawing-text" v-show="ifBookSelected">
+      {{ sentences[sentenceIndex] }}
     </div>
+
+    <finish-overlay
+      v-show="submitted"
+      :success="true"
+      message="좋았어!"
+    >
+      <overlay-button
+        text="활동 마치기"
+        @click.native="$router.replace('/')"
+      />
+    </finish-overlay>
 
   </sub-layout>
 </template>
@@ -89,10 +102,15 @@ export default {
       canvas: document.getElementById(''),
       ctx: [],
 
-      mainSentence: this.$route.params.sentence,
+      sentences: [],
+      sentenceIndex: 0,
       showToolBar: false,
       strokeColor: 'black',
       scale: 1,
+      submitted: false,
+      eraser: false,
+      tooltip: '그림을 그릴 책을 선택해보자!',
+      ifBookSelected: false,
     };
   },
 
@@ -146,6 +164,25 @@ export default {
     if (finish) {
       finish.addEventListener('click', this.finishBtnClicked);
     }
+
+    const reset = document.querySelector('#drawing-rest');
+    if (reset) {
+      reset.addEventListener('click', this.resetBtnClicked);
+    }
+
+    if (this.book !== undefined) {
+      this.ifBookSelected = true;
+      // eslint-disable-next-line
+      axios.get('/api/book/' + this.book.bid + '/main-sentence')
+        .then((res) => {
+          this.sentences = res.data.main_sentences;
+        }).catch((err) => {
+          console.error(err);
+        });
+    } else {
+      this.tooltip = '그림을 그릴 책을 선택해보자!';
+      this.ifBookSelected = false;
+    }
   },
 
   methods: {
@@ -169,6 +206,7 @@ export default {
     },
 
     getPosition(event) {
+      event.preventDefault();
       const touches = event.changedTouches;
       const x = (touches[0].clientX);
       const y = (touches[0].clientY);
@@ -216,6 +254,10 @@ export default {
       eraser.style.backgroundColor = '#83b1b1';
       this.ctx[0].strokeStyle = this.strokeColor;
       this.showToolBar = !this.showToolBar;
+      if (this.eraser === true) {
+        this.eraser = false;
+        this.ctx[0].lineWidth /= 2;
+      }
     },
 
     eraserBtnClicked() {
@@ -225,34 +267,64 @@ export default {
       if (eraser.style.backgroundColor !== 'rgb(36, 177, 161)') {
         this.ctx[0].strokeStyle = 'white';
         eraser.style.backgroundColor = '#24b1a1';
+        this.eraser = true;
+        this.ctx[0].lineWidth *= 2;
       } else {
         this.ctx[0].strokeStyle = this.strokeColor;
         eraser.style.backgroundColor = '#83b1b1';
+        this.eraser = false;
+        this.ctx[0].lineWidth /= 2;
       }
     },
 
     finishBtnClicked() {
       /* eslint-disable */
-      var a = document.createElement('a');
-      a.href = this.canvas.toDataURL('image/png');
-      a.download = 'test.png';
-      document.body.appendChild(a);
-      a.click();
-
       const data = {
         sentence: this.$route.params.sentence,
-      }
+        thumbnail: this.canvas.toDataURL(),
+      };
 
       axios.post('/api/user/work/save', {
-        bid: this.$route.params.bid, type: 2, thumbnail: this.canvas.toDataURL(), content: JSON.stringify(data),
+        bid: this.$route.params.bid,
+        type: 2,
+        content: JSON.stringify(data),
       }).then(() => {
-        this.$router.replace({
-          name: 'Main',
-        });
+        this.submitted = true;
       }).catch((err) => {
         console.warn('ERROR!!!!: ', err);
       });
       /* eslint-disable */
+    },
+
+    resetBtnClicked() {
+      this.ctx[0].clearRect(0, 0, this.canvas.width / 0.1, this.canvas.height / 0.1);
+      this.submitted = false;
+    },
+  },
+
+  computed: {
+    book() {
+      return this.$store.getters.currentBook;
+    },
+  },
+
+  watch: {
+    book() {
+      this.ifBookSelected = false;
+      if (this.book !== null) {
+        this.tooltip = this.book.title;
+        this.ifBookSelected = true;
+        // eslint-disable-next-line
+        axios.get('/api/book/' + this.book.bid + '/main-sentence')
+          .then((res) => {
+            this.sentences = res.data.main_sentences;
+            this.sentenceIndex = 0;
+          }).catch((err) => {
+            console.error(err);
+          });
+      } else {
+        this.tooltip = '그림을 그릴 책을 선택해보자!';
+      }
     },
   },
 };
@@ -281,7 +353,7 @@ export default {
   font-family: BM HANNA_TTF;
   font-style: normal;
   font-weight: 900;
-  line-height: 8vh;
+  line-height: 5vh;
 
   overflow-y: scroll;
   -ms-overflow-style: none;
@@ -455,5 +527,19 @@ export default {
   to {
     opacity: 0.5;
   }
+}
+
+#no-book-text {
+  text-align: center;
+  font-size: 2vw;
+  margin-top: calc(40% + 15vw);
+}
+
+#no-book-img {
+  position: absolute;
+  width: 30vw;
+  height: 30vw;
+  top: calc(40% - 15vw);
+  left: calc(50% - 15vw);
 }
 </style>

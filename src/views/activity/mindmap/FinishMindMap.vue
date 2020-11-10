@@ -12,6 +12,17 @@
       <div class="mindmap-tools" v-ripple><div id="mindmap-tool-zoomout" /></div>
     </div>
 
+    <finish-overlay
+      v-show="submitted"
+      :success="true"
+      message="좋았어!"
+    >
+      <overlay-button
+        text="활동 마치기"
+        @click.native="$router.replace('/')"
+      />
+    </finish-overlay>
+
     <!-- TODO: Implementation -->
   </sub-layout>
 </template>
@@ -39,10 +50,11 @@ export default {
       bookImg: new Image(),
       leaf1Img: new Image(),
       leaf2Img: new Image(),
+      submitted: false,
     };
   },
 
-  mounted() {
+  async mounted() {
     this.canvas = document.getElementById('center-canvas');
     this.ctx.push(this.canvas.getContext('2d'));
 
@@ -89,9 +101,9 @@ export default {
 
     this.bookImg.src = this.$route.params.thumbnail;
     // eslint-disable-next-line
-    this.leaf1Img.src = require('../../../assets/mindmap/grape-leaf1.png');
+    this.leaf1Img.src = require('../../../assets/img/views/activity/mindmap/grape-leaf1.png');
     // eslint-disable-next-line
-    this.leaf2Img.src = require('../../../assets/mindmap/grape-leaf2.png');
+    this.leaf2Img.src = require('../../../assets/img/views/activity/mindmap/grape-leaf2.png');
 
     setTimeout(() => {
       this.reDrawAll(this.padding.x, this.padding.y);
@@ -865,17 +877,16 @@ export default {
     },
 
     submitBtnClicked() {
+      console.log(this.$route.params.aiSupportCount);
       const data = {
         // eslint-disable-next-line
-        nodes: this.nodes, edges: this.edges, templateType: this.templateType, bookId: this.$route.params.bookId, bookTitle: this.$route.params.bookTitle,
+        nodes: this.nodes, edges: this.edges, templateType: this.templateType, bookId: this.$route.params.bookId, bookTitle: this.$route.params.bookTitle, aiSupportCount: this.$route.params.aiSupportCount,
       };
 
       axios.post('/api/user/work/save', {
         bid: this.$route.params.bookId, type: 0, thumbnail: btoa('string'), content: JSON.stringify(data),
       }).then(() => {
-        this.$router.replace({
-          name: 'Main',
-        });
+        this.submitted = true;
       }).catch((err) => {
         console.warn('ERROR!!!!: ', err);
       });
@@ -968,7 +979,7 @@ export default {
 #mindmap-tool-zoomin {
   width: 4vw;
   height: 4vw;
-  background-image: url('../../../assets/mindmap/zoom-in.png');
+  background-image: url('../../../assets/img/views/activity/mindmap/zoom-in.png');
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center center;
@@ -976,7 +987,7 @@ export default {
 #mindmap-tool-zoomout {
   width: 4vw;
   height: 4vw;
-  background-image: url('../../../assets/mindmap/zoom-out.png');
+  background-image: url('../../../assets/img/views/activity/mindmap/zoom-out.png');
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center center;

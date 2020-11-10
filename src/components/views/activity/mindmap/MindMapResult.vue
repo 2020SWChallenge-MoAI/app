@@ -16,6 +16,7 @@ export default {
       leaf2Img: new Image(),
       scale: 1.0,
       padding: { x: 0, y: 0 },
+      lightPos: { x: 0, y: 0 },
     };
   },
   watch: {
@@ -25,9 +26,9 @@ export default {
   },
   created() {
     // eslint-disable-next-line global-require
-    this.leaf1Img.src = require('../../../../assets/mindmap/grape-leaf1.png');
+    this.leaf1Img.src = require('../../../../assets/img/views/activity/mindmap/grape-leaf1.png');
     // eslint-disable-next-line global-require
-    this.leaf2Img.src = require('../../../../assets/mindmap/grape-leaf2.png');
+    this.leaf2Img.src = require('../../../../assets/img/views/activity/mindmap/grape-leaf2.png');
   },
   async mounted() {
     this.canvas = document.querySelector('#mindmap-result-canvas');

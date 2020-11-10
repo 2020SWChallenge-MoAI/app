@@ -6,6 +6,11 @@
         icon="mdi-arrow-left"
         @click.native="$router.back()"
       />
+      <left-menu-button
+        text="홈으로"
+        icon="mdi-home"
+        @click.native="$router.replace('/')"
+      />
       <slot name="left" />
     </template>
     <template v-slot:right>

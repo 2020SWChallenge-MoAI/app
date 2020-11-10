@@ -5,7 +5,8 @@
 
     <div v-show="!ifBookExist" id="no-book-text">
       <img src="../../../assets/noBooks.png" id="no-book-img" />
-      선택할 책이 없어. 책을 읽고 와야해!
+      책이 선택되지 않았어! <br>
+      생각펼치기 할 책을 선택해보자!
     </div>
 
     <!-- 캔버스 -->
@@ -46,7 +47,6 @@ export default {
       aiHelp: false,
       canvas: document.getElementById(''),
       ctx: [],
-      doubleTabTimer: false,
       template: -1,
       clickedTemplate: '',
 
@@ -55,7 +55,7 @@ export default {
     };
   },
 
-  mounted() {
+  async mounted() {
     this.canvas = document.getElementById('center-canvas');
     this.ctx.push(this.canvas.getContext('2d'));
 
@@ -66,9 +66,9 @@ export default {
     this.ctx[0].scale(1, 1);
 
     // eslint-disable-next-line
-    this.leaf1Img.src = require('../../../assets/mindmap/grape-leaf1.png');
+    this.leaf1Img.src = require('../../../assets/img/views/activity/mindmap/grape-leaf1.png');
     // eslint-disable-next-line
-    this.leaf2Img.src = require('../../../assets/mindmap/grape-leaf2.png');
+    this.leaf2Img.src = require('../../../assets/img/views/activity/mindmap/grape-leaf2.png');
 
     const templates = document.querySelectorAll('.choose-template');
 
@@ -83,7 +83,7 @@ export default {
     changeToTemplate(event) {
       this.ctx[0].clearRect(0, 0, 100000, 100000);
 
-      if (this.doubleTabTimer && event.target.id === this.clickedTemplate) {
+      if (event.target.id === this.clickedTemplate) {
         if (this.$store.getters.currentBook === null) {
           this.$store.dispatch('showMessage', {
             mode: 'error',
@@ -139,11 +139,6 @@ export default {
           this.clickedTemplate = 'template-change';
         }
       }
-
-      this.doubleTabTimer = true;
-      setTimeout(() => {
-        this.doubleTabTimer = false;
-      }, 200);
     },
 
     makeNode(x, y, size, type, text, template) {
@@ -467,6 +462,8 @@ export default {
 
     book() {
       this.tooltip = this.book.title;
+      if (this.book == null) this.ifBookExist = false;
+      else this.ifBookExist = true;
     },
   },
 };
@@ -543,13 +540,13 @@ export default {
 }
 
 #template1 {
-  background-image: url('../../../assets/mindmap/tree.png');
+  background-image: url('../../../assets/img/views/activity/mindmap/tree.png');
   background-position: center;
   background-size: contain;
   background-repeat: no-repeat;
 }
 #template2 {
-  background-image: url('../../../assets/mindmap/grape.png');
+  background-image: url('../../../assets/img/views/activity/mindmap/grape.png');
   background-position: center;
   background-size: contain;
   background-repeat : no-repeat;

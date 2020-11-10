@@ -44,22 +44,19 @@ axios.interceptors.response.use(
   (error) => {
     if (error.config && error.response && error.response.status === 401) {
       return new Promise((resolve, reject) => {
-        const refresh = store.dispatch('refresh');
-
-        refresh
+        const refresh = store
+          .dispatch('refresh')
           .then((token) => {
             const { config } = error;
             config.headers['x-access-token'] = token;
             return config;
           })
+          .catch((reason) => {
+            if (reason === 'refreshing') setTimeout(refresh, 1000);
+            else reject();
+          })
           .then((config) => axios.request(config))
-          .then(resolve)
-          .catch(reject);
-
-        refresh.catch((reason) => {
-          if (reason === 'refreshing') setTimeout(refresh, 1000);
-          else reject();
-        });
+          .then(resolve);
       });
     }
 

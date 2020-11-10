@@ -1,15 +1,18 @@
 <template>
-  <sub-layout title="마인드맵" tooltip="떠오르는 단어를 적어 커다란 나무를 완성해보자!">
+  <sub-layout title="마인드맵" :tooltip="tooltip">
     <template v-slot:left>
-      <!-- 왼쪽 버튼은 이렇게 입력 -->
-      <left-menu-button icon="mdi-thought-bubble-outline" text="불러오기" />
       <left-menu-button icon="mdi-check-bold" text="완료" id="canvas-finish" />
     </template>
 
     <!-- 캔버스 -->
     <canvas id="center-canvas" />
 
-    <input id="input-test" v-model="selectedNodeLabel" @keyup.enter="enter">
+    <input
+      id="input-test"
+      v-model="selectedNodeLabel"
+      @keyup.enter="enter"
+      autocomplete="off"
+    >
 
     <div id="mindmap-tool-bar">
       <div class="mindmap-tools" v-ripple><div id="mindmap-tool-pen" /></div>
@@ -73,6 +76,7 @@ export default {
   data() {
     return {
       aiHelp: false,
+      tooltip: '떠오르는 단어를 적어 커다란 나무를 완성해보자!',
       canvas: document.getElementById(''),
       ctx: [],
       templateType: this.$route.params.template,
@@ -123,10 +127,18 @@ export default {
 
       intervals: [],
       timeouts: [],
+
+      aiSupportCount: 0,
+
+      pinch: {
+        x1: -1, y1: 0, x2: 0, y2: 0,
+      },
+      beforeMode: '',
+      ifOneFinger: true,
     };
   },
 
-  mounted() {
+  async mounted() {
     this.canvas = document.getElementById('center-canvas');
     this.ctx.push(this.canvas.getContext('2d'));
 
@@ -142,19 +154,35 @@ export default {
 
     this.bookImg.src = this.bookThumbnail;
     // eslint-disable-next-line
-    this.leaf1Img.src = require('../../../assets/mindmap/grape-leaf1.png');
+    this.leaf1Img.src = require('../../../assets/img/views/activity/mindmap/grape-leaf1.png');
     // eslint-disable-next-line
-    this.leaf2Img.src = require('../../../assets/mindmap/grape-leaf2.png');
+    this.leaf2Img.src = require('../../../assets/img/views/activity/mindmap/grape-leaf2.png');
 
     this.canvas.addEventListener('touchstart', (e) => {
-      this.startDraw(e);
+      if (e.changedTouches.length === 2) {
+        this.pinchStart(e);
+        this.tooltip = 'doubletouch start';
+      } else this.startDraw(e);
     }, false);
     this.canvas.addEventListener('touchmove', (e) => {
-      this.draw(e);
+      if (e.changedTouches.length === 2) {
+        this.pinchMove(e);
+        this.touchmode = 'pinch';
+      } else this.draw(e);
     }, false);
     // eslint-disable-next-line no-unused-vars
     this.canvas.addEventListener('touchend', (e) => {
-      this.finishDraw(e);
+      if (e.changedTouches.length === 2) {
+        this.pinchFinish(e);
+        this.touchmode = 'drag';
+        const pen = document.querySelector('#mindmap-tool-pen');
+        pen.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
+        const select = document.querySelector('#mindmap-tool-select');
+        select.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
+
+        this.startPos.x = -1;
+        this.startPos.y = -1;
+      } else this.finishDraw(e);
     }, false);
 
     const penBtn = document.querySelector('#mindmap-tool-pen');
@@ -230,54 +258,145 @@ export default {
 
     if (this.templateType === 1) {
       this.nodes.push({
-        id: 0, x: width, y: height, size: 125, type: -1, link: true,
+        id: 0, x: width, y: height, size: 125, type: -1, link: true, parent: -1,
       });
 
       this.nodes.push({
         // eslint-disable-next-line max-len
-        id: 1, label: '등장인물', x: width - 240, y: height - 100, size: 80, type: 0, link: true,
+        id: 1, label: '등장인물', x: width - 240, y: height - 100, size: 80, type: 0, link: true, parent: 0,
       });
       this.nodes.push({
         // eslint-disable-next-line max-len
-        id: 2, label: '줄거리', x: width + 240, y: height - 100, size: 80, type: 1, link: true,
+        id: 2, label: '줄거리', x: width + 240, y: height - 100, size: 80, type: 1, link: true, parent: 0,
       });
       this.nodes.push({
         // eslint-disable-next-line max-len
-        id: 3, label: '느낀점', x: width - 240, y: height + 100, size: 80, type: 2, link: true,
+        id: 3, label: '느낀점', x: width - 240, y: height + 100, size: 80, type: 2, link: true, parent: 0,
       });
       this.nodes.push({
         // eslint-disable-next-line max-len
-        id: 4, label: '인상장면', x: width + 240, y: height + 100, size: 80, type: 3, link: true,
+        id: 4, label: '인상장면', x: width + 240, y: height + 100, size: 80, type: 3, link: true, parent: 0,
       });
     } else if (this.templateType === 2) {
+      this.edges.push({
+        id: 5, from: 0, to: 5,
+      });
       this.nodes.push({
-        id: 0, x: width, y: 0 + 100, size: 150, type: -1, link: true,
+        id: 0, x: width, y: 0 + 100, size: 150, type: -1, link: true, parent: -1,
       });
 
       this.nodes.push({
         // eslint-disable-next-line max-len
-        id: 1, label: '등장인물', x: width - 320, y: 120, size: 80, type: 0, link: true,
+        id: 1, label: '등장인물', x: width - 320, y: 120, size: 80, type: 0, link: true, parent: 0,
       });
       this.nodes.push({
         // eslint-disable-next-line max-len
-        id: 2, label: '줄거리', x: width - 150, y: 300, size: 80, type: 1, link: true,
+        id: 2, label: '줄거리', x: width - 150, y: 300, size: 80, type: 1, link: true, parent: 0,
       });
       this.nodes.push({
         // eslint-disable-next-line max-len
-        id: 3, label: '느낀점', x: width + 120, y: 250, size: 80, type: 2, link: true,
+        id: 3, label: '느낀점', x: width + 120, y: 250, size: 80, type: 2, link: true, parent: 0,
       });
       this.nodes.push({
         // eslint-disable-next-line max-len
-        id: 4, label: '인상장면', x: width + 300, y: 150, size: 80, type: 3, link: true,
+        id: 4, label: '인상장면', x: width + 300, y: 150, size: 80, type: 3, link: true, parent: 0,
+      });
+      this.nodes.push({
+        // eslint-disable-next-line max-len
+        id: 5, label: '사건', x: width + 30, y: 400, size: 80, type: 3, link: true, parent: 0,
       });
     }
 
     setTimeout(() => {
       this.reDrawAll(this.padding.x, this.padding.y);
-    }, 100);
+    }, 200);
   },
 
   methods: {
+    pinchStart(event) {
+      event.preventDefault();
+      const touch1 = event.changedTouches[0];
+      const touch2 = event.changedTouches[1];
+
+      this.pinch.x1 = touch1.clientX;
+      this.pinch.y1 = touch1.clientY;
+      this.pinch.x2 = touch2.clientX;
+      this.pinch.y2 = touch2.clientY;
+
+      // 한손가락 종료 오류 대비를 위함
+      this.selectedNode = -1;
+      const coors = this.getPosition(event);
+      this.startPos.x = coors.X;
+      this.startPos.y = coors.Y;
+      this.beforeMode = 'pinch';
+    },
+    pinchMove(event) {
+      event.preventDefault();
+      const touch1 = event.changedTouches[0];
+      const touch2 = event.changedTouches[1];
+
+      if (this.pinch.x1 === -1) {
+        this.pinch.x1 = touch1.clientX;
+        this.pinch.y1 = touch1.clientY;
+        this.pinch.x2 = touch2.clientX;
+        this.pinch.y2 = touch2.clientY;
+      }
+
+      // eslint-disable-next-line
+      const zoomSize = (Math.sqrt((touch1.clientX - this.pinch.x1) ** 2 + (touch1.clientY - this.pinch.y1) ** 2 + Math.sqrt((touch2.clientX - this.pinch.x2) ** 2 + (touch2.clientY - this.pinch.y2) ** 2))) / 2;
+      // eslint-disable-next-line
+      const zoomCenter = { x: (this.pinch.x1 + this.pinch.x2) / 2, y: (this.pinch.y1 + this.pinch.y2) / 2 };
+      // eslint-disable-next-line
+      const size1 = Math.sqrt((this.pinch.x1 - this.pinch.x2) ** 2 + (this.pinch.y1 - this.pinch.y2) ** 2);
+      // eslint-disable-next-line
+      const size2 = Math.sqrt((touch1.clientX - touch2.clientX) ** 2 + (touch1.clientY - touch2.clientY) ** 2);
+      const zoomRatio = size2 / size1;
+
+      this.ctx[0].scale(zoomRatio, zoomRatio);
+      this.ctx[0].scale(1, 1);
+      this.scale *= zoomRatio;
+
+      const moveX = zoomCenter.x / zoomRatio - zoomCenter.x;
+      const moveY = zoomCenter.y / zoomRatio - zoomCenter.y;
+      this.padding.x -= moveX;
+      this.padding.y -= moveY;
+
+      this.pinch.x1 = touch1.clientX;
+      this.pinch.y1 = touch1.clientY;
+      this.pinch.x2 = touch2.clientX;
+      this.pinch.y2 = touch2.clientY;
+      this.reDrawAll(this.padding.x, this.padding.y);
+      this.beforeMode = 'pinch';
+    },
+
+    pinchFinish(event) {
+      event.preventDefault();
+      const touch1 = event.changedTouches[0];
+      const touch2 = event.changedTouches[1];
+
+      // eslint-disable-next-line
+      const zoomSize = (Math.sqrt((touch1.clientX - this.pinch.x1) ** 2 + (touch1.clientY - this.pinch.y1) ** 2) + Math.sqrt((touch2.clientX - this.pinch.x2) ** 2 + (touch2.clientY - this.pinch.y2) ** 2)) / 2;
+      // eslint-disable-next-line
+      // const zoomCenter = { x: (touch1.clientX + touch2.clientX) / 2, y: (touch1.clientY + touch2.clientY) / 2 };
+      // eslint-disable-next-line
+      const size1 = Math.sqrt((this.pinch.x1 - this.pinch.x2) ** 2 + (this.pinch.y1 - this.pinch.y2) ** 2);
+      // eslint-disable-next-line
+      const size2 = Math.sqrt((touch1.clientX - touch2.clientX) ** 2 + (touch1.clientY - touch2.clientY) ** 2);
+      const zoomRatio = size2 / size1;
+
+      this.ctx[0].scale(zoomRatio, zoomRatio);
+      this.ctx[0].scale(1, 1);
+      this.scale *= zoomRatio;
+
+      this.pinch.x1 = -1;
+      this.pinch.y1 = 0;
+      this.pinch.x2 = 0;
+      this.pinch.y2 = 0;
+      this.reDrawAll(this.padding.x, this.padding.y);
+      this.beforeMode = 'pinch';
+      this.ifOneFinger = true;
+    },
+
     enter() {
       this.intervals.forEach(clearInterval);
       this.intervals.length = 0;
@@ -298,6 +417,7 @@ export default {
       htmlInput.value = '';
       htmlInput.blur();
     },
+
     initSetting(changeX, changeY) {
       const paddingX = changeX + this.padding.x;
       const paddingY = changeY + this.padding.y;
@@ -373,6 +493,8 @@ export default {
     },
 
     startDraw(event) {
+      this.ctx[0].shadowOffsetX = 0;
+      this.ctx[0].shadowOffsetY = 0;
       this.intervals.forEach(clearInterval);
       this.intervals.length = 0;
       for (let t = 0; t < this.timeouts.length; t += 1) {
@@ -397,10 +519,16 @@ export default {
         this.maxPos.L = coors.X;
         this.maxPos.R = coors.X;
       } else if (this.touchmode === 'drag') {
-        this.selectedNode = -1;
-        const coors = this.getPosition(event);
-        this.startPos.x = coors.X;
-        this.startPos.y = coors.Y;
+        if (this.beforeMode === 'pinch') this.beforeMode = 'drag';
+        if (this.startPos.x === -1) this.ifOneFinger = true;
+        else this.ifOneFinger = false;
+        this.tooltip = this.ifOneFinger;
+        if (this.ifOneFinger === true) {
+          this.selectedNode = -1;
+          const coors = this.getPosition(event);
+          this.startPos.x = coors.X;
+          this.startPos.y = coors.Y;
+        }
       } else if (this.touchmode === 'select') {
         this.selectedNode = -1;
         this.selectedNodeLabel = '';
@@ -454,11 +582,18 @@ export default {
         if (coors.Y > this.maxPos.T) this.maxPos.T = coors.Y;
         else if (coors.Y < this.maxPos.B) this.maxPos.B = coors.Y;
       } else if (this.touchmode === 'drag') {
-        const coors = this.getPosition(event);
-        const changeX = this.startPos.x - coors.X;
-        const changeY = this.startPos.y - coors.Y;
+        if (this.beforeMode !== 'pinch' && this.ifOneFinger === true) {
+          const coors = this.getPosition(event);
+          const changeX = this.startPos.x - coors.X;
+          const changeY = this.startPos.y - coors.Y;
+          this.padding.x += changeX;
+          this.padding.y += changeY;
 
-        this.reDrawAll(this.padding.x + changeX, this.padding.y + changeY);
+          this.startPos.x = coors.X;
+          this.startPos.y = coors.Y;
+
+          this.reDrawAll(this.padding.x, this.padding.y);
+        }
       } else if (this.touchmode === 'select') {
         if (this.selectedNode !== -1) {
           const coors = this.getPosition(event);
@@ -547,8 +682,13 @@ export default {
 
             const nodeindex1 = this.nodes.findIndex((element) => element.id === edgeFrom);
             const nodeindex2 = this.nodes.findIndex((element) => element.id === edgeTo);
-            this.nodes[nodeindex1].link = true;
-            this.nodes[nodeindex2].link = true;
+            if (this.nodes[nodeindex1].link === false) {
+              this.nodes[nodeindex1].link = true;
+              this.nodes[nodeindex1].parent = edgeTo;
+            } else {
+              this.nodes[nodeindex2].link = true;
+              this.nodes[nodeindex2].parent = edgeFrom;
+            }
             this.reDrawAll(this.padding.x, this.padding.y);
           }
 
@@ -600,7 +740,7 @@ export default {
             this.popupNodeId = newid;
             this.nodes.push({
               // eslint-disable-next-line max-len
-              id: newid, label: ' ', x: (this.maxPos.L + this.maxPos.R) / 2 + this.padding.x, y: (this.maxPos.T + this.maxPos.B) / 2 + this.padding.y, size: nodesize, type: newid % 4, link: false,
+              id: newid, label: ' ', x: (this.maxPos.L + this.maxPos.R) / 2 + this.padding.x, y: (this.maxPos.T + this.maxPos.B) / 2 + this.padding.y, size: nodesize, type: newid % 4, link: false, parent: -1,
             });
 
             // 노드에 연결 안돼있는 엣지 제거
@@ -608,10 +748,16 @@ export default {
               // eslint-disable-next-line max-len
               if (((this.maxPos.L + this.maxPos.R) / 2 + this.padding.x - nodesize < this.edgePos.x && this.edgePos.x < (this.maxPos.L + this.maxPos.R) / 2 + this.padding.x + nodesize) && ((this.maxPos.T + this.maxPos.B) / 2 + this.padding.y - nodesize < this.edgePos.y && this.edgePos.y < (this.maxPos.T + this.maxPos.B) / 2 + this.padding.y + nodesize)) {
                 const index = this.edges.findIndex((element) => element.id === this.edgeId);
-                if (this.edges[index].to === -1) this.edges[index].to = newid;
-                else this.edges[index].from = newid;
                 const nodeindex = this.nodes.findIndex((element) => element.id === newid);
-                this.nodes[nodeindex].link = true;
+                if (this.edges[index].to === -1) {
+                  this.edges[index].to = newid;
+                  this.nodes[nodeindex].parent = this.edges[index].from;
+                  this.nodes[nodeindex].link = true;
+                } else {
+                  this.edges[index].from = newid;
+                  this.nodes[nodeindex].parent = this.edges[index].to;
+                  this.nodes[nodeindex].link = true;
+                }
               } else {
                 const index = this.edges.findIndex((element) => element.id === this.edgeId);
                 this.edges.splice(index, 1);
@@ -649,15 +795,18 @@ export default {
         console.log('nodes: ', this.nodes);
         console.log('edges: ', this.edges);
       } else if (this.touchmode === 'drag') {
-        const coors = this.getPosition(event);
-        this.padding.x += this.startPos.x - coors.X;
-        this.padding.y += this.startPos.y - coors.Y;
+        if (this.beforeMode !== 'pinch' && this.ifOneFinger === true) {
+          const coors = this.getPosition(event);
+          this.padding.x += this.startPos.x - coors.X;
+          this.padding.y += this.startPos.y - coors.Y;
+          this.startPos.x = -1;
+          this.startPos.y = -1;
+          this.tooltip = '정상종료';
+        } else this.ifOneFinger = true;
       } else if (this.touchmode === 'word') {
         const htmlInput = document.querySelector('#input-test');
         htmlInput.value = '';
-        htmlInput.focus();
         this.selectedNodeLabel = '';
-        this.selectedNodeLabel = this.wordSelected;
         this.popupNodeId = -1;
 
         this.reDrawAll(this.padding.x, this.padding.y);
@@ -665,11 +814,16 @@ export default {
         const nodex = (coors.X + this.startPos.x) / 2;
         const nodey = (coors.Y + this.startPos.y) / 2;
         // eslint-disable-next-line max-len
-        let nodesize = Math.abs(coors.X - this.startPos.x) / 2 + Math.abs(coors.Y - this.startPos.y) / 2;
-        nodesize = Math.max(nodesize, 80);
+        let nodesize = Math.max(Math.abs(coors.X - this.startPos.x) / 2 + Math.abs(coors.Y - this.startPos.y) / 2, 80);
+        console.log(nodesize, (Math.min(this.wordSelected.length - 1, 8)));
+
+        // nodesize 조정
+        if (nodesize / (Math.min(this.wordSelected.length - 1, 8)) < 20) {
+          nodesize = (Math.min(this.wordSelected.length - 1, 8)) * 20;
+        }
+        console.log(nodesize);
         const nodetype = Math.floor(this.startPos.x + this.startPos.y) % 4;
         const newid = new Date().getTime();
-        this.popupNodeId = newid;
 
         // edge 없는 노드 삭제
         for (let i = 1; i < this.nodes.length; i += 1) {
@@ -690,37 +844,31 @@ export default {
 
         this.nodes.push({
           // eslint-disable-next-line max-len
-          id: newid, label: '', x: nodex + this.padding.x, y: nodey + this.padding.y, size: nodesize, type: nodetype, link: false,
+          id: newid, label: this.wordSelected, x: nodex + this.padding.x, y: nodey + this.padding.y, size: nodesize, type: nodetype, link: false, parent: -1,
         });
+        this.aiSupportCount += 1;
 
         // 노드에 연결 안돼있는 엣지 제거
         if (this.edgeId !== -1) {
           // eslint-disable-next-line max-len
           if ((nodex + this.padding.x - nodesize < this.edgePos.x && this.edgePos.x < nodex + this.padding.x + nodesize) && (nodey + this.padding.y - nodesize < this.edgePos.y && this.edgePos.y < nodey + this.padding.y + nodesize)) {
             const index = this.edges.findIndex((element) => element.id === this.edgeId);
-            if (this.edges[index].to === -1) this.edges[index].to = newid;
-            else this.edges[index].from = newid;
             const nodeindex = this.nodes.findIndex((element) => element.id === newid);
-            this.nodes[nodeindex].link = true;
+            if (this.edges[index].to === -1) {
+              this.edges[index].to = newid;
+              this.nodes[nodeindex].parent = this.edges[index].from;
+              this.nodes[nodeindex].link = true;
+            } else {
+              this.edges[index].from = newid;
+              this.nodes[nodeindex].parent = this.edges[index].to;
+              this.nodes[nodeindex].link = true;
+            }
           } else {
             const index = this.edges.findIndex((element) => element.id === this.edgeId);
             this.edges.splice(index, 1);
           }
         }
-
-        const index = this.nodes.findIndex((element) => element.id === this.popupNodeId);
-        const node = this.nodes[index];
-        const fontsize = Math.max(node.size / 8, 20);
-
-        this.ctx[0].beginPath();
-        this.ctx[0].strokeStyle = 'black';
-        this.ctx[0].lineWidth = 3;
-        this.ctx[0].setLineDash([5, 2]);
-        // eslint-disable-next-line
-        this.ctx[0].rect(node.x - node.size / 1.5 - this.padding.x - fontsize, node.y - this.padding.y - fontsize * 1.5, node.size * (4 / 3) + fontsize * 2, fontsize * 1.5 * 1.8);
-        this.ctx[0].stroke();
-
-        this.inputNodeLabel(this.wordSelected);
+        this.reDrawAll(this.padding.x, this.padding.y);
 
         this.edgeId = -1;
         this.wordSelected = false;
@@ -733,6 +881,9 @@ export default {
         select.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
 
         this.resetWordBackground();
+
+        this.startPos.x = -1;
+        this.startPos.y = -1;
       } else if (this.touchmode === 'select') {
         if (this.doubleSelectedNode === this.selectedNode) {
           if (this.doubleSelectedTime) {
@@ -766,12 +917,33 @@ export default {
             this.doubleSelectedTime = false;
           }, 200);
         }
+
+        this.startPos.x = -1;
+        this.startPos.y = -1;
+      } else if (this.touchmode === 'pinch') {
+        this.beforeMode = 'pinch';
+        this.touchmode = 'drag';
+        const pen = document.querySelector('#mindmap-tool-pen');
+        pen.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
+        const select = document.querySelector('#mindmap-tool-select');
+        select.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
+
+        this.pinch.x1 = -1;
+        this.pinch.y1 = 0;
+        this.pinch.x2 = 0;
+        this.pinch.y2 = 0;
+
+        this.startPos.x = -1;
+        this.startPos.y = -1;
       }
     },
 
     reDrawAll(paddingX, paddingY) {
       this.ctx[0].clearRect(0, 0, 100000, 100000);
       this.ctx[0].beginPath();
+      this.ctx[0].setLineDash([]);
+      this.ctx[0].shadowOffsetX = 0;
+      this.ctx[0].shadowOffsetY = 0;
 
       if (this.templateType === 1) {
         // edge 먼저 그리기
@@ -824,6 +996,7 @@ export default {
     },
 
     getPosition(event) {
+      event.preventDefault();
       const touches = event.changedTouches;
       const x = (touches[0].clientX - this.canvas.offsetLeft);
       const y = (touches[0].clientY - this.canvas.offsetTop);
@@ -1067,6 +1240,7 @@ export default {
           this.ctx[0].fillStyle = 'white';
           this.ctx[0].shadowOffsetX = 0;
           this.ctx[0].shadowOffsetY = 0;
+          this.ctx[0].shadowBlur = 0;
           this.ctx[0].beginPath();
           // eslint-disable-next-line max-len
           this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
@@ -1127,6 +1301,7 @@ export default {
           this.ctx[0].fillStyle = 'white';
           this.ctx[0].shadowOffsetX = 0;
           this.ctx[0].shadowOffsetY = 0;
+          this.ctx[0].shadowBlur = 0;
           this.ctx[0].beginPath();
           // eslint-disable-next-line max-len
           this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
@@ -1187,6 +1362,7 @@ export default {
           this.ctx[0].fillStyle = 'white';
           this.ctx[0].shadowOffsetX = 0;
           this.ctx[0].shadowOffsetY = 0;
+          this.ctx[0].shadowBlur = 0;
           this.ctx[0].beginPath();
           // eslint-disable-next-line max-len
           this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
@@ -1247,6 +1423,7 @@ export default {
           this.ctx[0].fillStyle = 'white';
           this.ctx[0].shadowOffsetX = 0;
           this.ctx[0].shadowOffsetY = 0;
+          this.ctx[0].shadowBlur = 0;
           this.ctx[0].beginPath();
           // eslint-disable-next-line max-len
           this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
@@ -1553,7 +1730,13 @@ export default {
       this.recommendLoaded = false;
       const node = this.nodes.find((element) => element.id === this.selectedNode);
       const ancWord = [];
-      if (this.selectedNode >= 5) ancWord.push(node.label);
+      if (this.selectedNode >= 1) ancWord.push(node.label);
+      if (node !== undefined) {
+        if (node.parent >= 10) {
+          const parentNode = this.nodes.find((element) => element.id === node.parent);
+          ancWord.push(parentNode.label);
+        }
+      }
 
       // eslint-disable-next-line
       axios.get('/api/book/' + this.$route.params.bookId + '/keyword', {
@@ -1696,7 +1879,7 @@ export default {
         // eslint-disable-next-line
         params: {
           // eslint-disable-next-line
-          nodes: this.nodes, edges: this.edges, template: this.templateType, bookId: this.$route.params.bookId, thumbnail: this.bookThumbnail, bookTitle: this.bookTitle,
+          nodes: this.nodes, edges: this.edges, template: this.templateType, bookId: this.$route.params.bookId, thumbnail: this.bookThumbnail, bookTitle: this.bookTitle, aiSupportCount: this.aiSupportCount,
         },
       });
     },
@@ -1976,14 +2159,14 @@ export default {
 #mindmap-tool-pen {
   width: 4vw;
   height: 4vw;
-  background-image: url('../../../assets/mindmap/pen.png');
+  background-image: url('../../../assets/img/views/activity/mindmap/pen.png');
   background-size: cover;
   background-repeat: no-repeat;
 }
 #mindmap-tool-select {
   width: 4vw;
   height: 4vw;
-  background-image: url('../../../assets/mindmap/select.png');
+  background-image: url('../../../assets/img/views/activity/mindmap/select.png');
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center center;
@@ -1991,7 +2174,7 @@ export default {
 #mindmap-tool-zoomin {
   width: 4vw;
   height: 4vw;
-  background-image: url('../../../assets/mindmap/zoom-in.png');
+  background-image: url('../../../assets/img/views/activity/mindmap/zoom-in.png');
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center center;
@@ -1999,7 +2182,7 @@ export default {
 #mindmap-tool-zoomout {
   width: 4vw;
   height: 4vw;
-  background-image: url('../../../assets/mindmap/zoom-out.png');
+  background-image: url('../../../assets/img/views/activity/mindmap/zoom-out.png');
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center center;
@@ -2007,7 +2190,7 @@ export default {
 #mindmap-tool-delete {
   width: 4vw;
   height: 4vw;
-  background-image: url('../../../assets/mindmap/delete.png');
+  background-image: url('../../../assets/img/views/activity/mindmap/delete.png');
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center center;
@@ -2026,7 +2209,7 @@ export default {
 }
 #ai-img {
   position: absolute;
-  background-image: url('../../../assets/mindmap/ai-recommend.png');
+  background-image: url('../../../assets/img/views/activity/mindmap/ai-recommend.png');
   background-size: cover;
   width: 12vw;
   height: 18vh;
@@ -2226,15 +2409,18 @@ export default {
   height: 18vh;
   margin-left: 83%;
   padding: 0;
-  background-image: url('../../../assets/mindmap/next.png');
+  background-image: url('../../../assets/img/views/activity/mindmap/next.png');
   background-size: cover;
 }
 
 #input-test {
   position: absolute;
   background: orange;
-  top: 20vh;
-  left: 20vw;
+  top: -20vh;
+  left: -20vw;
   z-index: 1;
+}
+#input-test:focus {
+  outline: none;
 }
 </style>

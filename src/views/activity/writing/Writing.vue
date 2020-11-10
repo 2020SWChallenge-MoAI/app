@@ -77,7 +77,7 @@ export default {
     }
 
     this.$store.dispatch('loadStart');
-    this.imageSrc = await this.$store.dispatch('downloadBookMainImage', { bid: this.book.bid, rank: this.rank });
+    this.imageSrc = await this.$store.dispatch('downloadBookMainImage', { bid: this.book.bid, rank: this.rank, thumbnail: false });
     this.$store.dispatch('loadFinish');
   },
   methods: {
