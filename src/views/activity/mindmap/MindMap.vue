@@ -1,5 +1,5 @@
 <template>
-  <sub-layout title="마인드맵" tooltip="떠오르는 단어를 적어 커다란 나무를 완성해보자!">
+  <sub-layout title="마인드맵" :tooltip="tooltip">
     <template v-slot:left>
       <left-menu-button icon="mdi-check-bold" text="완료" id="canvas-finish" />
     </template>
@@ -7,7 +7,12 @@
     <!-- 캔버스 -->
     <canvas id="center-canvas" />
 
-    <input id="input-test" v-model="selectedNodeLabel" @keyup.enter="enter">
+    <input
+      id="input-test"
+      v-model="selectedNodeLabel"
+      @keyup.enter="enter"
+      autocomplete="off"
+    >
 
     <div id="mindmap-tool-bar">
       <div class="mindmap-tools" v-ripple><div id="mindmap-tool-pen" /></div>
@@ -71,6 +76,7 @@ export default {
   data() {
     return {
       aiHelp: false,
+      tooltip: '떠오르는 단어를 적어 커다란 나무를 완성해보자!',
       canvas: document.getElementById(''),
       ctx: [],
       templateType: this.$route.params.template,
@@ -123,6 +129,12 @@ export default {
       timeouts: [],
 
       aiSupportCount: 0,
+
+      pinch: {
+        x1: -1, y1: 0, x2: 0, y2: 0,
+      },
+      beforeMode: '',
+      ifOneFinger: true,
     };
   },
 
@@ -147,14 +159,30 @@ export default {
     this.leaf2Img.src = require('../../../assets/img/views/activity/mindmap/grape-leaf2.png');
 
     this.canvas.addEventListener('touchstart', (e) => {
-      this.startDraw(e);
+      if (e.changedTouches.length === 2) {
+        this.pinchStart(e);
+        this.tooltip = 'doubletouch start';
+      } else this.startDraw(e);
     }, false);
     this.canvas.addEventListener('touchmove', (e) => {
-      this.draw(e);
+      if (e.changedTouches.length === 2) {
+        this.pinchMove(e);
+        this.touchmode = 'pinch';
+      } else this.draw(e);
     }, false);
     // eslint-disable-next-line no-unused-vars
     this.canvas.addEventListener('touchend', (e) => {
-      this.finishDraw(e);
+      if (e.changedTouches.length === 2) {
+        this.pinchFinish(e);
+        this.touchmode = 'drag';
+        const pen = document.querySelector('#mindmap-tool-pen');
+        pen.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
+        const select = document.querySelector('#mindmap-tool-select');
+        select.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
+
+        this.startPos.x = -1;
+        this.startPos.y = -1;
+      } else this.finishDraw(e);
     }, false);
 
     const penBtn = document.querySelector('#mindmap-tool-pen');
@@ -285,6 +313,90 @@ export default {
   },
 
   methods: {
+    pinchStart(event) {
+      event.preventDefault();
+      const touch1 = event.changedTouches[0];
+      const touch2 = event.changedTouches[1];
+
+      this.pinch.x1 = touch1.clientX;
+      this.pinch.y1 = touch1.clientY;
+      this.pinch.x2 = touch2.clientX;
+      this.pinch.y2 = touch2.clientY;
+
+      // 한손가락 종료 오류 대비를 위함
+      this.selectedNode = -1;
+      const coors = this.getPosition(event);
+      this.startPos.x = coors.X;
+      this.startPos.y = coors.Y;
+      this.beforeMode = 'pinch';
+    },
+    pinchMove(event) {
+      event.preventDefault();
+      const touch1 = event.changedTouches[0];
+      const touch2 = event.changedTouches[1];
+
+      if (this.pinch.x1 === -1) {
+        this.pinch.x1 = touch1.clientX;
+        this.pinch.y1 = touch1.clientY;
+        this.pinch.x2 = touch2.clientX;
+        this.pinch.y2 = touch2.clientY;
+      }
+
+      // eslint-disable-next-line
+      const zoomSize = (Math.sqrt((touch1.clientX - this.pinch.x1) ** 2 + (touch1.clientY - this.pinch.y1) ** 2 + Math.sqrt((touch2.clientX - this.pinch.x2) ** 2 + (touch2.clientY - this.pinch.y2) ** 2))) / 2;
+      // eslint-disable-next-line
+      const zoomCenter = { x: (this.pinch.x1 + this.pinch.x2) / 2, y: (this.pinch.y1 + this.pinch.y2) / 2 };
+      // eslint-disable-next-line
+      const size1 = Math.sqrt((this.pinch.x1 - this.pinch.x2) ** 2 + (this.pinch.y1 - this.pinch.y2) ** 2);
+      // eslint-disable-next-line
+      const size2 = Math.sqrt((touch1.clientX - touch2.clientX) ** 2 + (touch1.clientY - touch2.clientY) ** 2);
+      const zoomRatio = size2 / size1;
+
+      this.ctx[0].scale(zoomRatio, zoomRatio);
+      this.ctx[0].scale(1, 1);
+      this.scale *= zoomRatio;
+
+      const moveX = zoomCenter.x / zoomRatio - zoomCenter.x;
+      const moveY = zoomCenter.y / zoomRatio - zoomCenter.y;
+      this.padding.x -= moveX;
+      this.padding.y -= moveY;
+
+      this.pinch.x1 = touch1.clientX;
+      this.pinch.y1 = touch1.clientY;
+      this.pinch.x2 = touch2.clientX;
+      this.pinch.y2 = touch2.clientY;
+      this.reDrawAll(this.padding.x, this.padding.y);
+      this.beforeMode = 'pinch';
+    },
+
+    pinchFinish(event) {
+      event.preventDefault();
+      const touch1 = event.changedTouches[0];
+      const touch2 = event.changedTouches[1];
+
+      // eslint-disable-next-line
+      const zoomSize = (Math.sqrt((touch1.clientX - this.pinch.x1) ** 2 + (touch1.clientY - this.pinch.y1) ** 2) + Math.sqrt((touch2.clientX - this.pinch.x2) ** 2 + (touch2.clientY - this.pinch.y2) ** 2)) / 2;
+      // eslint-disable-next-line
+      // const zoomCenter = { x: (touch1.clientX + touch2.clientX) / 2, y: (touch1.clientY + touch2.clientY) / 2 };
+      // eslint-disable-next-line
+      const size1 = Math.sqrt((this.pinch.x1 - this.pinch.x2) ** 2 + (this.pinch.y1 - this.pinch.y2) ** 2);
+      // eslint-disable-next-line
+      const size2 = Math.sqrt((touch1.clientX - touch2.clientX) ** 2 + (touch1.clientY - touch2.clientY) ** 2);
+      const zoomRatio = size2 / size1;
+
+      this.ctx[0].scale(zoomRatio, zoomRatio);
+      this.ctx[0].scale(1, 1);
+      this.scale *= zoomRatio;
+
+      this.pinch.x1 = -1;
+      this.pinch.y1 = 0;
+      this.pinch.x2 = 0;
+      this.pinch.y2 = 0;
+      this.reDrawAll(this.padding.x, this.padding.y);
+      this.beforeMode = 'pinch';
+      this.ifOneFinger = true;
+    },
+
     enter() {
       this.intervals.forEach(clearInterval);
       this.intervals.length = 0;
@@ -305,6 +417,7 @@ export default {
       htmlInput.value = '';
       htmlInput.blur();
     },
+
     initSetting(changeX, changeY) {
       const paddingX = changeX + this.padding.x;
       const paddingY = changeY + this.padding.y;
@@ -406,10 +519,16 @@ export default {
         this.maxPos.L = coors.X;
         this.maxPos.R = coors.X;
       } else if (this.touchmode === 'drag') {
-        this.selectedNode = -1;
-        const coors = this.getPosition(event);
-        this.startPos.x = coors.X;
-        this.startPos.y = coors.Y;
+        if (this.beforeMode === 'pinch') this.beforeMode = 'drag';
+        if (this.startPos.x === -1) this.ifOneFinger = true;
+        else this.ifOneFinger = false;
+        this.tooltip = this.ifOneFinger;
+        if (this.ifOneFinger === true) {
+          this.selectedNode = -1;
+          const coors = this.getPosition(event);
+          this.startPos.x = coors.X;
+          this.startPos.y = coors.Y;
+        }
       } else if (this.touchmode === 'select') {
         this.selectedNode = -1;
         this.selectedNodeLabel = '';
@@ -463,11 +582,18 @@ export default {
         if (coors.Y > this.maxPos.T) this.maxPos.T = coors.Y;
         else if (coors.Y < this.maxPos.B) this.maxPos.B = coors.Y;
       } else if (this.touchmode === 'drag') {
-        const coors = this.getPosition(event);
-        const changeX = this.startPos.x - coors.X;
-        const changeY = this.startPos.y - coors.Y;
+        if (this.beforeMode !== 'pinch' && this.ifOneFinger === true) {
+          const coors = this.getPosition(event);
+          const changeX = this.startPos.x - coors.X;
+          const changeY = this.startPos.y - coors.Y;
+          this.padding.x += changeX;
+          this.padding.y += changeY;
 
-        this.reDrawAll(this.padding.x + changeX, this.padding.y + changeY);
+          this.startPos.x = coors.X;
+          this.startPos.y = coors.Y;
+
+          this.reDrawAll(this.padding.x, this.padding.y);
+        }
       } else if (this.touchmode === 'select') {
         if (this.selectedNode !== -1) {
           const coors = this.getPosition(event);
@@ -669,9 +795,14 @@ export default {
         console.log('nodes: ', this.nodes);
         console.log('edges: ', this.edges);
       } else if (this.touchmode === 'drag') {
-        const coors = this.getPosition(event);
-        this.padding.x += this.startPos.x - coors.X;
-        this.padding.y += this.startPos.y - coors.Y;
+        if (this.beforeMode !== 'pinch' && this.ifOneFinger === true) {
+          const coors = this.getPosition(event);
+          this.padding.x += this.startPos.x - coors.X;
+          this.padding.y += this.startPos.y - coors.Y;
+          this.startPos.x = -1;
+          this.startPos.y = -1;
+          this.tooltip = '정상종료';
+        } else this.ifOneFinger = true;
       } else if (this.touchmode === 'word') {
         const htmlInput = document.querySelector('#input-test');
         htmlInput.value = '';
@@ -750,6 +881,9 @@ export default {
         select.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
 
         this.resetWordBackground();
+
+        this.startPos.x = -1;
+        this.startPos.y = -1;
       } else if (this.touchmode === 'select') {
         if (this.doubleSelectedNode === this.selectedNode) {
           if (this.doubleSelectedTime) {
@@ -783,6 +917,24 @@ export default {
             this.doubleSelectedTime = false;
           }, 200);
         }
+
+        this.startPos.x = -1;
+        this.startPos.y = -1;
+      } else if (this.touchmode === 'pinch') {
+        this.beforeMode = 'pinch';
+        this.touchmode = 'drag';
+        const pen = document.querySelector('#mindmap-tool-pen');
+        pen.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
+        const select = document.querySelector('#mindmap-tool-select');
+        select.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
+
+        this.pinch.x1 = -1;
+        this.pinch.y1 = 0;
+        this.pinch.x2 = 0;
+        this.pinch.y2 = 0;
+
+        this.startPos.x = -1;
+        this.startPos.y = -1;
       }
     },
 
@@ -2264,8 +2416,11 @@ export default {
 #input-test {
   position: absolute;
   background: orange;
-  top: 20vh;
-  left: 20vw;
+  top: -20vh;
+  left: -20vw;
   z-index: 1;
+}
+#input-test:focus {
+  outline: none;
 }
 </style>
