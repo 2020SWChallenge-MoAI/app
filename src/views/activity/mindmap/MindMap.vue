@@ -42,17 +42,13 @@
         </div>
       </div>
 
-      <v-btn
+      <div
         id="mindmap-left-arrow"
-        icon
-        color="#668d8d"
-        x-large
-        :disabled="wordIndex == 0"
         @click="beforeWords"
         v-show="recommendClicked && recommendLoaded"
+        v-ripple
       >
-        <v-icon>mdi-arrow-left-drop-circle</v-icon>
-      </v-btn>
+      </div>
 
       <div id="recommend-words" v-show="recommendClicked && recommendLoaded">
 
@@ -67,17 +63,13 @@
         </div>
       </div>
 
-      <v-btn
+      <div
         id="mindmap-right-arrow"
-        icon
-        color="#668d8d"
-        x-large
-        :disabled="wordIndex > words.length / 6 - 2"
         @click="afterWords"
         v-show="recommendClicked && recommendLoaded"
+        v-ripple
       >
-        <v-icon>mdi-arrow-right-drop-circle</v-icon>
-      </v-btn>
+      </div>
 
       <div id="recommend-start" v-if="!recommendClicked">
         내 도움이 필요하면 버튼을 누르면 돼!
@@ -1016,13 +1008,11 @@ export default {
       let textLength = 0;
       if (text !== undefined) {
         textLength = this.getTextLength(text);
-        console.log(textLength);
         if (textLength > 12) fontsize /= 2;
         else if (textLength > 8) fontsize = size / (textLength / 2 - 1);
         linesize = Math.floor(textLength / 16) + 1;
         if (textLength % 16 === 0) linesize -= 1;
       }
-      console.log('test', linesize, textLength);
 
       if (this.templateType === 1) {
         if (type === 0) {
@@ -1755,26 +1745,30 @@ export default {
     },
 
     beforeWords() {
-      this.wordIndex -= 1;
-      this.resetWordBackground();
-      this.wordSelected = '';
-      this.touchmode = 'drag';
+      if (this.wordIndex > 0) {
+        this.wordIndex -= 1;
+        this.resetWordBackground();
+        this.wordSelected = '';
+        this.touchmode = 'drag';
 
-      this.showWords.length = 0;
-      for (let i = 0; i < 6; i += 1) {
-        this.showWords.push(this.words[this.wordIndex * 6 + i]);
+        this.showWords.length = 0;
+        for (let i = 0; i < 6; i += 1) {
+          this.showWords.push(this.words[this.wordIndex * 6 + i]);
+        }
       }
     },
 
     afterWords() {
-      this.wordIndex += 1;
-      this.resetWordBackground();
-      this.wordSelected = '';
-      this.touchmode = 'drag';
+      if (this.wordIndex <= this.words.length / 6 - 2) {
+        this.wordIndex += 1;
+        this.resetWordBackground();
+        this.wordSelected = '';
+        this.touchmode = 'drag';
 
-      this.showWords.length = 0;
-      for (let i = 0; i < 6; i += 1) {
-        this.showWords.push(this.words[this.wordIndex * 6 + i]);
+        this.showWords.length = 0;
+        for (let i = 0; i < 6; i += 1) {
+          this.showWords.push(this.words[this.wordIndex * 6 + i]);
+        }
       }
     },
 
@@ -2276,6 +2270,10 @@ export default {
   position: absolute;
   left: 20%;
   z-index: 100;
+  background-image: url('../../../assets/img/views/activity/mindmap/left-arrow.svg');
+  background-size: 30%;
+  background-position: center, center;
+  background-color: lightgray;
 }
 #mindmap-right-arrow {
   width: 10%;
@@ -2283,6 +2281,12 @@ export default {
   position: absolute;
   left: 90%;
   z-index: 100;
+  background-image: url('../../../assets/img/views/activity/mindmap/right-arrow.svg');
+  background-size: 30%;
+  background-position: center, center;
+  background-color: lightgray;
+  border: 0;
+  box-shadow: 0;
 }
 
 #input-test {
