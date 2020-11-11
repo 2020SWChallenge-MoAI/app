@@ -26,16 +26,17 @@ export default {
 
 <style lang="scss" scoped>
 .drawing-result-picture {
-  width: 98%;
-  margin-left: 1%;
+  width: 94%;
+  margin-left: 3%;
   margin-top: 0.5%;
   border: 2px solid rgba(155, 155, 155);
 }
 .drawing-result-text {
   width: 95%;
-  height: 6vh;
+  height: 5vh;
   margin-left: 2.5%;
   margin-top: 0;
+  font-size: 1.5vh;
   overflow-y: scroll;
   -ms-overflow-style: none;
 }

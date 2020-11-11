@@ -1,5 +1,5 @@
 <template>
-  <sub-layout title="마인드맵" :tooltip="tooltip">
+  <sub-layout title="생각펼치기" :tooltip="tooltip">
     <template v-slot:left>
       <left-menu-button icon="mdi-check-bold" text="완료" id="canvas-finish" />
     </template>
@@ -29,42 +29,61 @@
         <div id="ai-space" />
         <div id="ai-dotline">
           <div id="ai-dot" />
+          <div id="ai-dot1" />
           <div id="ai-dot" />
+          <div id="ai-dot1" />
           <div id="ai-dot" />
+          <div id="ai-dot1" />
           <div id="ai-dot" />
+          <div id="ai-dot1" />
           <div id="ai-dot" />
-          <div id="ai-dot" />
+          <div id="ai-dot1" />
           <div id="ai-dot" />
         </div>
       </div>
 
+      <v-btn
+        id="mindmap-left-arrow"
+        icon
+        color="#668d8d"
+        x-large
+        :disabled="wordIndex == 0"
+        @click="beforeWords"
+        v-show="recommendClicked && recommendLoaded"
+      >
+        <v-icon>mdi-arrow-left-drop-circle</v-icon>
+      </v-btn>
+
       <div id="recommend-words" v-show="recommendClicked && recommendLoaded">
-        <div id="recommend-words-top">
-          <div class="recommend-word" id="recommend1" v-ripple>
-          </div>
-          <div class="recommend-word" id="recommend2" v-ripple>
-          </div>
-          <div class="recommend-word" id="recommend3" v-ripple>
-          </div>
-        </div>
-        <div id="recommend-words-bot">
-          <div class="recommend-word" id="recommend4" v-ripple>
-          </div>
-          <div class="recommend-word" id="recommend5" v-ripple>
-          </div>
-          <div class="recommend-word" id="recommend6" v-ripple>
-          </div>
+
+        <div
+          class="recommend-word"
+          v-for="(word, index) in showWords"
+          :key="index"
+          :id="'recommend-word' + index"
+          @click="wordClicked"
+        >
+          {{ word.word }}
         </div>
       </div>
+
+      <v-btn
+        id="mindmap-right-arrow"
+        icon
+        color="#668d8d"
+        x-large
+        :disabled="wordIndex > words.length / 6 - 2"
+        @click="afterWords"
+        v-show="recommendClicked && recommendLoaded"
+      >
+        <v-icon>mdi-arrow-right-drop-circle</v-icon>
+      </v-btn>
 
       <div id="recommend-start" v-if="!recommendClicked">
         내 도움이 필요하면 버튼을 누르면 돼!
       </div>
 
       <div id="recommend-loading" v-if="recommendClicked && !recommendLoaded" />
-
-      <div id="right-btn" v-show="recommendClicked && recommendLoaded">
-      </div>
     </div>
   </sub-layout>
 </template>
@@ -99,6 +118,7 @@ export default {
       ],
 
       wordIndex: 0,
+      showWords: [],
       selectedNode: -1,
       doubleSelectedNode: -1,
       doubleSelectedTime: false,
@@ -161,7 +181,6 @@ export default {
     this.canvas.addEventListener('touchstart', (e) => {
       if (e.changedTouches.length === 2) {
         this.pinchStart(e);
-        this.tooltip = 'doubletouch start';
       } else this.startDraw(e);
     }, false);
     this.canvas.addEventListener('touchmove', (e) => {
@@ -193,8 +212,6 @@ export default {
     const finishBtn = document.querySelector('#canvas-finish');
     const aiSupportBtn = document.querySelector('#ai-background');
     const aiHelp = document.querySelector('#aiHelp');
-    const recommendWords = document.querySelectorAll('.recommend-word');
-    const nextBtn = document.querySelector('#right-btn');
     if (penBtn) {
       penBtn.addEventListener('click', this.modePen);
     }
@@ -219,17 +236,6 @@ export default {
     if (aiHelp) {
       aiHelp.addEventListener('click', this.aiHelpSelected);
     }
-    if (nextBtn) {
-      nextBtn.addEventListener('click', this.nextBtnClicked);
-    }
-    recommendWords.forEach((word) => {
-      // eslint-disable-next-line no-unused-vars
-      word.addEventListener('click', (e) => {
-        this.recommendWordClicked(e);
-        this.touchmode = 'word';
-        this.wordSelected = word.innerText;
-      });
-    }, true);
 
     this.ctx[0].lineJoin = 'round';
     this.ctx[0].scale(0.9, 0.9);
@@ -330,6 +336,7 @@ export default {
       this.startPos.y = coors.Y;
       this.beforeMode = 'pinch';
     },
+
     pinchMove(event) {
       event.preventDefault();
       const touch1 = event.changedTouches[0];
@@ -465,11 +472,11 @@ export default {
         this.ctx[0].beginPath();
         this.ctx[0].fillStyle = '#836d4b';
         // eslint-disable-next-line max-len
-        this.ctx[0].fillRect(width - 20 - paddingX, height * 0.9 - paddingY + height / 3, 40, 140);
+        this.ctx[0].fillRect(width - 20 - paddingX, height * 0.9 - paddingY + 140, 40, 160);
         this.ctx[0].lineWidth = 12;
         this.ctx[0].strokeStyle = '#836d4b';
         // eslint-disable-next-line max-len
-        this.ctx[0].arc(width - paddingX, height * 0.9 - paddingY, height / 3, Math.PI * 0.25, Math.PI * 0.75);
+        this.ctx[0].arc(width - paddingX, height * 0.9 - paddingY, 140, Math.PI * 0.25, Math.PI * 0.75);
         this.ctx[0].stroke();
 
         // 책 이미지 넣기
@@ -522,7 +529,6 @@ export default {
         if (this.beforeMode === 'pinch') this.beforeMode = 'drag';
         if (this.startPos.x === -1) this.ifOneFinger = true;
         else this.ifOneFinger = false;
-        this.tooltip = this.ifOneFinger;
         if (this.ifOneFinger === true) {
           this.selectedNode = -1;
           const coors = this.getPosition(event);
@@ -801,7 +807,6 @@ export default {
           this.padding.y += this.startPos.y - coors.Y;
           this.startPos.x = -1;
           this.startPos.y = -1;
-          this.tooltip = '정상종료';
         } else this.ifOneFinger = true;
       } else if (this.touchmode === 'word') {
         const htmlInput = document.querySelector('#input-test');
@@ -1005,15 +1010,15 @@ export default {
     },
 
     makeNode(x, y, size, type, text) {
-      let fontsize = size / 4;
+      let fontsize = size / 3;
       let linesize = 1;
       let textLength = 0;
       if (text !== undefined) {
         textLength = this.getTextLength(text);
-        if (textLength > 16) fontsize /= 2;
-        else if (textLength > 10) fontsize = size / (textLength / 2 - 1);
-        linesize = Math.floor(textLength / 20) + 1;
-        if (textLength % 20 === 0) linesize -= 1;
+        if (textLength > 12) fontsize /= 2;
+        else if (textLength > 8) fontsize = size / (textLength / 2 - 1);
+        linesize = Math.floor(textLength / 15) + 1;
+        if (textLength % 15 === 0) linesize -= 1;
       }
 
       if (this.templateType === 1) {
@@ -1049,13 +1054,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 20 || i === text.length - 1) {
+              if (stringLength === 15 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 14 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
@@ -1098,13 +1103,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 20 || i === text.length - 1) {
+              if (stringLength === 15 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 14 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
@@ -1150,13 +1155,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 20 || i === text.length - 1) {
+              if (stringLength === 15 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 14 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
@@ -1205,13 +1210,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 20 || i === text.length - 1) {
+              if (stringLength === 15 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 14 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
@@ -1220,7 +1225,8 @@ export default {
               }
             }
           } else {
-            this.ctx[0].fillText(text, x - (fontsize / 2) * (textLength / 2), y + fontsize / 4);
+            // eslint-disable-next-line
+            this.ctx[0].fillText(text, x - (fontsize / 2) * ((textLength - 1) / 2), y + fontsize / 4);
           }
         }
       } else if (this.templateType === 2) {
@@ -1271,13 +1277,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 20 || i === text.length - 1) {
+              if (stringLength === 15 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 14 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
@@ -1332,13 +1338,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 20 || i === text.length - 1) {
+              if (stringLength === 15 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 14 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
@@ -1393,13 +1399,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 20 || i === text.length - 1) {
+              if (stringLength === 15 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 14 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
@@ -1454,13 +1460,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 20 || i === text.length - 1) {
+              if (stringLength === 15 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 14 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
@@ -1682,50 +1688,7 @@ export default {
       }
     },
 
-    nextBtnClicked() {
-      this.wordIndex += 6;
-      this.wordIndex %= 60;
-      const word1 = document.querySelector('#recommend1');
-      const word2 = document.querySelector('#recommend2');
-      const word3 = document.querySelector('#recommend3');
-      const word4 = document.querySelector('#recommend4');
-      const word5 = document.querySelector('#recommend5');
-      const word6 = document.querySelector('#recommend6');
-
-      word1.innerHTML = this.words[this.wordIndex].word;
-      word2.innerHTML = this.words[this.wordIndex + 1].word;
-      word3.innerHTML = this.words[this.wordIndex + 2].word;
-      word4.innerHTML = this.words[this.wordIndex + 3].word;
-      word5.innerHTML = this.words[this.wordIndex + 4].word;
-      word6.innerHTML = this.words[this.wordIndex + 5].word;
-
-      this.wordCanSelect = false;
-      this.wordSelected = '';
-      this.resetWordBackground();
-
-      word1.style.fontSize = '2.5vw'; word1.style.paddingTop = '1vw';
-      word2.style.fontSize = '2.5vw'; word2.style.paddingTop = '1vw';
-      word3.style.fontSize = '2.5vw'; word3.style.paddingTop = '1vw';
-      word4.style.fontSize = '2.5vw'; word4.style.paddingTop = '1vw';
-      word5.style.fontSize = '2.5vw'; word5.style.paddingTop = '1vw';
-      word6.style.fontSize = '2.5vw'; word6.style.paddingTop = '1vw';
-
-      // eslint-disable-next-line brace-style
-      if (word1.innerHTML.length > 5) { word1.style.fontSize = '1.5vw'; word1.style.paddingTop = '1.5vw'; }
-      // eslint-disable-next-line brace-style
-      else if (word2.innerHTML.length > 5) { word2.style.fontSize = '1.5vw'; word2.style.paddingTop = '1.5vw'; }
-      // eslint-disable-next-line brace-style
-      else if (word3.innerHTML.length > 5) { word3.style.fontSize = '1.5vw'; word3.style.paddingTop = '1.5vw'; }
-      // eslint-disable-next-line brace-style
-      else if (word4.innerHTML.length > 5) { word4.style.fontSize = '1.5vw'; word4.style.paddingTop = '1.5vw'; }
-      // eslint-disable-next-line brace-style
-      else if (word5.innerHTML.length > 5) { word5.style.fontSize = '1.5vw'; word5.style.paddingTop = '1.5vw'; }
-      // eslint-disable-next-line brace-style
-      else if (word6.innerHTML.length > 5) { word6.style.fontSize = '1.5vw'; word6.style.paddingTop = '1.5vw'; }
-      // eslint-disable-next-line brace-style
-    },
-
-    aiSupportBtnClicked() {
+    async aiSupportBtnClicked() {
       this.recommendClicked = true;
       this.recommendLoaded = false;
       const node = this.nodes.find((element) => element.id === this.selectedNode);
@@ -1739,41 +1702,19 @@ export default {
       }
 
       // eslint-disable-next-line
-      axios.get('/api/book/' + this.$route.params.bookId + '/keyword', {
+      const a = await axios.get('/api/book/' + this.$route.params.bookId + '/keyword', {
         params: {
           num: 60, anc: JSON.stringify(ancWord),
         },
       }).then((res) => {
         this.words = res.data.keywords;
         this.wordIndex = 0;
+        console.log(this.words.length);
 
-        const word1 = document.querySelector('#recommend1');
-        const word2 = document.querySelector('#recommend2');
-        const word3 = document.querySelector('#recommend3');
-        const word4 = document.querySelector('#recommend4');
-        const word5 = document.querySelector('#recommend5');
-        const word6 = document.querySelector('#recommend6');
-
-        word1.innerHTML = this.words[0].word;
-        word2.innerHTML = this.words[1].word;
-        word3.innerHTML = this.words[2].word;
-        word4.innerHTML = this.words[3].word;
-        word5.innerHTML = this.words[4].word;
-        word6.innerHTML = this.words[5].word;
-
-        // eslint-disable-next-line brace-style
-        if (word1.innerHTML.length > 5) { word1.style.fontSize = '1.5vw'; word1.style.paddingTop = '1.5vw'; }
-        // eslint-disable-next-line brace-style
-        else if (word2.innerHTML.length > 5) { word2.style.fontSize = '1.5vw'; word2.style.paddingTop = '1.5vw'; }
-        // eslint-disable-next-line brace-style
-        else if (word3.innerHTML.length > 5) { word3.style.fontSize = '1.5vw'; word3.style.paddingTop = '1.5vw'; }
-        // eslint-disable-next-line brace-style
-        else if (word4.innerHTML.length > 5) { word4.style.fontSize = '1.5vw'; word4.style.paddingTop = '1.5vw'; }
-        // eslint-disable-next-line brace-style
-        else if (word5.innerHTML.length > 5) { word5.style.fontSize = '1.5vw'; word5.style.paddingTop = '1.5vw'; }
-        // eslint-disable-next-line brace-style
-        else if (word6.innerHTML.length > 5) { word6.style.fontSize = '1.5vw'; word6.style.paddingTop = '1.5vw'; }
-        // eslint-disable-next-line brace-style
+        this.showWords.length = 0;
+        for (let i = 0; i < 6; i += 1) {
+          this.showWords.push(this.words[i]);
+        }
 
         this.recommendLoaded = true;
       }).catch((err) => {
@@ -1781,72 +1722,55 @@ export default {
       });
     },
 
-    recommendWordClicked(e) {
-      const word1 = document.querySelector('#recommend1');
-      const word2 = document.querySelector('#recommend2');
-      const word3 = document.querySelector('#recommend3');
-      const word4 = document.querySelector('#recommend4');
-      const word5 = document.querySelector('#recommend5');
-      const word6 = document.querySelector('#recommend6');
+    resetWordBackground() {
+      const recommendWords = document.querySelectorAll('.recommend-word-selected');
+      recommendWords.forEach((word) => {
+        console.log(word);
+        word.classList.remove('recommend-word-selected');
+        word.classList.add('recommend-word');
+      }, true);
+    },
 
-      if (this.wordCanSelect) {
-        // eslint-disable-next-line brace-style
-        if (e.target.id === 'recommend1') { word1.style.background = '#b6b6b6'; this.wordSelected = word1.innerHTML; }
-        // eslint-disable-next-line brace-style
-        else if (e.target.id === 'recommend2') { word2.style.background = '#b6b6b6'; this.wordSelected = word2.innerHTML; }
-        // eslint-disable-next-line brace-style
-        else if (e.target.id === 'recommend3') { word3.style.background = '#b6b6b6'; this.wordSelected = word3.innerHTML; }
-        // eslint-disable-next-line brace-style
-        else if (e.target.id === 'recommend4') { word4.style.background = '#b6b6b6'; this.wordSelected = word4.innerHTML; }
-        // eslint-disable-next-line brace-style
-        else if (e.target.id === 'recommend5') { word5.style.background = '#b6b6b6'; this.wordSelected = word5.innerHTML; }
-        // eslint-disable-next-line brace-style
-        else if (e.target.id === 'recommend6') { word6.style.background = '#b6b6b6'; this.wordSelected = word6.innerHTML; }
-        this.wordCanSelect = false;
+    wordClicked(e) {
+      this.resetWordBackground();
+      // eslint-disable-next-line
+      const word = document.querySelector('#' + e.target.id);
+      if (this.wordSelected === word.innerText) {
+        word.classList.remove('recommend-word-selected');
+        word.classList.add('recommend-word');
+        this.wordSelected = '';
+        this.touchmode = 'drag';
       } else {
-        // eslint-disable-next-line no-lonely-if
-        if (e.target.id === 'recommend1') {
-          this.resetWordBackground();
-          word1.style.background = '#b6b6b6';
-          this.wordSelected = word1.innerText;
-        } else if (e.target.id === 'recommend2') {
-          this.resetWordBackground();
-          word2.style.background = '#b6b6b6';
-          this.wordSelected = word2.innerText;
-        } else if (e.target.id === 'recommend3') {
-          this.resetWordBackground();
-          word3.style.background = '#b6b6b6';
-          this.wordSelected = word3.innerText;
-        } else if (e.target.id === 'recommend4') {
-          this.resetWordBackground();
-          word4.style.background = '#b6b6b6';
-          this.wordSelected = word4.innerText;
-        } else if (e.target.id === 'recommend5') {
-          this.resetWordBackground();
-          word5.style.background = '#b6b6b6';
-          this.wordSelected = word5.innerText;
-        } else if (e.target.id === 'recommend6') {
-          this.resetWordBackground();
-          word6.style.background = '#b6b6b6';
-          this.wordSelected = word6.innerText;
-        }
+        this.resetWordBackground();
+        word.classList.add('recommend-word-selected');
+        word.classList.remove('recommend-word');
+        this.wordSelected = word.innerText;
+        this.touchmode = 'word';
       }
     },
 
-    resetWordBackground() {
-      const word1 = document.querySelector('#recommend1');
-      const word2 = document.querySelector('#recommend2');
-      const word3 = document.querySelector('#recommend3');
-      const word4 = document.querySelector('#recommend4');
-      const word5 = document.querySelector('#recommend5');
-      const word6 = document.querySelector('#recommend6');
+    beforeWords() {
+      this.wordIndex -= 1;
+      this.resetWordBackground();
+      this.wordSelected = '';
+      this.touchmode = 'drag';
 
-      word1.style.background = '#F0EBD7';
-      word2.style.background = '#F0EBD7';
-      word3.style.background = '#F0EBD7';
-      word4.style.background = '#F0EBD7';
-      word5.style.background = '#F0EBD7';
-      word6.style.background = '#F0EBD7';
+      this.showWords.length = 0;
+      for (let i = 0; i < 6; i += 1) {
+        this.showWords.push(this.words[this.wordIndex * 6 + i]);
+      }
+    },
+
+    afterWords() {
+      this.wordIndex += 1;
+      this.resetWordBackground();
+      this.wordSelected = '';
+      this.touchmode = 'drag';
+
+      this.showWords.length = 0;
+      for (let i = 0; i < 6; i += 1) {
+        this.showWords.push(this.words[this.wordIndex * 6 + i]);
+      }
     },
 
     finishBtnClicked() {
@@ -2206,16 +2130,18 @@ export default {
   top: 72%;
   left: 2.5%;
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  display: inline-block;
 }
 #ai-img {
   position: absolute;
   background-image: url('../../../assets/img/views/activity/mindmap/ai-recommend.png');
   background-size: cover;
-  width: 12vw;
-  height: 18vh;
+  background-position: center center;
+  width: 90%;
+  height: 90%;
   z-index: 18;
-  display: inline-block;
-  margin-left: 0.5vw;
+  margin-left: 10%;
+  margin-top: 5%;
 }
 #ai-background {
   position: absolute;
@@ -2241,36 +2167,40 @@ export default {
 }
 #ai-dot {
   width: 100%;
-  height: 1.8vh;
+  height: 10%;
   background: #8BA9A3;
-  margin-bottom: 0.72vw;
+}
+#ai-dot1 {
+  width: 100%;
+  height: 8%;
+  background: lightgray;
 }
 
 #recommend-words {
   position: absolute;
   width: 65%;
   height: 100%;
-  margin-left: 20%;
+  margin-left: 30%;
 }
 #recommend-start {
   position: absolute;
   width: 80%;
   height: 100%;
   margin-left: 18%;
-  font-size: 2.8vw;
+  font-size: 4vh;
   font-family: BM HANNA_TTF;
   font-style: normal;
   font-weight: 900;
   text-align: center;
-  padding-top: 4vw;
+  padding-top: 5vh;
   color: black;
 }
 #recommend-loading {
   position: absolute;
-  margin-left: 50%;
-  margin-top: 5%;
-  width: 7vw;
-  height: 7vw;
+  top: calc(50% - 5vh);
+  left: calc(55% - 5vh);
+  width: 10vh;
+  height: 10vh;
   border: 10px solid rgba(255,174,0,.3);
   border-radius: 50%;
   border-top-color: #FFAE00;
@@ -2284,133 +2214,75 @@ export default {
   to { -webkit-transform: rotate(360deg); }
 }
 
-#recommend-words-top {
-  position: absolute;
-  width: 100%;
-  height: 50%;
-}
-#recommend-words-bot {
-  position: absolute;
-  width: 100%;
-  height: 50%;
-  margin-top: 15%;
-}
-#recommend1 {
-  position: absolute;
-  width: 12vw;
-  height: 5.5vw;
+.recommend-word {
+  width: 24%;
+  height: 7vh;
+
+  margin-top: 2vh;
+  margin-bottom: 1vh;
+  margin-left: 3%;
+  margin-right: 3%;
+
   background: #F0EBD7;
   border-radius: 10px;
   margin-top: 0.6vw;
   text-align: center;
-  font-size: 2.5vw;
-  padding-top: 1vw;
+  color: black;
+  font-size: 3vh;
+  padding-top: 1vh;
   font-family: BM HANNA_TTF;
   font-style: normal;
   font-weight: 900;
   display: inline-block;
-  margin-left: 2vw;
-  margin-right: 2vw;
   box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.25);
+  overflow-y: scroll;
+  -ms-overflow-style: none;
 }
-#recommend2 {
-  position: absolute;
-  width: 12vw;
-  height: 5.5vw;
-  background: #F0EBD7;
+.recommend-word::-webkit-scrollbar {
+  display: none;
+}
+
+.recommend-word-selected {
+  width: 24%;
+  height: 7vh;
+
+  margin-top: 2vh;
+  margin-bottom: 1vh;
+  margin-left: 3%;
+  margin-right: 3%;
+
+  background: gray;
   border-radius: 10px;
   margin-top: 0.6vw;
   text-align: center;
-  font-size: 2.5vw;
-  padding-top: 1vw;
+  color: black;
+  font-size: 3vh;
+  padding-top: 1vh;
   font-family: BM HANNA_TTF;
   font-style: normal;
   font-weight: 900;
   display: inline-block;
-  margin-left: 18vw;
-  margin-right: 2vw;
   box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.25);
+  overflow-y: scroll;
+  -ms-overflow-style: none;
 }
-#recommend3 {
-  position: absolute;
-  width: 12vw;
-  height: 5.5vw;
-  background: #F0EBD7;
-  border-radius: 10px;
-  margin-top: 0.6vw;
-  text-align: center;
-  font-size: 2.5vw;
-  padding-top: 1vw;
-  font-family: BM HANNA_TTF;
-  font-style: normal;
-  font-weight: 900;
-  display: inline-block;
-  margin-left: 34vw;
-  margin-right: 2vw;
-  box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.25);
+.recommend-word-selected::-webkit-scrollbar {
+  display: none;
 }
-#recommend4 {
+
+#mindmap-left-arrow {
+  width: 10%;
+  height: 100%;
   position: absolute;
-  width: 12vw;
-  height: 5.5vw;
-  background: #F0EBD7;
-  border-radius: 10px;
-  margin-top: 0.6vw;
-  text-align: center;
-  font-size: 2.5vw;
-  padding-top: 1vw;
-  font-family: BM HANNA_TTF;
-  font-style: normal;
-  font-weight: 900;
-  display: inline-block;
-  margin-left: 2vw;
-  margin-right: 2vw;
-  box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.25);
+  left: 20%;
+  z-index: 100;
 }
-#recommend5 {
+#mindmap-right-arrow {
+  width: 10%;
+  height: 100%;
   position: absolute;
-  width: 12vw;
-  height: 5.5vw;
-  background: #F0EBD7;
-  border-radius: 10px;
-  margin-top: 0.6vw;
-  text-align: center;
-  font-size: 2.5vw;
-  padding-top: 1vw;
-  font-family: BM HANNA_TTF;
-  font-style: normal;
-  font-weight: 900;
-  display: inline-block;
-  margin-left: 18vw;
-  margin-right: 2vw;
-  box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.25);
-}
-#recommend6 {
-  position: absolute;
-  width: 12vw;
-  height: 5.5vw;
-  background: #F0EBD7;
-  border-radius: 10px;
-  margin-top: 0.6vw;
-  text-align: center;
-  font-size: 2.5vw;
-  padding-top: 1vw;
-  font-family: BM HANNA_TTF;
-  font-style: normal;
-  font-weight: 900;
-  display: inline-block;
-  margin-left: 34vw;
-  margin-right: 2vw;
-  box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.25);
-}
-#right-btn {
-  position: absolute;
-  width: 12vw;
-  height: 18vh;
-  margin-left: 83%;
-  padding: 0;
-  background-image: url('../../../assets/img/views/activity/mindmap/next.png');
-  background-size: cover;
+  left: 90%;
+  z-index: 100;
 }
 
 #input-test {

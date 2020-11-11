@@ -75,8 +75,47 @@
     <canvas id="drawing-canvas" v-show="ifBookSelected"/>
 
     <!-- 줄노트 -->
-    <div id="drawing-text" v-show="ifBookSelected">
-      {{ sentences[sentenceIndex] }}
+    <div id="drawing-text-box">
+    <v-carousel
+      v-model="sentenceIndex"
+      :show-arrows="false"
+      :cycle="false"
+      :hide-delimiter-background="true"
+      v-show="ifBookSelected"
+    >
+      <v-carousel-item
+        v-for="(sentence, index) in sentences"
+        :key="index"
+      >
+        <div id="drawing-text">
+          {{ sentence }}
+        </div>
+      </v-carousel-item>
+    </v-carousel>
+    </div>
+
+    <div id="drawing-arrow-box" v-show="ifBookSelected">
+      <v-btn
+        id="drawing-left-arrow"
+        icon
+        color="#668d8d"
+        x-large
+        :disabled="sentenceIndex == 0"
+        @click="prevSentence"
+      >
+        <v-icon>mdi-arrow-left-drop-circle</v-icon>
+      </v-btn>
+
+      <v-btn
+        id="drawing-right-arrow"
+        icon
+        color="#668d8d"
+        x-large
+        :disabled="sentenceIndex == sentences.length - 1"
+        @click="nextSentence"
+      >
+        <v-icon>mdi-arrow-right-drop-circle</v-icon>
+      </v-btn>
     </div>
 
     <finish-overlay
@@ -110,11 +149,26 @@ export default {
       submitted: false,
       eraser: false,
       tooltip: '그림을 그릴 책을 선택해보자!',
-      ifBookSelected: false,
+      ifBookSelected: true,
     };
   },
 
   mounted() {
+    if (this.book !== undefined) {
+      this.ifBookSelected = true;
+      this.tooltip = this.book.title;
+      // eslint-disable-next-line
+      axios.get('/api/book/' + this.book.bid + '/main-sentence')
+        .then((res) => {
+          this.sentences = res.data.main_sentences;
+        }).catch((err) => {
+          console.error(err);
+        });
+    } else {
+      this.tooltip = '그림을 그릴 책을 선택해보자!';
+      this.ifBookSelected = false;
+    }
+
     this.canvas = document.getElementById('drawing-canvas');
     this.ctx.push(this.canvas.getContext('2d'));
 
@@ -126,8 +180,8 @@ export default {
     this.ctx[0].scale(1, 1);
     this.scale = 0.1;
     this.ctx[0].lineWidth = 20;
-    this.ctx[0].strokeStyle = '#2c2c2c';
-    this.strokeColor = '#2c2c2c';
+    this.ctx[0].strokeStyle = 'black';
+    this.strokeColor = 'black';
 
     this.canvas.addEventListener('touchstart', (e) => {
       this.startDraw(e);
@@ -169,23 +223,17 @@ export default {
     if (reset) {
       reset.addEventListener('click', this.resetBtnClicked);
     }
-
-    if (this.book !== undefined) {
-      this.ifBookSelected = true;
-      // eslint-disable-next-line
-      axios.get('/api/book/' + this.book.bid + '/main-sentence')
-        .then((res) => {
-          this.sentences = res.data.main_sentences;
-        }).catch((err) => {
-          console.error(err);
-        });
-    } else {
-      this.tooltip = '그림을 그릴 책을 선택해보자!';
-      this.ifBookSelected = false;
-    }
   },
 
   methods: {
+    nextSentence() {
+      this.sentenceIndex += 1;
+    },
+
+    prevSentence() {
+      this.sentenceIndex -= 1;
+    },
+
     startDraw(event) {
       this.showToolBar = false;
       this.ctx[0].beginPath();
@@ -278,14 +326,15 @@ export default {
     },
 
     finishBtnClicked() {
+      console.log(this.sentences[this.sentenceIndex]);
       /* eslint-disable */
       const data = {
-        sentence: this.$route.params.sentence,
+        sentence: this.sentences[this.sentenceIndex],
         thumbnail: this.canvas.toDataURL(),
       };
 
       axios.post('/api/user/work/save', {
-        bid: this.$route.params.bid,
+        bid: this.book.bid,
         type: 2,
         content: JSON.stringify(data),
       }).then(() => {
@@ -330,10 +379,10 @@ export default {
 };
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 #drawing-canvas {
   width: 95%;
-  height: calc(60% - 1vh);
+  height: calc(65% - 1vh);
   margin-left: 2.5%;
   margin-top: 2.5%;
 
@@ -342,11 +391,16 @@ export default {
   border-radius: 10px;
 }
 
-#drawing-text {
-  width: 92%;
-  height: 20vh;
-  margin-left: 4%;
+#drawing-text-box {
+  width: 100%;
+  height: 16vh;
   margin-top: 5%;
+}
+
+#drawing-text {
+  width: 88%;
+  height: 16vh;
+  margin-left: 6%;
 
   font-size: 3vh;
   color: black;
@@ -541,5 +595,16 @@ export default {
   height: 30vw;
   top: calc(40% - 15vw);
   left: calc(50% - 15vw);
+}
+
+#drawing-arrow-box {
+  margin-top: -3vh;
+  display: inline-block
+}
+#drawing-left-arrow {
+  float: left;
+}
+#drawing-right-arrow {
+  float: right;
 }
 </style>

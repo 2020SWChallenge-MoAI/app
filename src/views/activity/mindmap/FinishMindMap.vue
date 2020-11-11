@@ -1,5 +1,5 @@
 <template>
-  <sub-layout title="마인드맵" tooltip="떠오르는 단어를 적어 커다란 나무를 완성해보자!">
+  <sub-layout title="생각펼치기" tooltip="떠오르는 단어를 적어 커다란 나무를 완성해보자!">
     <template v-slot:left>
       <left-menu-button icon="mdi-bookmark-check-outline" text="제출하기" id="canvas-submit" />
     </template>
@@ -155,11 +155,11 @@ export default {
         this.ctx[0].beginPath();
         this.ctx[0].fillStyle = '#836d4b';
         // eslint-disable-next-line max-len
-        this.ctx[0].fillRect(width - 20 - paddingX, height * 0.9 - paddingY + height / 3, 40, 140);
+        this.ctx[0].fillRect(width - 20 - paddingX, height * 0.9 - paddingY + 140, 40, 160);
         this.ctx[0].lineWidth = 12;
         this.ctx[0].strokeStyle = '#836d4b';
         // eslint-disable-next-line max-len
-        this.ctx[0].arc(width - paddingX, height * 0.9 - paddingY, height / 3, Math.PI * 0.25, Math.PI * 0.75);
+        this.ctx[0].arc(width - paddingX, height * 0.9 - paddingY, 140, Math.PI * 0.25, Math.PI * 0.75);
         this.ctx[0].stroke();
 
         // 책 이미지 넣기
