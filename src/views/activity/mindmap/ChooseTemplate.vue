@@ -86,6 +86,7 @@ export default {
     });
 
     if (this.book == null) this.ifBookExist = false;
+    this.drawTemplate(2);
   },
 
   methods: {
@@ -473,59 +474,59 @@ export default {
         const width = this.canvas.width / (2 * this.scale);
         const height = this.canvas.height / (2 * this.scale);
 
-        this.ctx[0].drawImage(this.leaf1Img, width - 450, -300, 700, 600);
-        this.ctx[0].drawImage(this.leaf2Img, width - 150, -300, 700, 600);
+        this.ctx[0].drawImage(this.leaf1Img, width - 450, height - 550, 700, 600);
+        this.ctx[0].drawImage(this.leaf2Img, width - 150, height - 550, 700, 600);
 
         this.nodes.push({
-          id: 1, x: width * 0.4, y: height * 0.4, size: 100, type: 0,
+          id: 1, x: width - 350, y: height - 200, size: 100, type: 0,
         });
         this.nodes.push({
-          id: 2, x: width * 0.7, y: height * 0.9, size: 100, type: 1,
+          id: 2, x: width - 150, y: height - 50, size: 100, type: 1,
         });
         this.nodes.push({
-          id: 3, x: width * 1.2, y: height * 0.8, size: 100, type: 2,
+          id: 3, x: width + 150, y: height - 70, size: 100, type: 2,
         });
         this.nodes.push({
-          id: 4, x: width * 1.6, y: height * 0.5, size: 100, type: 3,
+          id: 4, x: width + 400, y: height - 160, size: 100, type: 3,
         });
         this.nodes.push({
-          id: 11, x: width * 0.1, y: height * 0.6, size: 80, type: 2,
+          id: 11, x: width - 550, y: height - 120, size: 80, type: 2,
         });
         this.nodes.push({
-          id: 12, x: width * 0.35, y: height * 0.95, size: 75, type: 3,
+          id: 12, x: width - 400, y: height - 20, size: 75, type: 3,
         });
         this.nodes.push({
-          id: 21, x: width * 0.8, y: height * 1.5, size: 70, type: 3,
+          id: 21, x: width - 100, y: height + 150, size: 70, type: 3,
         });
         this.nodes.push({
-          id: 22, x: width * 0.5, y: height * 1.4, size: 85, type: 2,
+          id: 22, x: width - 300, y: height + 130, size: 85, type: 2,
         });
         this.nodes.push({
-          id: 31, x: width * 1.3, y: height * 1.4, size: 90, type: 1,
+          id: 31, x: width + 200, y: height + 130, size: 90, type: 1,
         });
         this.nodes.push({
-          id: 32, x: width, y: height * 1.1, size: 40, type: 0,
+          id: 32, x: width, y: height + 50, size: 40, type: 0,
         });
         this.nodes.push({
-          id: 41, x: width * 1.6, y: height * 1.1, size: 90, type: 2,
+          id: 41, x: width + 380, y: height + 60, size: 90, type: 2,
         });
         this.nodes.push({
-          id: 42, x: width * 1.9, y: height * 0.8, size: 65, type: 1,
+          id: 42, x: width + 550, y: height - 60, size: 65, type: 1,
         });
         this.nodes.push({
-          id: 421, x: width * 1.9, y: height * 1.2, size: 50, type: 3,
+          id: 421, x: width + 600, y: height + 80, size: 50, type: 3,
         });
         this.nodes.push({
-          id: 121, x: width * 0.05, y: height * 1.5, size: 120, type: 1,
+          id: 121, x: width - 600, y: height + 180, size: 120, type: 1,
         });
         this.nodes.push({
-          id: 321, x: width * 1.8, y: height * 1.9, size: 160, type: 2,
+          id: 321, x: width + 500, y: height + 350, size: 160, type: 2,
         });
         this.nodes.push({
-          id: 221, x: width * 1.1, y: height * 1.9, size: 80, type: 2,
+          id: 221, x: width + 80, y: height + 300, size: 80, type: 2,
         });
         this.nodes.push({
-          id: 2211, x: width * 0.4, y: height * 2.1, size: 100, type: 0,
+          id: 2211, x: width - 400, y: height + 350, size: 100, type: 0,
         });
 
         this.edges.push({
