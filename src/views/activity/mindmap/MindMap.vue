@@ -148,8 +148,6 @@ export default {
       intervals: [],
       timeouts: [],
 
-      aiSupportCount: 0,
-
       pinch: {
         x1: -1, y1: 0, x2: 0, y2: 0,
       },
@@ -264,52 +262,52 @@ export default {
 
     if (this.templateType === 1) {
       this.nodes.push({
-        id: 0, x: width, y: height, size: 125, type: -1, link: true, parent: -1,
+        id: 0, x: width, y: height, size: 125, type: -1, link: true, parent: -1, ai: '',
       });
 
       this.nodes.push({
         // eslint-disable-next-line max-len
-        id: 1, label: '등장인물', x: width - 240, y: height - 100, size: 80, type: 0, link: true, parent: 0,
+        id: 1, label: '등장인물', x: width - 240, y: height - 100, size: 80, type: 0, link: true, parent: 0, ai: '',
       });
       this.nodes.push({
         // eslint-disable-next-line max-len
-        id: 2, label: '줄거리', x: width + 240, y: height - 100, size: 80, type: 1, link: true, parent: 0,
+        id: 2, label: '줄거리', x: width + 240, y: height - 100, size: 80, type: 1, link: true, parent: 0, ai: '',
       });
       this.nodes.push({
         // eslint-disable-next-line max-len
-        id: 3, label: '느낀점', x: width - 240, y: height + 100, size: 80, type: 2, link: true, parent: 0,
+        id: 3, label: '느낀점', x: width - 240, y: height + 100, size: 80, type: 2, link: true, parent: 0, ai: '',
       });
       this.nodes.push({
         // eslint-disable-next-line max-len
-        id: 4, label: '인상장면', x: width + 240, y: height + 100, size: 80, type: 3, link: true, parent: 0,
+        id: 4, label: '인상장면', x: width + 240, y: height + 100, size: 80, type: 3, link: true, parent: 0, ai: '',
       });
     } else if (this.templateType === 2) {
       this.edges.push({
         id: 5, from: 0, to: 5,
       });
       this.nodes.push({
-        id: 0, x: width, y: 0 + 100, size: 150, type: -1, link: true, parent: -1,
+        id: 0, x: width, y: 0 + 100, size: 150, type: -1, link: true, parent: -1, ai: '',
       });
 
       this.nodes.push({
         // eslint-disable-next-line max-len
-        id: 1, label: '등장인물', x: width - 320, y: 120, size: 80, type: 0, link: true, parent: 0,
+        id: 1, label: '등장인물', x: width - 320, y: 120, size: 80, type: 0, link: true, parent: 0, ai: '',
       });
       this.nodes.push({
         // eslint-disable-next-line max-len
-        id: 2, label: '줄거리', x: width - 150, y: 300, size: 80, type: 1, link: true, parent: 0,
+        id: 2, label: '줄거리', x: width - 150, y: 300, size: 80, type: 1, link: true, parent: 0, ai: '',
       });
       this.nodes.push({
         // eslint-disable-next-line max-len
-        id: 3, label: '느낀점', x: width + 120, y: 250, size: 80, type: 2, link: true, parent: 0,
+        id: 3, label: '느낀점', x: width + 120, y: 250, size: 80, type: 2, link: true, parent: 0, ai: '',
       });
       this.nodes.push({
         // eslint-disable-next-line max-len
-        id: 4, label: '인상장면', x: width + 300, y: 150, size: 80, type: 3, link: true, parent: 0,
+        id: 4, label: '인상장면', x: width + 300, y: 150, size: 80, type: 3, link: true, parent: 0, ai: '',
       });
       this.nodes.push({
         // eslint-disable-next-line max-len
-        id: 5, label: '사건', x: width + 30, y: 400, size: 80, type: 3, link: true, parent: 0,
+        id: 5, label: '사건', x: width + 30, y: 400, size: 80, type: 3, link: true, parent: 0, ai: '',
       });
     }
 
@@ -413,6 +411,12 @@ export default {
       }
       const index = this.nodes.findIndex((element) => element.id === this.popupNodeId);
       this.nodes[index].label = this.selectedNodeLabel;
+      // node가 추천받은 단어인지 확인
+      if (this.nodes[index].ai !== '') {
+        const ifAI = this.selectedNodeLabel.indexOf(this.nodes[index].ai);
+        // eslint-disable-next-line
+        if (ifAI == -1) this.nodes[index].ai = '';
+      }
       // eslint-disable-next-line
       if (this.nodes[index].size / (Math.min(this.nodes[index].label.length - 1, 8)) < 20) {
         this.nodes[index].size = (Math.min(this.nodes[index].label.length - 1, 8)) * 20;
@@ -746,7 +750,7 @@ export default {
             this.popupNodeId = newid;
             this.nodes.push({
               // eslint-disable-next-line max-len
-              id: newid, label: ' ', x: (this.maxPos.L + this.maxPos.R) / 2 + this.padding.x, y: (this.maxPos.T + this.maxPos.B) / 2 + this.padding.y, size: nodesize, type: newid % 4, link: false, parent: -1,
+              id: newid, label: ' ', x: (this.maxPos.L + this.maxPos.R) / 2 + this.padding.x, y: (this.maxPos.T + this.maxPos.B) / 2 + this.padding.y, size: nodesize, type: newid % 4, link: false, parent: -1, ai: '',
             });
 
             // 노드에 연결 안돼있는 엣지 제거
@@ -820,13 +824,11 @@ export default {
         const nodey = (coors.Y + this.startPos.y) / 2;
         // eslint-disable-next-line max-len
         let nodesize = Math.max(Math.abs(coors.X - this.startPos.x) / 2 + Math.abs(coors.Y - this.startPos.y) / 2, 80);
-        console.log(nodesize, (Math.min(this.wordSelected.length - 1, 8)));
 
         // nodesize 조정
         if (nodesize / (Math.min(this.wordSelected.length - 1, 8)) < 20) {
           nodesize = (Math.min(this.wordSelected.length - 1, 8)) * 20;
         }
-        console.log(nodesize);
         const nodetype = Math.floor(this.startPos.x + this.startPos.y) % 4;
         const newid = new Date().getTime();
 
@@ -849,9 +851,8 @@ export default {
 
         this.nodes.push({
           // eslint-disable-next-line max-len
-          id: newid, label: this.wordSelected, x: nodex + this.padding.x, y: nodey + this.padding.y, size: nodesize, type: nodetype, link: false, parent: -1,
+          id: newid, label: this.wordSelected, x: nodex + this.padding.x, y: nodey + this.padding.y, size: nodesize, type: nodetype, link: false, parent: -1, ai: this.wordSelected,
         });
-        this.aiSupportCount += 1;
 
         // 노드에 연결 안돼있는 엣지 제거
         if (this.edgeId !== -1) {
@@ -1015,11 +1016,13 @@ export default {
       let textLength = 0;
       if (text !== undefined) {
         textLength = this.getTextLength(text);
+        console.log(textLength);
         if (textLength > 12) fontsize /= 2;
         else if (textLength > 8) fontsize = size / (textLength / 2 - 1);
-        linesize = Math.floor(textLength / 15) + 1;
-        if (textLength % 15 === 0) linesize -= 1;
+        linesize = Math.floor(textLength / 16) + 1;
+        if (textLength % 16 === 0) linesize -= 1;
       }
+      console.log('test', linesize, textLength);
 
       if (this.templateType === 1) {
         if (type === 0) {
@@ -1054,13 +1057,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 15 || i === text.length - 1) {
+              if (stringLength === 16 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 14 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
@@ -1103,13 +1106,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 15 || i === text.length - 1) {
+              if (stringLength === 16 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 14 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
@@ -1155,13 +1158,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 15 || i === text.length - 1) {
+              if (stringLength === 16 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 14 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
@@ -1210,13 +1213,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 15 || i === text.length - 1) {
+              if (stringLength === 16 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 14 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
@@ -1277,13 +1280,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 15 || i === text.length - 1) {
+              if (stringLength === 16 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 14 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
@@ -1338,13 +1341,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 15 || i === text.length - 1) {
+              if (stringLength === 16 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 14 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
@@ -1399,13 +1402,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 15 || i === text.length - 1) {
+              if (stringLength === 16 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 14 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
@@ -1460,13 +1463,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 15 || i === text.length - 1) {
+              if (stringLength === 16 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 14 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
@@ -1693,11 +1696,15 @@ export default {
       this.recommendLoaded = false;
       const node = this.nodes.find((element) => element.id === this.selectedNode);
       const ancWord = [];
-      if (this.selectedNode >= 1) ancWord.push(node.label);
+      if (this.selectedNode >= 1) {
+        if (node.ai === '') ancWord.push(node.label);
+        else ancWord.push(node.ai);
+      }
       if (node !== undefined) {
         if (node.parent >= 10) {
           const parentNode = this.nodes.find((element) => element.id === node.parent);
-          ancWord.push(parentNode.label);
+          if (parentNode.ai === '') ancWord.push(parentNode.label);
+          else ancWord.push(parentNode.ai);
         }
       }
 
@@ -1709,7 +1716,6 @@ export default {
       }).then((res) => {
         this.words = res.data.keywords;
         this.wordIndex = 0;
-        console.log(this.words.length);
 
         this.showWords.length = 0;
         for (let i = 0; i < 6; i += 1) {
@@ -1725,7 +1731,6 @@ export default {
     resetWordBackground() {
       const recommendWords = document.querySelectorAll('.recommend-word-selected');
       recommendWords.forEach((word) => {
-        console.log(word);
         word.classList.remove('recommend-word-selected');
         word.classList.add('recommend-word');
       }, true);
@@ -1803,7 +1808,7 @@ export default {
         // eslint-disable-next-line
         params: {
           // eslint-disable-next-line
-          nodes: this.nodes, edges: this.edges, template: this.templateType, bookId: this.$route.params.bookId, thumbnail: this.bookThumbnail, bookTitle: this.bookTitle, aiSupportCount: this.aiSupportCount,
+          nodes: this.nodes, edges: this.edges, template: this.templateType, bookId: this.$route.params.bookId, thumbnail: this.bookThumbnail, bookTitle: this.bookTitle,
         },
       });
     },
@@ -2013,11 +2018,6 @@ export default {
           len += 1;
         }
         len += 1;
-        if (len % 10 === 9 && i < str.length - 1) {
-          if (escape(str.charAt(i)).length === 6) {
-            len += 1;
-          }
-        }
       }
       return len;
     },
