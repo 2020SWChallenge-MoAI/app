@@ -1,14 +1,5 @@
 <template>
   <sub-layout title="생각펼치기" :tooltip="tooltip">
-    <template v-slot:left>
-    </template>
-
-    <div v-show="!ifBookExist" id="no-book-text">
-      <img src="../../../assets/noBooks.png" id="no-book-img" />
-      책이 선택되지 않았어! <br>
-      생각펼치기 할 책을 선택해보자!
-    </div>
-
     <!-- 캔버스 -->
     <canvas id="center-canvas" v-show="ifBookExist" />
 
@@ -85,7 +76,10 @@ export default {
       template.addEventListener('click', this.changeToTemplate);
     });
 
-    if (this.book == null) this.ifBookExist = false;
+    if (this.book == null) {
+      this.ifBookExist = false;
+      this.$store.dispatch('showError', '책이 선택되지 않았어!');
+    }
   },
 
   methods: {

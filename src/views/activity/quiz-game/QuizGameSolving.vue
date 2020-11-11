@@ -2,6 +2,7 @@
   <sub-layout
     title="독서퀴즈"
     :tooltip="book ? book.title : '책 선택 안 됨'"
+    :scrollable="true"
   >
     <div class="wrapper">
       <div class="content">

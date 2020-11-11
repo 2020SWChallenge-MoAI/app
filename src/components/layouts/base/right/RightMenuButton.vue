@@ -25,6 +25,7 @@ export default {
   },
   methods: {
     route() {
+      if (this.$route.path === this.url) return;
       if (activities.some((a) => this.$route.path.includes(a))) this.$router.replace(this.url);
       else this.$router.push(this.url);
     },

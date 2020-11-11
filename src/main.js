@@ -32,7 +32,7 @@ requireComponent.keys().forEach((fileName) => {
 
 // access token check
 router.beforeEach((to, from, next) => {
-  store.dispatch('loadFinish');
+  store.dispatch('resetState');
   if (to.matched.some((record) => record.meta.auth) && !store.getters.accessToken) {
     next('/login');
   } else next();

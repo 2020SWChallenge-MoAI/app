@@ -61,15 +61,8 @@
             <hr id="line3">
           </div>
         </div>
-
       </div>
     </template>
-
-    <div v-show="!ifBookSelected" id="no-book-text">
-      <img src="../../../assets/noBooks.png" id="no-book-img" />
-      책이 선택되지 않았어! <br>
-      그림 그릴 책을 선택해보자!
-    </div>
 
     <!-- 캔버스 -->
     <canvas id="drawing-canvas" v-show="ifBookSelected"/>
@@ -167,6 +160,7 @@ export default {
     } else {
       this.tooltip = '그림을 그릴 책을 선택해보자!';
       this.ifBookSelected = false;
+      this.$store.dispatch('showError', '책이 선택되지 않았어!');
     }
 
     this.canvas = document.getElementById('drawing-canvas');

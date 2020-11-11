@@ -32,7 +32,7 @@ export default {
   border-radius: 1vw;
   overflow-wrap: anywhere;
   font-size: 1.2em;
-  padding: 2vw;
+  padding: 2vh;
 }
 
 .character-tooltip-text:after {
@@ -51,6 +51,6 @@ export default {
 }
 
 .character-tooltip-image {
-  width: 12vw;
+  height: 20vh;
 }
 </style>

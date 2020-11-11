@@ -1,9 +1,10 @@
 <template>
   <sub-layout
     title="그림설명하기"
-    :tooltip="book ? book.title : '책 선택 안 됨'"
+    tooltip="원하는 그림을 골라서 설명해 보자!"
   >
-    <div class="wrapper">
+    <div class="writing-intro">
+      <book-title :book="book" />
       <div class="main-images">
         <main-image
           v-for="image in images"
@@ -28,24 +29,20 @@
       >
         <img src="@/assets/img/layouts/base/left/more.svg">
       </div>
-      <character-text-bubble
-        tooltip="원하는 그림을 골라서 설명해 보자!"
-        @click.native="nextPage"
-      />
     </div>
   </sub-layout>
 </template>
 
 <script>
 import _ from 'lodash';
-import CharacterTextBubble from '../../../components/CharacterTextBubble.vue';
+import BookTitle from '../../../components/views/activity/BookTitle.vue';
 import MainImage from '../../../components/views/activity/writing/MainImage.vue';
 
 const imagesPerPage = 4;
 
 export default {
   components: {
-    CharacterTextBubble,
+    BookTitle,
     MainImage,
   },
   data() {
@@ -122,7 +119,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
-.wrapper {
+.writing-intro {
   flex: 1;
   padding: 2vw;
   display: flex;
@@ -130,13 +127,9 @@ export default {
   justify-content: space-between;
 }
 
-.content {
-  display: flex;
-}
-
 .main-images-prev {
   position: absolute;
-  top: 30vh;
+  top: 50%;
   left: 0;
 
   &.disabled {
@@ -150,7 +143,7 @@ export default {
 
 .main-images-next {
   position: absolute;
-  top: 30vh;
+  top: 50%;
   right: 0;
 
   &.disabled {
@@ -167,6 +160,7 @@ export default {
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
+  flex: 1;
 }
 
 .main-image {

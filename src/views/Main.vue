@@ -31,29 +31,32 @@
         :cycle="false"
         :hide-delimiter-background="true"
         class="bookshelf"
-        height="calc(100% - 3vw - 2vh)"
+        height="100%"
       >
-        <div
-          id="bookshelf-bar-1"
-          class="bookshelf-bar"
-        />
-        <div
-          id="bookshelf-bar-2"
-          class="bookshelf-bar"
-        />
         <v-carousel-item
-          v-for="(page, index) in pages"
-          :key="index"
+          v-for="(page, pageIndex) in pages"
+          :key="pageIndex"
           class="bookshelf-page"
         >
           <div class="books">
-            <book
-              v-for="book in page"
-              :key="book.bid"
-              :book="book"
-              :clicked="book.bid === selectedBook"
-              @click.native="read(book.bid)"
-            />
+            <div
+              v-for="(row, rowIndex) in rows"
+              :key="rowIndex"
+              class="book-row"
+            >
+              <div class="bookshelf-bar" />
+              <book
+                v-for="book in row"
+                :key="book.bid"
+                :book="book"
+                :clicked="book.bid === selectedBook"
+                @click.native="read(book.bid)"
+              />
+              <dummy-book
+                v-for="n in (booksPerRow - row.length)"
+                :key="n"
+              />
+            </div>
           </div>
         </v-carousel-item>
       </v-carousel>
@@ -63,18 +66,19 @@
 
 <script>
 import Book from '../components/views/main/Book.vue';
-
-const booksPerPage = 8;
+import DummyBook from '../components/views/main/DummyBook.vue';
 
 export default {
   components: {
-    Book,
+    Book, DummyBook,
   },
   data() {
     return {
       currentPage: 0,
       currentCategory: 0,
       selectedBook: null,
+      booksPerRow: 4,
+      rowsPerPage: 2,
     };
   },
   computed: {
@@ -85,15 +89,25 @@ export default {
       return this.$store.getters.categoryBooks(this.categories[this.currentCategory]);
     },
     totalPages() {
-      return Math.ceil(this.books.length / booksPerPage);
+      return Math.ceil(this.books.length / this.booksPerPage);
+    },
+    booksPerPage() {
+      return this.booksPerRow * this.rowsPerPage;
     },
     pages() {
       const pages = [];
       for (let i = 0; i < this.totalPages; i += 1) {
-        pages.push(this.books.slice(i * booksPerPage, (i + 1) * booksPerPage));
+        pages.push(this.books.slice(i * this.booksPerPage, (i + 1) * this.booksPerPage));
       }
 
       return pages;
+    },
+    rows() {
+      return this.pages[this.currentPage]
+        .reduce((rows, book, index) => {
+          rows[Math.floor(index / this.booksPerRow)].push(book);
+          return rows;
+        }, [...new Array(this.rowsPerPage)].map(() => []));
     },
   },
   watch: {
@@ -124,18 +138,18 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 #tabs-category {
   margin: 0 20px 0 20px;
   padding: 0;
   overflow-x: scroll;
-  border-radius: 1vw 1vw 0 0;
+  border-radius: 1vmax 1vmax 0 0;
   display: flex;
   list-style: none;
 }
 
 #tabs-category > *:not(:last-child) {
-  margin-right: 1vw;
+  margin-right: 1vmax;
 }
 
 #tabs-category::-webkit-scrollbar {
@@ -143,11 +157,11 @@ export default {
 }
 
 .tab {
-  min-width: 12vw;
-  padding: 1vh 0 1vh 0;
+  min-width: 12vmax;
+  padding: 1vmin 0 1vmin 0;
   background: #83b1b1;
-  border-radius: 1vw 1vw 0 0;
-  font-size: 2vh;
+  border-radius: 1vmax 1vmax 0 0;
+  font-size: 2vmin;
   text-align: center;
   color: #ffffff;
 }
@@ -163,18 +177,18 @@ export default {
   flex-grow: 1;
   flex-flow: column;
   width: 100%;
-  height: calc(100% - 4vh);
+  height: calc(100% - 4vmin);
   background: rgba(255, 253, 242, 0.6);
-  border-radius: 1vw;
+  border-radius: 1vmax;
   overflow: hidden;
 }
 
 #tooltip {
-  margin: 1vw 1vw 0 0;
+  margin: 1vmax 1vmax 0 0;
   background: #ffffff;
-  padding: 1vw;
-  font-size: 2vh;
-  border-radius: 1vw;
+  padding: 1vmax;
+  font-size: 2vmin;
+  border-radius: 1vmax;
   text-align: center;
   min-width: 50%;
   align-self: flex-end;
@@ -187,39 +201,35 @@ export default {
 
 .bookshelf-bar {
   width: 100%;
-  height: 5vh;
+  height: 5vmin;
   background: rgba(156, 138, 108, 0.8);
-}
-
-#bookshelf-bar-1 {
   position: absolute;
-  top: 28vh;
-}
-
-#bookshelf-bar-2 {
-  position: absolute;
-  top: 58vh;
+  bottom: -2.5vmin;
+  left: 0;
 }
 
 .books {
   list-style: none;
   display: flex;
   height: 100%;
+  width: 100%;
   flex-wrap: wrap;
   justify-content: center;
   align-content: flex-start;
+  padding: 0;
 }
 
-.books > * {
-  margin-top: 8vh;
-  margin-right: calc((78vw - 18vh * 4 - 16vw) / 3);
-}
-.books > *:nth-child(4n + 0) {
-  margin-right: 0;
+.book-row {
+  position: relative;
+  display: flex;
+  width: 100%;
+  justify-content: space-around;
+  padding: 0 4vmax;
+  margin-top: 10vmin;
 }
 
 .btn-right-menu {
-  margin-top: 1vw;
+  margin-top: 1vmax;
 }
 
 /* change v-carousel navigator button color */

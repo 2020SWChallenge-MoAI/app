@@ -1,15 +1,32 @@
 <template>
   <div id="container">
-    <v-snackbar
+    <v-dialog
       v-model="popup"
-      centered
-      rounded="pill"
-      :type="popupType"
-      timeout="3000"
-      @click.native="popup = false"
+      hide-overlay
+      width="60vw"
     >
-      <v-icon>mdi-alert-circle</v-icon> {{ popupMessage }}
-    </v-snackbar>
+      <div
+        class="popup-content"
+        :class="{'app-error': popupType === 'error', 'app-success': popupType === 'success'}"
+        @click="popup = false"
+      >
+        <v-img
+          v-if="popupType === 'success'"
+          src="@/assets/img/layouts/character-correct.png"
+          max-width="10vw"
+          class="popup-image"
+        />
+        <v-img
+          v-if="popupType === 'error'"
+          src="@/assets/img/layouts/character-wrong.png"
+          max-width="10vw"
+          class="popup-image"
+        />
+        <div class="popup-message">
+          {{ popupMessage }}
+        </div>
+      </div>
+    </v-dialog>
     <div
       id="left-column"
       class="column"
@@ -41,7 +58,9 @@
         MENU
       </div>
       <div id="menu-items">
-        <slot name="right" />
+        <div class="scroll">
+          <slot name="right" />
+        </div>
       </div>
     </div>
   </div>
@@ -67,18 +86,21 @@ export default {
       get() { return this.$store.getters.popup; },
       set(value) { this.$store.commit('setPopup', value); },
     },
+    popupType() {
+      return this.$store.getters.popupType;
+    },
   },
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 #container {
   width: 100vw;
   height: 100vh;
   padding: 2vw;
   display: flex;
   background: linear-gradient(180deg, #a6d6cd 0%, rgba(166, 214, 205, 0) 100%),
-    url('../../../assets/img/layouts/background.svg') center bottom/contain no-repeat;
+    url('~@/assets/img/layouts/background.svg') center bottom/contain no-repeat;
   background-size: contain;
 }
 
@@ -94,7 +116,7 @@ export default {
 }
 
 #left-column > *:not(:last-child) {
-  margin-bottom: 1vh;
+  margin-bottom: 1vmin;
 }
 
 #mid-column {
@@ -114,8 +136,8 @@ export default {
 
 #menu-title {
   text-align: center;
-  font-size: 2vh;
-  margin: 1vh 0 1vh 0;
+  font-size: 1.5vw;
+  margin: 1vmin 0 1vmin 0;
   color: #ffffff;
 }
 
@@ -124,8 +146,37 @@ export default {
   flex-flow: column;
   flex-grow: 1;
   text-align: center;
-  border-radius: 1vw;
+  border-radius: 1vmax;
   padding: 1vw;
   background: rgba(255, 253, 242, 0.6);
+  overflow-y: scroll;
+}
+
+.scroll {
+  display: flex;
+  flex-flow: column;
+}
+
+.popup-content {
+  border: 2vw solid #202937;
+  background-color: white !important;
+  display: flex;
+  padding: 2vw;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 2em;
+
+  &.app-success {
+    border-color: #8bc673;
+  }
+  &.app-error {
+    border-color: #ee8f89;
+  }
+
+  .popup-message {
+    flex: 1;
+    text-align: center;
+    padding-left: 1vw;
+  }
 }
 </style>

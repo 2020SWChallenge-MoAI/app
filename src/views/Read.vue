@@ -9,6 +9,7 @@
       class="book-viewer"
       :pages="pages"
       :zooms="[1, 2]"
+      n-polygons="3"
       :flip-duration="flipDuration"
       @flip-left-end="onFlip"
       @flip-right-end="onFlip"

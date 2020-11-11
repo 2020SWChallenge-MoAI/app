@@ -2,44 +2,41 @@
   <sub-layout
     title="독서퀴즈"
     :tooltip="book ? book.title : '책 선택 안 됨'"
+    :scrollable="true"
   >
     <div class="wrapper">
       <div class="content">
         <div class="question">
-          <div class="question-text-wrapper">
-            <div class="question-type-tooltip">
-              주관식/객관식 바꾸기 →
-            </div>
-            <v-textarea
-              v-model="question.text"
-              class="question-text"
-              auto-grow
-              flat
-              solo
-              hide-details
-              rows="2"
+          <v-textarea
+            v-model="question.text"
+            class="question-text"
+            auto-grow
+            flat
+            solo
+            hide-details
+            rows="2"
+            color="#668d8d"
+            label="문제를 입력해 줘!"
+            prefix="Q."
+            :class="{
+              error: questionValidated && !questionValid,
+              success: questionValidated && questionValid
+            }"
+            @input="questionValidated = false"
+          >
+            <v-btn
+              slot="append"
+              depressed
+              filled
+              rounded
+              dark
               color="#668d8d"
-              label="문제를 입력해 줘!"
-              prefix="Q."
-              :class="{
-                error: questionValidated && !questionValid,
-                success: questionValidated && questionValid
-              }"
-              @input="questionValidated = false"
+              :loading="questionValidating"
+              @click="verifyQuestion"
             >
-              <v-btn
-                slot="append"
-                depressed
-                filled
-                rounded
-                dark
-                color="#668d8d"
-                @click="verifyQuestion"
-              >
-                검사하기
-              </v-btn>
-            </v-textarea>
-          </div>
+              검사하기
+            </v-btn>
+          </v-textarea>
           <div class="question-type">
             <v-btn-toggle
               v-model="question.type"
@@ -109,6 +106,7 @@
                 color="#668d8d"
                 dark
                 class="answer-choice-btn"
+                :loading="answerValidating"
                 @click="verifyAnswer"
               >
                 검사하기
@@ -194,8 +192,10 @@ export default {
         answer: '',
       },
       questionValidated: false,
+      questionValidating: false,
       questionValid: true,
       answerValidated: false,
+      answerValidating: false,
       answerValid: true,
       submitted: false,
     };
@@ -222,6 +222,7 @@ export default {
       return this.question.answer;
     },
     verifyQuestion() {
+      this.questionValidating = true;
       axios
         .post(`/api/book/${this.book.bid}/qna/verify/question`, {
           question: this.question.text,
@@ -241,9 +242,11 @@ export default {
             mode: 'error',
             message: '질문에 문제가 있는 것 같아. 다시 만들어 보자!',
           });
-        });
+        })
+        .finally(() => { this.questionValidating = false; });
     },
     verifyAnswer() {
+      this.answerValidating = true;
       axios
         .post(`/api/book/${this.book.bid}/qna/verify/answer`, {
           question: this.question.text,
@@ -265,7 +268,8 @@ export default {
             mode: 'error',
             message: '질문과 답이 맞지 않는 것 같아. 다시 만들어 보자!',
           });
-        });
+        })
+        .finally(() => { this.answerValidating = false; });
     },
     addOption() {
       if (this.question.options.length >= 4) return;
@@ -362,7 +366,7 @@ export default {
 
 .question-text.error, .answer-text.error {
   background-color: #f0ebd7 !important;
-  border: 2px solid #e98d89 !important;
+  border: 2px solid #ee8f89 !important;
 }
 
 .question-text.success, .answer-text.success {
