@@ -359,10 +359,19 @@ export default {
         this.initSetting(paddingX - this.padding.x, paddingY - this.padding.y);
 
         // node 그리기
+        // image 노드 먼저 그리기
+        for (let i = 0; i < this.nodes.length; i += 1) {
+          if (this.nodes[i].type === 43) {
+            // eslint-disable-next-line
+            this.makeNode(this.nodes[i].x - paddingX, this.nodes[i].y - paddingY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+          }
+        }
         // eslint-disable-next-line no-plusplus
         for (let i = 0; i < this.nodes.length; i++) {
-          // eslint-disable-next-line max-len
-          this.makeNode(this.nodes[i].x - paddingX, this.nodes[i].y - paddingY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+          if (this.nodes[i].type !== 43) {
+            // eslint-disable-next-line max-len
+            this.makeNode(this.nodes[i].x - paddingX, this.nodes[i].y - paddingY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+          }
         }
       } else if (this.templateType === 2) {
         this.lightPos.x = this.canvas.width / 2 - paddingX;
@@ -385,10 +394,19 @@ export default {
         this.ctx[0].drawImage(this.bookImg, this.canvas.width / 2 - paddingX - 75, 0 - paddingY, 150, 200);
 
         // node 그리기
+        // image 노드 먼저 그리기
+        for (let i = 0; i < this.nodes.length; i += 1) {
+          if (this.nodes[i].type === 43) {
+            // eslint-disable-next-line
+            this.makeNode(this.nodes[i].x - paddingX, this.nodes[i].y - paddingY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+          }
+        }
         // eslint-disable-next-line no-plusplus
         for (let i = 0; i < this.nodes.length; i++) {
-          // eslint-disable-next-line max-len
-          this.makeNode(this.nodes[i].x - paddingX, this.nodes[i].y - paddingY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+          if (this.nodes[i].type !== 43) {
+            // eslint-disable-next-line max-len
+            this.makeNode(this.nodes[i].x - paddingX, this.nodes[i].y - paddingY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+          }
         }
       }
     },
@@ -406,7 +424,7 @@ export default {
       let fontsize = size / 3;
       let linesize = 1;
       let textLength = 0;
-      if (text !== undefined) {
+      if (text !== undefined && type !== 43) {
         textLength = this.getTextLength(text);
         if (textLength > 12) fontsize /= 2;
         else if (textLength > 8) fontsize = size / (textLength / 2 - 1);
@@ -621,6 +639,32 @@ export default {
             // eslint-disable-next-line
             this.ctx[0].fillText(text, x - (fontsize / 2) * ((textLength - 1) / 2), y + fontsize / 4);
           }
+        } else if (type === 43) {
+          // 사진 노드 그리기
+          const image = new Image();
+          image.src = text;
+
+          this.ctx[0].drawImage(image, x - size * 0.84, y - size * 0.6, size * 1.6, size * 1.2);
+          // 테두리 그리기
+          this.ctx[0].beginPath();
+          // 기본 세팅
+          this.ctx[0].strokeStyle = '#fffdf2';
+          this.ctx[0].lineWidth = size / 3.3;
+          this.ctx[0].lineCap = 'round';
+
+          this.ctx[0].moveTo(x, y - size / 2);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x - size / 4, y - size * 0.9, x - size, y - size * 0.6, x - size * 0.8, y - size * 0.2);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x - size * 1.3, y + size / 4, x - size / 2, y + size * 0.8, x - size / 4, y + size / 2);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size / 2, y + size * 0.9, x + size * 1, y + size * 0.3, x + size * 0.75, y - 5);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size, y - size / 2, x + size * 0.2, y - size * 0.9, x, y - size / 2);
+          this.ctx[0].stroke();
         }
       } else if (this.templateType === 2) {
         // eslint-disable-next-line
@@ -870,6 +914,41 @@ export default {
           } else {
             this.ctx[0].fillText(text, x - (fontsize / 2) * (textLength / 2), y + fontsize / 4);
           }
+        } else if (type === 43) {
+          // 사진 노드 그리기
+          const image = new Image();
+          image.src = text;
+
+          this.ctx[0].drawImage(image, x - size, y - size * 0.8, size * 2, size * 1.6);
+          // 테두리 그리기
+          this.ctx[0].beginPath();
+          // 기본 세팅
+          this.ctx[0].strokeStyle = '#fffdf2';
+          this.ctx[0].lineWidth = size / 3.3;
+          this.ctx[0].lineCap = 'round';
+
+          this.ctx[0].beginPath();
+          this.ctx[0].arc(x, y, size * 1.2, 0, Math.PI * 2);
+          this.ctx[0].stroke();
+
+          this.ctx[0].fillStyle = 'white';
+          this.ctx[0].beginPath();
+          // eslint-disable-next-line max-len
+          this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
+          this.ctx[0].rotate(-lightRad);
+          this.ctx[0].moveTo(0, -size * 0.15);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(-size * 0.05, -size * 0.15, -size * 0.1, -size * 0.075, -size * 0.1, 0);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(-size * 0.1, size * 0.075, -size * 0.05, size * 0.15, 0, size * 0.15);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(size * 0.05, size * 0.15, size * 0.1, size * 0.075, size * 0.1, 0);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(size * 0.1, -size * 0.075, size * 0.05, -size * 0.15, 0, -size * 0.15);
+          this.ctx[0].fill();
+          this.ctx[0].rotate(+lightRad);
+          // eslint-disable-next-line max-len
+          this.ctx[0].translate(-(x + r * Math.cos(lightRad)), -(y - r * Math.sin(lightRad)));
         }
       }
     },
@@ -970,7 +1049,7 @@ export default {
         edges: this.edges,
         templateType: this.templateType,
       };
-      console.log(this.$route.params.bookId);
+      console.log(this.$route.params.bookId, data);
 
       axios.post('/api/user/work/save', {
         bid: this.$route.params.bookId,
