@@ -25,6 +25,12 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-flow: column;
+}
 .drawing-result-picture {
   width: 94%;
   margin-left: 3%;
@@ -33,7 +39,7 @@ export default {
 }
 .drawing-result-text {
   width: 95%;
-  height: 5vh;
+  flex: 1;
   margin-left: 2.5%;
   margin-top: 0;
   font-size: 1.5vh;

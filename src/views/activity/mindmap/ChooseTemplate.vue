@@ -603,8 +603,13 @@ export default {
 
     book() {
       this.tooltip = this.book.title;
-      if (this.book == null) this.ifBookExist = false;
-      else this.ifBookExist = true;
+      if (this.book == null) {
+        this.ifBookExist = false;
+        this.$store.dispatch('showError', '책이 선택되지 않았어!');
+      } else {
+        this.ifBookExist = true;
+        this.$store.dispatch('hideError');
+      }
     },
   },
 };

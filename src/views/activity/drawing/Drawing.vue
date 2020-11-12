@@ -334,8 +334,10 @@ export default {
           }).catch((err) => {
             console.error(err);
           });
+          this.$store.dispatch('hideError');
       } else {
         this.tooltip = '그림을 그릴 책을 선택해보자!';
+        this.$store.dispatch('showError', '책이 선택되지 않았어!');
       }
     },
   },
@@ -381,7 +383,7 @@ export default {
 
 #drawing-tool-triangle {
   position: absolute;
-  top: 17vh;
+  top: 28vh;
   left: 6.5vw;
   width: 0px;
   height: 0px;

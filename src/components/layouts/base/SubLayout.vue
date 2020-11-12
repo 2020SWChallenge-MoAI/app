@@ -1,11 +1,11 @@
 <template>
   <base-layout :recent-books="recentBooks">
     <template v-slot:left>
-      <!-- <left-menu-button
+      <left-menu-button
         text="뒤로가기"
         icon="mdi-arrow-left"
         @click.native="$router.back()"
-      /> -->
+      />
       <left-menu-button
         text="홈으로"
         icon="mdi-home"

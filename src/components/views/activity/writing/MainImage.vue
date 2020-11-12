@@ -27,7 +27,7 @@
 
 <script>
 export default {
-  props: ['src', 'width'],
+  props: ['src', 'width', 'height'],
   data() {
     return {
       loaded: false,
