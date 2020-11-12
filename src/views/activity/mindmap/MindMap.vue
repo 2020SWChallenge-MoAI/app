@@ -17,8 +17,6 @@
     <div id="mindmap-tool-bar">
       <div class="mindmap-tools" v-ripple><div id="mindmap-tool-pen" /></div>
       <div class="mindmap-tools" v-ripple><div id="mindmap-tool-select" /></div>
-      <div class="mindmap-tools" v-ripple><div id="mindmap-tool-zoomin" /></div>
-      <div class="mindmap-tools" v-ripple><div id="mindmap-tool-zoomout" /></div>
       <div class="mindmap-tools" v-ripple><div id="mindmap-tool-delete" /></div>
     </div>
 
@@ -196,8 +194,6 @@ export default {
 
     const penBtn = document.querySelector('#mindmap-tool-pen');
     const selectBtn = document.querySelector('#mindmap-tool-select');
-    const zoomin = document.querySelector('#mindmap-tool-zoomin');
-    const zoomout = document.querySelector('#mindmap-tool-zoomout');
     const deleteBtn = document.querySelector('#mindmap-tool-delete');
     const finishBtn = document.querySelector('#canvas-finish');
     const aiSupportBtn = document.querySelector('#ai-background');
@@ -207,12 +203,6 @@ export default {
     }
     if (selectBtn) {
       selectBtn.addEventListener('click', this.modeSelect);
-    }
-    if (zoomin) {
-      zoomin.addEventListener('click', this.zoomin);
-    }
-    if (zoomout) {
-      zoomout.addEventListener('click', this.zoomout);
     }
     if (deleteBtn) {
       deleteBtn.addEventListener('click', this.deleteNode);
@@ -1663,24 +1653,6 @@ export default {
       this.selectedNode = -1;
     },
 
-    zoomin() {
-      if (this.canvasScale < 3) {
-        this.canvasScale += 0.1;
-        this.scale *= 1.1;
-        this.ctx[0].scale(1.1, 1.1);
-        this.reDrawAll(this.padding.x, this.padding.y);
-      }
-    },
-
-    zoomout() {
-      if (this.canvasScale > 0.1) {
-        this.canvasScale -= 0.1;
-        this.scale *= 0.9;
-        this.ctx[0].scale(0.9, 0.9);
-        this.reDrawAll(this.padding.x, this.padding.y);
-      }
-    },
-
     async aiSupportBtnClicked() {
       this.recommendClicked = true;
       this.recommendLoaded = false;
@@ -2055,11 +2027,11 @@ export default {
 #mindmap-tool-bar {
   position: absolute;
   width: 6vw;
-  height: 31vw;
+  height: 19vw;
   background: rgba(184, 182, 172, 0.5);
   z-index: 20;
   border-radius: 1vw;
-  top: calc(50% - 15.5vw);
+  top: calc(50% - 9.5vw);
   left: calc(100% - 7vw);
 }
 .mindmap-tools {
@@ -2085,22 +2057,6 @@ export default {
   width: 4vw;
   height: 4vw;
   background-image: url('../../../assets/img/views/activity/mindmap/select.png');
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: center center;
-}
-#mindmap-tool-zoomin {
-  width: 4vw;
-  height: 4vw;
-  background-image: url('../../../assets/img/views/activity/mindmap/zoom-in.png');
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: center center;
-}
-#mindmap-tool-zoomout {
-  width: 4vw;
-  height: 4vw;
-  background-image: url('../../../assets/img/views/activity/mindmap/zoom-out.png');
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center center;
