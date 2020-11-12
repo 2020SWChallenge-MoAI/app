@@ -56,9 +56,20 @@
           :key="index"
           :id="'recommend-word' + index"
           @click="wordClicked"
+          v-show="aiSupportType && recommendLoaded"
         >
           {{ word.word }}
         </div>
+
+        <main-image
+          v-for="image in images"
+          :key="image.rank"
+          :src="image.uri"
+          width="40%"
+          class="main-image"
+          v-show="!aiSupportType && recommendLoaded"
+        />
+
       </div>
 
       <div
@@ -79,12 +90,24 @@
 </template>
 
 <script>
+import _ from 'lodash';
 import axios from 'axios';
+import MainImage from '../../../components/views/activity/writing/MainImage.vue';
+
+const imagesPerPage = 1;
 
 export default {
+  components: {
+    MainImage,
+  },
   data() {
     return {
       aiHelp: false,
+      // 인상장면
+      aiSupportType: true,
+      page: 0,
+      delay: 300,
+
       tooltip: '떠오르는 단어를 적어 커다란 나무를 완성해보자!',
       canvas: document.getElementById(''),
       ctx: [],
@@ -98,14 +121,13 @@ export default {
         T: -1, B: -1, L: -1, R: -1,
       },
 
-      nodes: [
-      ],
+      nodes: [],
 
-      edges: [
-      ],
+      edges: [],
 
-      words: [
-      ],
+      words: [],
+
+      images: [],
 
       wordIndex: 0,
       showWords: [],
@@ -1663,31 +1685,41 @@ export default {
         else ancWord.push(node.ai);
       }
       if (node !== undefined) {
+        this.aiSupportType = true;
+        if (node.id === 4) this.aiSupportType = false;
         if (node.parent >= 10) {
           const parentNode = this.nodes.find((element) => element.id === node.parent);
           if (parentNode.ai === '') ancWord.push(parentNode.label);
           else ancWord.push(parentNode.ai);
         }
+      } else {
+        this.aiSupportType = true;
       }
 
-      // eslint-disable-next-line
-      const a = await axios.get('/api/book/' + this.$route.params.bookId + '/keyword', {
-        params: {
-          num: 60, anc: JSON.stringify(ancWord),
-        },
-      }).then((res) => {
-        this.words = res.data.keywords;
-        this.wordIndex = 0;
+      console.log(this.aiSupportType);
 
-        this.showWords.length = 0;
-        for (let i = 0; i < 6; i += 1) {
-          this.showWords.push(this.words[i]);
-        }
+      if (this.aiSupportType) {
+        // eslint-disable-next-line
+        const a = await axios.get('/api/book/' + this.$route.params.bookId + '/keyword', {
+          params: {
+            num: 60, anc: JSON.stringify(ancWord),
+          },
+        }).then((res) => {
+          this.words = res.data.keywords;
+          this.wordIndex = 0;
 
+          this.showWords.length = 0;
+          for (let i = 0; i < 6; i += 1) {
+            this.showWords.push(this.words[i]);
+          }
+
+          this.recommendLoaded = true;
+        }).catch((err) => {
+          console.warn('ERROR!!!!: ', err);
+        });
+      } else {
         this.recommendLoaded = true;
-      }).catch((err) => {
-        console.warn('ERROR!!!!: ', err);
-      });
+      }
     },
 
     resetWordBackground() {
@@ -1717,7 +1749,7 @@ export default {
     },
 
     beforeWords() {
-      if (this.wordIndex > 0) {
+      if (this.wordIndex > 0 && this.aiSupportType) {
         this.wordIndex -= 1;
         this.resetWordBackground();
         this.wordSelected = '';
@@ -1727,11 +1759,14 @@ export default {
         for (let i = 0; i < 6; i += 1) {
           this.showWords.push(this.words[this.wordIndex * 6 + i]);
         }
+      } else if (this.page > 0 && !this.aiSupportType) {
+        this.page -= 1;
+        this.touchmode = 'drag';
       }
     },
 
     afterWords() {
-      if (this.wordIndex <= this.words.length / 6 - 2) {
+      if (this.wordIndex <= this.words.length / 6 - 2 && this.aiSupportType) {
         this.wordIndex += 1;
         this.resetWordBackground();
         this.wordSelected = '';
@@ -1741,6 +1776,9 @@ export default {
         for (let i = 0; i < 6; i += 1) {
           this.showWords.push(this.words[this.wordIndex * 6 + i]);
         }
+      } else if (!this.aiSupportType && this.page < this.totalPages - 1) {
+        this.page += 1;
+        this.touchmode = 'drag';
       }
     },
 
@@ -1768,6 +1806,8 @@ export default {
           i -= 1;
         }
       }
+
+      console.log(this.$route.params.bookId);
 
       this.$router.replace({
         name: 'FinishMindMap',
@@ -1987,6 +2027,30 @@ export default {
       }
       return len;
     },
+
+    // 인상장면
+    async loadImages() {
+      const range = _.range(
+        imagesPerPage * this.page + 1,
+        Math.min(this.book.imageNum + 1, imagesPerPage * (this.page + 1) + 1),
+      );
+
+      this.images = await Promise.all(
+        range.map(async (rank) => ({
+          rank, uri: await this.$store.dispatch('downloadBookMainImage', { rank, bid: this.book.bid, thumbnail: true }),
+        })),
+      );
+    },
+    async load() {
+      this.page = 0;
+
+      await this.loadImages();
+    },
+  },
+
+  created() {
+    this.delayedLoadImages = _.debounce(this.loadImages, this.delay);
+    this.load();
   },
 
   watch: {
@@ -1997,6 +2061,22 @@ export default {
         const htmlInput = document.querySelector('#input-test');
         htmlInput.focus();
       }
+    },
+    book() {
+      this.load();
+    },
+    page() {
+      this.loadImages();
+    },
+  },
+
+  computed: {
+    totalPages() {
+      if (!this.book) return 0;
+      return Math.ceil(this.book.imageNum / imagesPerPage);
+    },
+    book() {
+      return this.$store.getters.currentBook;
     },
   },
 

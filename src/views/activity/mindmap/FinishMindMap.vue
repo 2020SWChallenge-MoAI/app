@@ -88,16 +88,8 @@ export default {
     }, false);
 
     const submitBtn = document.querySelector('#canvas-submit');
-    const zoomin = document.querySelector('#mindmap-tool-zoomin');
-    const zoomout = document.querySelector('#mindmap-tool-zoomout');
     if (submitBtn) {
       submitBtn.addEventListener('click', this.submitBtnClicked);
-    }
-    if (zoomin) {
-      zoomin.addEventListener('click', this.zoomin);
-    }
-    if (zoomout) {
-      zoomout.addEventListener('click', this.zoomout);
     }
 
     this.canvas.width = this.canvas.clientWidth;
@@ -900,24 +892,6 @@ export default {
       }
     },
 
-    zoomin() {
-      if (this.canvasScale < 3) {
-        this.canvasScale += 0.1;
-        this.scale *= 1.1;
-        this.ctx[0].scale(1.1, 1.1);
-        this.reDrawAll(this.padding.x, this.padding.y);
-      }
-    },
-
-    zoomout() {
-      if (this.canvasScale > 0.1) {
-        this.canvasScale -= 0.1;
-        this.scale *= 0.9;
-        this.ctx[0].scale(0.9, 0.9);
-        this.reDrawAll(this.padding.x, this.padding.y);
-      }
-    },
-
     drawCloud(x, y, paddingX, paddingY) {
       const width = this.canvas.width / 2;
       const height = this.canvas.height / 2;
@@ -990,14 +964,18 @@ export default {
     },
 
     submitBtnClicked() {
-      console.log(this.$route.params.aiSupportCount);
       const data = {
         // eslint-disable-next-line
-        nodes: this.nodes, edges: this.edges, templateType: this.templateType, bookId: this.$route.params.bookId, bookTitle: this.$route.params.bookTitle, aiSupportCount: this.$route.params.aiSupportCount,
+        nodes: this.nodes,
+        edges: this.edges,
+        templateType: this.templateType,
       };
+      console.log(this.$route.params.bookId);
 
       axios.post('/api/user/work/save', {
-        bid: this.$route.params.bookId, type: 0, thumbnail: btoa('string'), content: JSON.stringify(data),
+        bid: this.$route.params.bookId,
+        type: 0,
+        content: JSON.stringify(data),
       }).then(() => {
         this.submitted = true;
       }).catch((err) => {
