@@ -320,7 +320,6 @@ export default {
     },
 
     finishBtnClicked() {
-      console.log(this.sentences[this.sentenceIndex]);
       /* eslint-disable */
       const data = {
         sentence: this.sentences[this.sentenceIndex],
