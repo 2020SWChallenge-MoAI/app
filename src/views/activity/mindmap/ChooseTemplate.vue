@@ -86,7 +86,6 @@ export default {
     });
 
     if (this.book == null) this.ifBookExist = false;
-    this.drawTemplate(2);
   },
 
   methods: {

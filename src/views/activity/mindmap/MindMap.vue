@@ -48,7 +48,11 @@
       >
       </div>
 
-      <div id="recommend-words" v-show="recommendClicked && recommendLoaded">
+      <div
+        id="recommend-container"
+        v-show="recommendClicked && recommendLoaded"
+        class="recommend-words"
+      >
 
         <div
           class="recommend-word"
@@ -62,11 +66,13 @@
         </div>
 
         <main-image
-          v-for="image in images"
+          v-for="(image, index) in images"
           :key="image.rank"
           :src="image.uri"
+          :id="'recommend-image' + index"
           width="40%"
           class="main-image"
+          @click.native="imageClicked(image.uri, 'recommend-image' + index)"
           v-show="!aiSupportType && recommendLoaded"
         />
 
@@ -81,7 +87,7 @@
       </div>
 
       <div id="recommend-start" v-if="!recommendClicked">
-        내 도움이 필요하면 버튼을 누르면 돼!
+        {{ aiSupportText }}
       </div>
 
       <div id="recommend-loading" v-if="recommendClicked && !recommendLoaded" />
@@ -94,7 +100,7 @@ import _ from 'lodash';
 import axios from 'axios';
 import MainImage from '../../../components/views/activity/writing/MainImage.vue';
 
-const imagesPerPage = 1;
+const imagesPerPage = 2;
 
 export default {
   components: {
@@ -165,6 +171,9 @@ export default {
       },
       beforeMode: '',
       ifOneFinger: true,
+      aiSupportText: '내 도움이 필요하면 버튼을 누르면 돼!',
+
+      selectedImageURI: '',
     };
   },
 
@@ -524,7 +533,7 @@ export default {
         this.selectedNode = -1;
         this.ctx[0].beginPath();
         this.ctx[0].lineWidth = 12;
-        this.ctx[0].strokeStyle = '836d4b';
+        this.ctx[0].strokeStyle = '#836d4b';
         const coors = this.getPosition(event);
         this.ctx[0].moveTo(coors.X, coors.Y);
         this.startPos.x = coors.X;
@@ -582,6 +591,10 @@ export default {
         const coors = this.getPosition(event);
         this.startPos.x = coors.X;
         this.startPos.y = coors.Y;
+      } else if (this.touchmode === 'image') {
+        const coors = this.getPosition(event);
+        this.startPos.x = coors.X;
+        this.startPos.y = coors.Y;
       }
     },
 
@@ -631,6 +644,15 @@ export default {
         const nodesize = Math.abs(coors.X - this.startPos.x) / 2 + Math.abs(coors.Y - this.startPos.y) / 2;
         const nodetype = Math.floor(this.startPos.x + this.startPos.y) % 4;
         this.makeNode(nodex, nodey, nodesize, nodetype, this.wordSelected);
+      } else if (this.touchmode === 'image') {
+        this.reDrawAll(this.padding.x, this.padding.y);
+        const coors = this.getPosition(event);
+        const nodex = (coors.X + this.startPos.x) / 2;
+        const nodey = (coors.Y + this.startPos.y) / 2;
+        // eslint-disable-next-line max-len
+        const nodesize = Math.abs(coors.X - this.startPos.x) / 2 + Math.abs(coors.Y - this.startPos.y) / 2;
+        const nodetype = 43;
+        this.makeNode(nodex, nodey, nodesize, nodetype, this.selectedImageURI);
       }
     },
 
@@ -945,6 +967,72 @@ export default {
 
         this.startPos.x = -1;
         this.startPos.y = -1;
+      } else if (this.touchmode === 'image') {
+        this.reDrawAll(this.padding.x, this.padding.y);
+        const coors = this.getPosition(event);
+        const nodex = (coors.X + this.startPos.x) / 2;
+        const nodey = (coors.Y + this.startPos.y) / 2;
+        // eslint-disable-next-line max-len
+        const nodesize = Math.max(Math.abs(coors.X - this.startPos.x) / 2 + Math.abs(coors.Y - this.startPos.y) / 2, 80);
+
+        const nodetype = 43;
+        const newid = new Date().getTime();
+
+        // edge 없는 노드 삭제
+        for (let i = 1; i < this.nodes.length; i += 1) {
+          if (this.nodes[i].link === false) {
+            // 노드 삭제
+            const deleteNodeid = this.nodes[i].id;
+            this.nodes.splice(i, 1);
+
+            for (let j = 0; j < this.edges.length; j += 1) {
+              if (this.edges[j].to === deleteNodeid || this.edges[j].from === deleteNodeid) {
+                this.edges.splice(j, 1);
+                j -= 1;
+              }
+            }
+            i -= 1;
+          }
+        }
+
+        this.nodes.push({
+          // eslint-disable-next-line max-len
+          id: newid, label: this.selectedImageURI, x: nodex + this.padding.x, y: nodey + this.padding.y, size: nodesize, type: nodetype, link: false, parent: -1, ai: 'image',
+        });
+
+        // 노드에 연결 안돼있는 엣지 제거
+        if (this.edgeId !== -1) {
+          // eslint-disable-next-line max-len
+          if ((nodex + this.padding.x - nodesize < this.edgePos.x && this.edgePos.x < nodex + this.padding.x + nodesize) && (nodey + this.padding.y - nodesize < this.edgePos.y && this.edgePos.y < nodey + this.padding.y + nodesize)) {
+            const index = this.edges.findIndex((element) => element.id === this.edgeId);
+            const nodeindex = this.nodes.findIndex((element) => element.id === newid);
+            if (this.edges[index].to === -1) {
+              this.edges[index].to = newid;
+              this.nodes[nodeindex].parent = this.edges[index].from;
+              this.nodes[nodeindex].link = true;
+            } else {
+              this.edges[index].from = newid;
+              this.nodes[nodeindex].parent = this.edges[index].to;
+              this.nodes[nodeindex].link = true;
+            }
+          } else {
+            const index = this.edges.findIndex((element) => element.id === this.edgeId);
+            this.edges.splice(index, 1);
+          }
+        }
+        this.reDrawAll(this.padding.x, this.padding.y);
+
+        this.edgeId = -1;
+        this.selectedImageURI = '';
+        this.touchmode = 'drag';
+        // tool reset
+        const pen = document.querySelector('#mindmap-tool-pen');
+        const select = document.querySelector('#mindmap-tool-select');
+        pen.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
+        select.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
+
+        this.startPos.x = -1;
+        this.startPos.y = -1;
       }
     },
 
@@ -971,10 +1059,19 @@ export default {
         this.initSetting(paddingX - this.padding.x, paddingY - this.padding.y);
 
         // node 그리기
+        // image 노드 먼저 그리기
+        for (let i = 0; i < this.nodes.length; i += 1) {
+          if (this.nodes[i].type === 43) {
+            // eslint-disable-next-line
+            this.makeNode(this.nodes[i].x - paddingX, this.nodes[i].y - paddingY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+          }
+        }
         // eslint-disable-next-line no-plusplus
         for (let i = 0; i < this.nodes.length; i++) {
-          // eslint-disable-next-line max-len
-          this.makeNode(this.nodes[i].x - paddingX, this.nodes[i].y - paddingY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+          if (this.nodes[i].type !== 43) {
+            // eslint-disable-next-line max-len
+            this.makeNode(this.nodes[i].x - paddingX, this.nodes[i].y - paddingY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+          }
         }
       } else if (this.templateType === 2) {
         this.lightPos.x = this.canvas.width / 2 - paddingX;
@@ -997,10 +1094,19 @@ export default {
         this.ctx[0].drawImage(this.bookImg, this.canvas.width / 2 - paddingX - 75, 0 - paddingY, 150, 200);
 
         // node 그리기
+        // image 노드 먼저 그리기
+        for (let i = 0; i < this.nodes.length; i += 1) {
+          if (this.nodes[i].type === 43) {
+            // eslint-disable-next-line
+            this.makeNode(this.nodes[i].x - paddingX, this.nodes[i].y - paddingY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+          }
+        }
         // eslint-disable-next-line no-plusplus
         for (let i = 0; i < this.nodes.length; i++) {
-          // eslint-disable-next-line max-len
-          this.makeNode(this.nodes[i].x - paddingX, this.nodes[i].y - paddingY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+          if (this.nodes[i].type !== 43) {
+            // eslint-disable-next-line max-len
+            this.makeNode(this.nodes[i].x - paddingX, this.nodes[i].y - paddingY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+          }
         }
       }
     },
@@ -1018,7 +1124,7 @@ export default {
       let fontsize = size / 3;
       let linesize = 1;
       let textLength = 0;
-      if (text !== undefined) {
+      if (text !== undefined && type !== 43) {
         textLength = this.getTextLength(text);
         if (textLength > 12) fontsize /= 2;
         else if (textLength > 8) fontsize = size / (textLength / 2 - 1);
@@ -1233,6 +1339,32 @@ export default {
             // eslint-disable-next-line
             this.ctx[0].fillText(text, x - (fontsize / 2) * ((textLength - 1) / 2), y + fontsize / 4);
           }
+        } else if (type === 43) {
+          // 사진 노드 그리기
+          const image = new Image();
+          image.src = text;
+
+          this.ctx[0].drawImage(image, x - size * 0.84, y - size * 0.6, size * 1.6, size * 1.2);
+          // 테두리 그리기
+          this.ctx[0].beginPath();
+          // 기본 세팅
+          this.ctx[0].strokeStyle = '#fffdf2';
+          this.ctx[0].lineWidth = size / 3.3;
+          this.ctx[0].lineCap = 'round';
+
+          this.ctx[0].moveTo(x, y - size / 2);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x - size / 4, y - size * 0.9, x - size, y - size * 0.6, x - size * 0.8, y - size * 0.2);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x - size * 1.3, y + size / 4, x - size / 2, y + size * 0.8, x - size / 4, y + size / 2);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size / 2, y + size * 0.9, x + size * 1, y + size * 0.3, x + size * 0.75, y - 5);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size, y - size / 2, x + size * 0.2, y - size * 0.9, x, y - size / 2);
+          this.ctx[0].stroke();
         }
       } else if (this.templateType === 2) {
         // eslint-disable-next-line
@@ -1482,6 +1614,40 @@ export default {
           } else {
             this.ctx[0].fillText(text, x - (fontsize / 2) * (textLength / 2), y + fontsize / 4);
           }
+        } else if (type === 43) {
+          // 사진 노드 그리기
+          const image = new Image();
+          image.src = text;
+
+          this.ctx[0].drawImage(image, x - size, y - size * 0.8, size * 2, size * 1.6);
+          // 테두리 그리기
+          this.ctx[0].beginPath();
+          // 기본 세팅
+          this.ctx[0].strokeStyle = '#fffdf2';
+          this.ctx[0].lineWidth = size / 3.3;
+
+          this.ctx[0].beginPath();
+          this.ctx[0].arc(x, y, size * 1.2, 0, Math.PI * 2);
+          this.ctx[0].stroke();
+
+          this.ctx[0].fillStyle = 'white';
+          this.ctx[0].beginPath();
+          // eslint-disable-next-line max-len
+          this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
+          this.ctx[0].rotate(-lightRad);
+          this.ctx[0].moveTo(0, -size * 0.15);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(-size * 0.05, -size * 0.15, -size * 0.1, -size * 0.075, -size * 0.1, 0);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(-size * 0.1, size * 0.075, -size * 0.05, size * 0.15, 0, size * 0.15);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(size * 0.05, size * 0.15, size * 0.1, size * 0.075, size * 0.1, 0);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(size * 0.1, -size * 0.075, size * 0.05, -size * 0.15, 0, -size * 0.15);
+          this.ctx[0].fill();
+          this.ctx[0].rotate(+lightRad);
+          // eslint-disable-next-line max-len
+          this.ctx[0].translate(-(x + r * Math.cos(lightRad)), -(y - r * Math.sin(lightRad)));
         }
       }
     },
@@ -1577,16 +1743,45 @@ export default {
           // eslint-disable-next-line max-len
           this.ctx[0].bezierCurveTo(x + size * 1.0, y - size * 0.8, x + size * 0.2, y - size * 0.7, x + size * 0.3, y - size * 0.6);
           this.ctx[0].stroke();
+        } else if (type === 43) {
+          // 테두리 그리기
+          this.ctx[0].beginPath();
+          // 기본 세팅
+          this.ctx[0].strokeStyle = '#649a28';
+          this.ctx[0].lineWidth = size / 8;
+          this.ctx[0].lineCap = 'round';
+
+          this.ctx[0].moveTo(x, y - size / 2);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x - size / 4, y - size * 0.9, x - size, y - size * 0.6, x - size * 0.8, y - size * 0.2);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x - size * 1.3, y + size / 4, x - size / 2, y + size * 0.8, x - size / 4, y + size / 2);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size / 2, y + size * 0.9, x + size * 1, y + size * 0.3, x + size * 0.75, y - 5);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size, y - size / 2, x + size * 0.2, y - size * 0.9, x, y - size / 2);
+          this.ctx[0].stroke();
         }
       } else if (this.templateType === 2) {
-        if (type === 0) this.ctx[0].strokeStyle = '#5c4a92';
-        else if (type === 1) this.ctx[0].strokeStyle = '#866bc6';
-        else if (type === 2) this.ctx[0].strokeStyle = '#917fb0';
-        else if (type === 3) this.ctx[0].strokeStyle = '#5d37d3';
-        this.ctx[0].beginPath();
         this.ctx[0].lineWidth = size / 10;
-        this.ctx[0].arc(x, y, size, 0, Math.PI * 2);
-        this.ctx[0].stroke();
+        if (type < 43) {
+          if (type === 0) this.ctx[0].strokeStyle = '#5c4a92';
+          else if (type === 1) this.ctx[0].strokeStyle = '#866bc6';
+          else if (type === 2) this.ctx[0].strokeStyle = '#917fb0';
+          else if (type === 3) this.ctx[0].strokeStyle = '#5d37d3';
+          this.ctx[0].beginPath();
+          this.ctx[0].arc(x, y, size, 0, Math.PI * 2);
+          this.ctx[0].stroke();
+        } else if (type === 43) {
+          this.ctx[0].strokeStyle = '#866bc6';
+          this.ctx[0].lineWidth = size / 8;
+          this.ctx[0].beginPath();
+          this.ctx[0].arc(x, y, size * 1.2, 0, Math.PI * 2);
+          this.ctx[0].stroke();
+        }
       }
     },
 
@@ -1696,8 +1891,6 @@ export default {
         this.aiSupportType = true;
       }
 
-      console.log(this.aiSupportType);
-
       if (this.aiSupportType) {
         // eslint-disable-next-line
         const a = await axios.get('/api/book/' + this.$route.params.bookId + '/keyword', {
@@ -1708,6 +1901,10 @@ export default {
           this.words = res.data.keywords;
           this.wordIndex = 0;
 
+          const aiContainer = document.querySelector('#recommend-container');
+          aiContainer.classList.add('recommend-words');
+          aiContainer.classList.remove('recommend-images');
+
           this.showWords.length = 0;
           for (let i = 0; i < 6; i += 1) {
             this.showWords.push(this.words[i]);
@@ -1715,10 +1912,16 @@ export default {
 
           this.recommendLoaded = true;
         }).catch((err) => {
-          console.warn('ERROR!!!!: ', err);
+          this.recommendClicked = false;
+          this.aiSupportText = '추천할 수 있는 단어가 없어...';
+          console.log(err);
         });
       } else {
-        this.recommendLoaded = true;
+        this.delayedLoadImages = _.debounce(this.loadImages, this.delay);
+        const aiContainer = document.querySelector('#recommend-container');
+        aiContainer.classList.remove('recommend-words');
+        aiContainer.classList.add('recommend-images');
+        this.load();
       }
     },
 
@@ -1748,6 +1951,22 @@ export default {
       }
     },
 
+    imageClicked(uri, id) {
+      // 효과 삭제
+      const images = document.querySelectorAll('.main-image');
+      images.forEach((img) => {
+        // eslint-disable-next-line
+        img.classList.add('recommend-image');
+        img.classList.remove('recommend-image-selected');
+      });
+      // eslint-disable-next-line
+      const image = document.querySelector('#' + id);
+      image.classList.add('recommend-image-selected');
+      image.classList.remove('recommend-image');
+      this.touchmode = 'image';
+      this.selectedImageURI = uri;
+    },
+
     beforeWords() {
       if (this.wordIndex > 0 && this.aiSupportType) {
         this.wordIndex -= 1;
@@ -1762,6 +1981,7 @@ export default {
       } else if (this.page > 0 && !this.aiSupportType) {
         this.page -= 1;
         this.touchmode = 'drag';
+        this.selectedImageURI = '';
       }
     },
 
@@ -1779,6 +1999,7 @@ export default {
       } else if (!this.aiSupportType && this.page < this.totalPages - 1) {
         this.page += 1;
         this.touchmode = 'drag';
+        this.selectedImageURI = '';
       }
     },
 
@@ -1823,6 +2044,7 @@ export default {
       this.aiHelp = !this.aiHelp;
       this.recommendClicked = false;
       this.recommendLoaded = false;
+      this.aiSupportText = '내 도움이 필요하면 버튼을 누르면 돼!';
     },
 
     inputNodeLabel(str) {
@@ -2043,14 +2265,20 @@ export default {
     },
     async load() {
       this.page = 0;
-
-      await this.loadImages();
+      if (!this.totalPages) {
+        this.recommendClicked = false;
+        this.aiSupportText = '삽화가 부족해...';
+      } else {
+        await this.loadImages();
+        this.recommendLoaded = true;
+        this.selectedImageURI = '';
+      }
     },
   },
 
   created() {
-    this.delayedLoadImages = _.debounce(this.loadImages, this.delay);
-    this.load();
+    // this.delayedLoadImages = _.debounce(this.loadImages, this.delay);
+    // this.load();
   },
 
   watch: {
@@ -2206,8 +2434,16 @@ export default {
   background: lightgray;
 }
 
-#recommend-words {
+.recommend-words {
   position: absolute;
+  width: 65%;
+  height: 100%;
+  margin-left: 30%;
+}
+.recommend-images {
+  position: absolute;
+  display: flex;
+  align-items: center;
   width: 65%;
   height: 100%;
   margin-left: 30%;
@@ -2310,6 +2546,7 @@ export default {
   background-size: 30%;
   background-position: center, center;
   background-color: lightgray;
+  border-radius: 1vw;
 }
 #mindmap-right-arrow {
   width: 10%;
@@ -2323,6 +2560,7 @@ export default {
   background-color: lightgray;
   border: 0;
   box-shadow: 0;
+  border-radius: 1vw;
 }
 
 #input-test {
@@ -2334,5 +2572,20 @@ export default {
 }
 #input-test:focus {
   outline: none;
+}
+
+.main-image {
+  display: inline-block;
+  margin-left: 2.5%;
+  margin-right: 2.5%;
+}
+
+.recommend-image-selected {
+  border: 1vw solid gray;
+  border-radius: 1vw;
+}
+.recommend-image {
+  border: 1vw solid white;
+  border-radius: 1vw;
 }
 </style>
