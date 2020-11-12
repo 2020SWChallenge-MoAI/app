@@ -23,6 +23,16 @@ export default {
       return this.content.work === 0 ? '문제 만들기' : '문제 풀기';
     },
   },
+  methods: {
+    parseOptions(text) {
+      const options = text.split('#@@#');
+      return { options: options.slice(1), answer: options[parseInt(options[0], 10)] };
+    },
+    parseAnswer() {
+      if (this.content.question.type === 0) return this.parseOptions(this.content.answer).answer;
+      return this.content.answer;
+    },
+  },
 };
 </script>
 

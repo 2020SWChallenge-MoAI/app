@@ -328,7 +328,7 @@ export default {
           work: 0, // 만들기: 0, 풀기: 1
           question: this.question.text,
           answer: this.question.type === 0
-            ? this.question.options[this.question.answer]
+            ? this.question.options[this.question.answer].text
             : this.question.answer,
         }),
       }));

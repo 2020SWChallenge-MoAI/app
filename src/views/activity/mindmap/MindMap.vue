@@ -1906,7 +1906,7 @@ export default {
           aiContainer.classList.remove('recommend-images');
 
           this.showWords.length = 0;
-          for (let i = 0; i < 6; i += 1) {
+          for (let i = 0; i < Math.min(6, this.words.length); i += 1) {
             this.showWords.push(this.words[i]);
           }
 
