@@ -3,7 +3,6 @@
     <template v-slot:left>
       <left-menu-button icon="mdi-check-bold" text="완료" id="drawing-finish" />
       <left-menu-button icon="mdi-pencil" text="연필" id="drawing-pen" />
-      <left-menu-button icon="mdi-eraser" text="지우개" id="drawing-eraser" />
       <left-menu-button icon="mdi-backup-restore" text="초기화" id="drawing-rest" />
       <!-- 툴바 -->
       <div v-show="showToolBar" id="drawing-tool-triangle" />
@@ -14,7 +13,7 @@
         >
           <div
             class="controls__color jsColor"
-            style="background-color: #2c2c2c; border: 3px solid rgba(200, 50, 50, 0.6);"
+            style="background-color: #2c2c2c; border: 10px solid rgba(200, 50, 50, 0.6);"
           />
           <div
             class="controls__color jsColor"
@@ -51,7 +50,7 @@
         </div></center>
 
         <div class="lines">
-          <div class="line" id="width2" style="border: 3px solid rgba(200, 50, 50, 0.6);">
+          <div class="line" id="width2" style="border: 10px solid rgba(200, 50, 50, 0.6);">
             <hr id="line1">
           </div>
           <div class="line" id="width5">
@@ -140,7 +139,6 @@ export default {
       strokeColor: 'black',
       scale: 1,
       submitted: false,
-      eraser: false,
       tooltip: '그림을 그릴 책을 선택해보자!',
       ifBookSelected: true,
     };
@@ -203,11 +201,6 @@ export default {
       pen.addEventListener('click', this.penBtnClicked);
     }
 
-    const eraser = document.querySelector('#drawing-eraser');
-    if (eraser) {
-      eraser.addEventListener('click', this.eraserBtnClicked);
-    }
-
     const finish = document.querySelector('#drawing-finish');
     if (finish) {
       finish.addEventListener('click', this.finishBtnClicked);
@@ -259,7 +252,7 @@ export default {
     colorClicked(event) {
       this.colorBtnStyleClear();
       const color = event.target;
-      color.style.border = '3px solid rgba(200, 50, 50, 0.6)';
+      color.style.border = '10px solid rgba(200, 50, 50, 0.6)';
       this.ctx[0].strokeStyle = color.style.backgroundColor;
       this.strokeColor = color.style.backgroundColor;
     },
@@ -268,14 +261,14 @@ export default {
       const colors = document.querySelectorAll('.jsColor');
       colors.forEach((color) => {
         const c = color;
-        c.style.border = '3px solid rgba(255, 253, 242, 0.6)';
+        c.style.border = '10px solid rgba(255, 253, 242, 0.6)';
       });
     },
 
     lineClicked(event) {
       this.lineBtnStyleClear();
       const line = event.target;
-      line.style.border = '3px solid rgba(200, 50, 50, 0.6)';
+      line.style.border = '10px solid rgba(200, 50, 50, 0.6)';
       if (line.id === 'width2' || line.id === 'line1') this.ctx[0].lineWidth = 20;
       else if (line.id === 'width5' || line.id === 'line2') this.ctx[0].lineWidth = 40;
       else if (line.id === 'width8' || line.id === 'line3') this.ctx[0].lineWidth = 70;
@@ -285,38 +278,15 @@ export default {
       const lines = document.querySelectorAll('.line');
       lines.forEach((line) => {
         const l = line;
-        l.style.border = '3px solid rgba(255, 253, 242, 0.6)';
+        l.style.border = '10px solid rgba(255, 253, 242, 0.6)';
       });
     },
 
     penBtnClicked() {
       const pen = document.querySelector('#drawing-pen');
       pen.style.backgroundColor = '#83b1b1';
-      const eraser = document.querySelector('#drawing-eraser');
-      eraser.style.backgroundColor = '#83b1b1';
       this.ctx[0].strokeStyle = this.strokeColor;
       this.showToolBar = !this.showToolBar;
-      if (this.eraser === true) {
-        this.eraser = false;
-        this.ctx[0].lineWidth /= 2;
-      }
-    },
-
-    eraserBtnClicked() {
-      this.showToolBar = false;
-      const eraser = document.querySelector('#drawing-eraser');
-      // eslint-disable-next-line
-      if (eraser.style.backgroundColor !== 'rgb(36, 177, 161)') {
-        this.ctx[0].strokeStyle = 'white';
-        eraser.style.backgroundColor = '#24b1a1';
-        this.eraser = true;
-        this.ctx[0].lineWidth *= 2;
-      } else {
-        this.ctx[0].strokeStyle = this.strokeColor;
-        eraser.style.backgroundColor = '#83b1b1';
-        this.eraser = false;
-        this.ctx[0].lineWidth /= 2;
-      }
     },
 
     finishBtnClicked() {
@@ -458,7 +428,7 @@ export default {
   margin: 1vh;
   box-shadow: 3px 3px 5px grey;
   display: inline-block;
-  border: 3px solid rgba(255, 253, 242, 0.6);
+  border: 10px solid rgba(255, 253, 242, 0.6);
 }
 .jscolor {
   color: transparent;
@@ -476,14 +446,14 @@ export default {
   width: 90%;
   height: 4vh;
   background-color: white;
-  border: 3px solid rgba(255, 253, 242, 0.6);
+  border: 10px solid rgba(255, 253, 242, 0.6);
   margin-left: 5%;
   margin-bottom: 2vh;
   border-radius: 5px;
   box-shadow: 3px 3px 3px gray;
 }
 #line1 {
-  margin-top: calc(2vh - 2.5px);
+  margin-top: calc(2vh - 6px);
   margin-left: 10%;
   margin-right: 10%;
   height: 2px;
@@ -492,7 +462,7 @@ export default {
   pointer-events: none;
 }
 #line2 {
-  margin-top: calc(2vh - 4px);
+  margin-top: calc(2vh - 7.5px);
   margin-left: 10%;
   margin-right: 10%;
   height: 5px;
@@ -501,7 +471,7 @@ export default {
   pointer-events: none;
 }
 #line3 {
-  margin-top: calc(2vh - 5.5px);
+  margin-top: calc(2vh - 9px);
   margin-left: 10%;
   margin-right: 10%;
   height: 8px;

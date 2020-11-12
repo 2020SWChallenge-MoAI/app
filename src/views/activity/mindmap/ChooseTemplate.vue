@@ -130,17 +130,21 @@ export default {
           template.style.border = '5px solid #FFAE00';
           this.clickedTemplate = 'template2';
         } else if (event.target.id === 'template3') {
+          /*
           this.template = 3;
           this.drawTemplate(3);
           this.templateBorderClear();
           const template = document.querySelector('#template3');
           template.style.border = '5px solid #FFAE00';
           this.clickedTemplate = 'template2';
+          */
         } else if (event.target.id === 'template-change') {
+          /*
           this.templateBorderClear();
           const template = document.querySelector('#template-change');
           template.style.border = '5px solid #FFAE00';
           this.clickedTemplate = 'template-change';
+          */
         }
       }
     },
