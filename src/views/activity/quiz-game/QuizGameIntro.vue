@@ -1,9 +1,15 @@
 <template>
   <sub-layout
     title="독서퀴즈"
-    :tooltip="book ? book.title : '책 선택 안 됨'"
+    tooltip="책에 관련된 퀴즈를 내거나 풀어서 이해력을 길러 보자!"
   >
-    <div class="wrapper">
+    <div
+      v-if="loaded"
+      class="wrapper"
+    >
+      <div class="book-title">
+        <span>책 제목: {{ book.title }}</span>
+      </div>
       <div class="btn-wrapper">
         <router-link
           v-ripple
@@ -19,7 +25,7 @@
         >
           <span>문제 풀기</span>
         </router-link>
-        <character-text-bubble tooltip="책에 관련된 퀴즈를 풀거나 내서 이해도를 높여 보자!" />
+        <character-text-bubble tooltip="버튼을 선택해 줘!" />
       </div>
     </div>
   </sub-layout>
@@ -32,22 +38,44 @@ export default {
   components: {
     CharacterTextBubble,
   },
+  data() {
+    return {
+      loaded: false,
+    };
+  },
   computed: {
     book() {
-      return (
-        this.$store.getters.currentBook || { title: '책을 선택해 보자!' }
-      );
+      return this.$store.getters.currentBook;
+    },
+  },
+  watch: {
+    book() {
+      this.loadBook();
+    },
+  },
+  created() {
+    this.loadBook();
+  },
+  methods: {
+    loadBook() {
+      this.$store.dispatch('loadStart');
+      if (!this.book) {
+        this.$store.dispatch('showError', '책이 선택되지 않았어!');
+        return;
+      }
+
+      this.loaded = true;
+      this.$store.dispatch('loadFinish');
     },
   },
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .wrapper {
   display: flex;
   flex: 1;
   flex-flow: column;
-  justify-content: center;
   padding: 2vw;
 }
 
@@ -56,32 +84,44 @@ export default {
   margin-bottom: 3vh;
 }
 
+.book-title {
+  text-align: center;
+  background: #f0ebd7;
+  border-radius: 1vw;
+  padding: 1vw;
+}
+
 .btn-wrapper {
   display: flex;
-  justify-content: space-evenly;
+  flex: 1;
+  justify-content: space-between;
   align-items: center;
-}
 
-.btn-quiz {
-  width: 30vw;
-  height: 25vh;
-  border-radius: 1vw;
-  text-decoration: none;
-  color: #202937;
-  display: flex;
-  align-items: center;
-}
+  .btn-quiz {
+    width: 100%;
+    height: 25vh;
+    border-radius: 1vw;
+    text-decoration: none;
+    color: #202937;
+    display: flex;
+    align-items: center;
 
-.btn-quiz span {
-  display: block;
-  font-size: 2em;
-  color: white;
-  margin-left: 3vw;
+    span {
+      display: block;
+      font-size: 2em;
+      color: white;
+      margin-left: 3vw;
+    }
+  }
+
+  .btn-quiz:not(:last-of-type) {
+    margin-right: 2vw;
+  }
 }
 
 .btn-creation {
   background: url('~@/assets/img/views/activity/quiz-game/creation-button-background.png')
-    #202937;
+  #202937;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: right;
@@ -89,7 +129,7 @@ export default {
 
 .btn-solving {
   background: url('~@/assets/img/views/activity/quiz-game/solving-button-background.png')
-    #202937;
+  #202937;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: right;

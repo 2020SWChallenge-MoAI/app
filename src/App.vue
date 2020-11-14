@@ -7,6 +7,11 @@
 <script>
 export default {
   components: {},
+  mounted() {
+    const viewheight = window.innerHeight;
+    const viewport = document.querySelector('meta[name=viewport]');
+    viewport.setAttribute('content', `width=device-width,height=${viewheight},initial-scale=1.0,user-scalable=no`);
+  },
 };
 </script>
 

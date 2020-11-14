@@ -1,13 +1,18 @@
 <template>
   <div class="profile">
-    <div class="profile-header">
-      <div class="profile-image" />
-      <div class="profile-age">
-        {{ user.age }}세
-      </div>
-    </div>
     <div class="profile-name">
       {{ user.nickname }}
+    </div>
+    <div class="profile-header">
+      <div class="profile-image-wrapper">
+        <img
+          src="@/assets/userImg.png"
+          class="profile-image"
+        >
+        <div class="profile-age">
+          {{ user.age }}세
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -21,48 +26,56 @@ export default {
 <style scoped>
 .profile {
   display: flex;
-  flex-flow: column;
-  justify-content: center;
+  flex-flow: column-reverse;
+  justify-content: space-between;
   align-items: center;
 }
 
 .profile-header {
   position: relative;
+  width: 100%;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.profile-image-wrapper {
+  position: relative;
+  width: auto;
+  height: 100%;
+  display: flex;
+  justify-content: center;
 }
 
 .profile-image {
-  width: 20vw;
-  height: 20vw;
-  border-radius: 20vw;
-  border: 1px solid lightskyblue;
-  background-image: url('~@/assets/userImg.png');
-  background-size: cover;
+  border-radius: 100%;
+  width: auto;
+  height: 100%;
 }
 
 .profile-age {
   position: absolute;
-  width: 7vw;
-  height: 7vw;
+  width: 8vh;
+  height: 8vh;
   bottom: 0;
   right: 0;
   text-align: center;
-  font-size: 3vw;
+  font-size: 3vh;
   font-weight: 900;
   font-family: 'Tmoney';
-  letter-spacing: -0.5vw;
-  padding-top: 1vw;
-  border-radius: 20vw;
+  border-radius: 100%;
   background: orange;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .profile-name {
-  width: 22vw;
-  height: 7vh;
+  width: 100%;
   border-radius: 3vw;
   text-align: center;
   font-size: 2.8vw;
   font-weight: 900;
-  letter-spacing: -0.2vw;
   padding-top: 0.5vh;
   margin-top: 2vh;
   color: white;

@@ -1,14 +1,5 @@
 <template>
-  <sub-layout title="마인드맵" :tooltip="tooltip">
-    <template v-slot:left>
-    </template>
-
-    <div v-show="!ifBookExist" id="no-book-text">
-      <img src="../../../assets/noBooks.png" id="no-book-img" />
-      책이 선택되지 않았어! <br>
-      생각펼치기 할 책을 선택해보자!
-    </div>
-
+  <sub-layout title="생각펼치기" :tooltip="tooltip">
     <!-- 캔버스 -->
     <canvas id="center-canvas" v-show="ifBookExist" />
 
@@ -21,11 +12,15 @@
         <div id="choose-space" />
         <div id="choose-dotline">
           <div id="choose-dot" />
+          <div id="choose-dot1" />
           <div id="choose-dot" />
+          <div id="choose-dot1" />
           <div id="choose-dot" />
+          <div id="choose-dot1" />
           <div id="choose-dot" />
+          <div id="choose-dot1" />
           <div id="choose-dot" />
-          <div id="choose-dot" />
+          <div id="choose-dot1" />
           <div id="choose-dot" />
         </div>
       </div>
@@ -52,6 +47,10 @@ export default {
 
       leaf1Img: new Image(),
       leaf2Img: new Image(),
+      scale: 1,
+
+      nodes: [],
+      edges: [],
     };
   },
 
@@ -62,8 +61,9 @@ export default {
     this.canvas.width = this.canvas.clientWidth;
     this.canvas.height = this.canvas.clientHeight;
 
-    this.ctx[0].scale(0.8, 0.8);
+    this.ctx[0].scale(0.6, 0.6);
     this.ctx[0].scale(1, 1);
+    this.scale = 0.6;
 
     // eslint-disable-next-line
     this.leaf1Img.src = require('../../../assets/img/views/activity/mindmap/grape-leaf1.png');
@@ -76,7 +76,11 @@ export default {
       template.addEventListener('click', this.changeToTemplate);
     });
 
-    if (this.book == null) this.ifBookExist = false;
+    if (this.book == null) {
+      this.ifBookExist = false;
+      this.drawTemplate(2);
+      this.$store.dispatch('showError', '책이 선택되지 않았어!');
+    }
   },
 
   methods: {
@@ -126,17 +130,21 @@ export default {
           template.style.border = '5px solid #FFAE00';
           this.clickedTemplate = 'template2';
         } else if (event.target.id === 'template3') {
+          /*
           this.template = 3;
           this.drawTemplate(3);
           this.templateBorderClear();
           const template = document.querySelector('#template3');
           template.style.border = '5px solid #FFAE00';
           this.clickedTemplate = 'template2';
+          */
         } else if (event.target.id === 'template-change') {
+          /*
           this.templateBorderClear();
           const template = document.querySelector('#template-change');
           template.style.border = '5px solid #FFAE00';
           this.clickedTemplate = 'template-change';
+          */
         }
       }
     },
@@ -247,7 +255,7 @@ export default {
         }
       } else if (template === 2) {
         // eslint-disable-next-line
-        var lightRad = Math.atan2(y + 50, this.canvas.width / 2 - x);
+        var lightRad = Math.atan2(y + 50, this.canvas.width / (2 * this.scale) - x);
         const r = size * 0.8;
         if (type === 0) {
           this.ctx[0].shadowOffsetX = 0;
@@ -373,32 +381,54 @@ export default {
       }
     },
 
-    drawTemplate(template) {
+    drawEdge(x1, y1, x2, y2, template) {
       if (template === 1) {
-        const width = this.canvas.width / (2 * 0.8);
-        const height = this.canvas.height / (2 * 0.8);
-        // edge 줄기 미리 그리기
         this.ctx[0].strokeStyle = '#baad93';
         this.ctx[0].lineWidth = 12;
         this.ctx[0].beginPath();
-        this.ctx[0].moveTo(width, height);
-        this.ctx[0].lineTo(width - 240, height - 100);
+        this.ctx[0].moveTo(x1, y1);
+        this.ctx[0].lineTo(x2, y2);
         this.ctx[0].stroke();
-
+      } else if (template === 2) {
+        this.ctx[0].strokeStyle = '#baad93';
+        this.ctx[0].lineWidth = 12;
         this.ctx[0].beginPath();
-        this.ctx[0].moveTo(width, height);
-        this.ctx[0].lineTo(width + 240, height - 100);
+        this.ctx[0].moveTo(x1, y1);
+        this.ctx[0].lineTo(x2, y2);
         this.ctx[0].stroke();
+      }
+    },
 
-        this.ctx[0].beginPath();
-        this.ctx[0].moveTo(width, height);
-        this.ctx[0].lineTo(width - 240, height + 100);
-        this.ctx[0].stroke();
+    drawTemplate(template) {
+      if (template === 1) {
+        const width = this.canvas.width / (2 * this.scale);
+        const height = this.canvas.height / (2 * this.scale);
 
+        // 땅 그리기
+        this.ctx[0].fillStyle = '#44A508';
         this.ctx[0].beginPath();
-        this.ctx[0].moveTo(width, height);
-        this.ctx[0].lineTo(width + 240, height + 100);
-        this.ctx[0].stroke();
+        this.ctx[0].moveTo(0, height * 2);
+        // eslint-disable-next-line max-len
+        this.ctx[0].bezierCurveTo(width - width * 0.7, height * 1.5, width + width * 0.7, height * 1.5, width * 2, height * 2);
+        this.ctx[0].closePath();
+        this.ctx[0].fill();
+
+        // edge 줄기 미리 그리기
+        this.drawEdge(width, height, width - 280, height - 100, template);
+        this.drawEdge(width, height, width + 240, height - 100, template);
+        this.drawEdge(width, height, width - 280, height + 100, template);
+        this.drawEdge(width, height, width + 240, height + 100, template);
+
+        this.drawEdge(width - 280, height - 100, width - 320, height - 250, template);
+        this.drawEdge(width - 280, height - 100, width - 480, height - 120, template);
+        this.drawEdge(width + 240, height - 100, width + 320, height - 250, template);
+        this.drawEdge(width + 240, height - 100, width + 480, height - 120, template);
+        this.drawEdge(width + 240, height - 100, width + 80, height - 250, template);
+        this.drawEdge(width + 240, height + 100, width + 430, height + 50, template);
+        this.drawEdge(width + 240, height + 100, width + 440, height + 180, template);
+        this.drawEdge(width + 430, height + 50, width + 600, height, template);
+        this.drawEdge(width + 430, height + 50, width + 570, height + 100, template);
+        this.drawEdge(width - 260, height + 100, width - 480, height + 100, template);
 
         // 템플릿(나무) 그리기
         this.ctx[0].beginPath();
@@ -415,27 +445,138 @@ export default {
         // 나무 줄기 그리기
         this.ctx[0].beginPath();
         this.ctx[0].fillStyle = '#836d4b';
-        this.ctx[0].fillRect(width - 20, this.canvas.height * (0.4 / 0.8) + 130, 40, 120);
+        const treeLength = (height * 0.35) / this.scale;
+        // eslint-disable-next-line
+        this.ctx[0].fillRect(width - 20, this.canvas.height * (0.4 / this.scale) + 160, 40, treeLength);
         this.ctx[0].lineWidth = 12;
         this.ctx[0].strokeStyle = '#836d4b';
         // eslint-disable-next-line max-len
-        this.ctx[0].arc(this.canvas.width * (0.5 / 0.8), this.canvas.height * (0.4 / 0.8), 130, Math.PI * 0.25, Math.PI * 0.75);
+        this.ctx[0].arc(this.canvas.width * (0.5 / this.scale), this.canvas.height * (0.4 / this.scale) + 30, 130, Math.PI * 0.25, Math.PI * 0.75);
         this.ctx[0].stroke();
 
-        this.makeNode(width - 240, height - 100, 80, 0, '', template);
-        this.makeNode(width + 240, height - 100, 80, 1, '', template);
-        this.makeNode(width - 240, height + 100, 80, 2, '', template);
-        this.makeNode(width + 240, height + 100, 80, 3, '', template);
+        this.makeNode(width - 280, height - 100, 100, 0, '', template);
+        this.makeNode(width + 240, height - 100, 100, 1, '', template);
+        this.makeNode(width - 280, height + 100, 100, 2, '', template);
+        this.makeNode(width + 240, height + 100, 100, 3, '', template);
+        this.makeNode(width - 320, height - 250, 80, 2, '', template);
+        this.makeNode(width - 480, height - 120, 70, 3, '', template);
+        this.makeNode(width + 320, height - 250, 80, 1, '', template);
+        this.makeNode(width + 480, height - 120, 85, 0, '', template);
+        this.makeNode(width + 80, height - 250, 65, 0, '', template);
+        this.makeNode(width + 430, height + 50, 80, 2, '', template);
+        this.makeNode(width + 440, height + 180, 70, 1, '', template);
+        this.makeNode(width + 600, height, 50, 1, '', template);
+        this.makeNode(width + 570, height + 100, 50, 1, '', template);
+        this.makeNode(width - 480, height + 100, 70, 1, '', template);
       } else if (template === 2) {
-        const width = this.canvas.width / (2 * 0.8);
+        const width = this.canvas.width / (2 * this.scale);
+        const height = this.canvas.height / (2 * this.scale);
 
-        this.ctx[0].drawImage(this.leaf1Img, width - 450, -300, 700, 600);
-        this.ctx[0].drawImage(this.leaf2Img, width - 150, -300, 700, 600);
+        this.ctx[0].drawImage(this.leaf1Img, width - 450, height - 550, 700, 600);
+        this.ctx[0].drawImage(this.leaf2Img, width - 150, height - 550, 700, 600);
 
-        this.makeNode(width - 320, 120, 80, 0, '', template);
-        this.makeNode(width - 150, 300, 80, 1, '', template);
-        this.makeNode(width + 120, 250, 80, 2, '', template);
-        this.makeNode(width + 300, 150, 80, 3, '', template);
+        this.nodes.push({
+          id: 1, x: width - 350, y: height - 200, size: 100, type: 0,
+        });
+        this.nodes.push({
+          id: 2, x: width - 150, y: height - 50, size: 100, type: 1,
+        });
+        this.nodes.push({
+          id: 3, x: width + 150, y: height - 70, size: 100, type: 2,
+        });
+        this.nodes.push({
+          id: 4, x: width + 400, y: height - 160, size: 100, type: 3,
+        });
+        this.nodes.push({
+          id: 11, x: width - 550, y: height - 120, size: 80, type: 2,
+        });
+        this.nodes.push({
+          id: 12, x: width - 400, y: height - 20, size: 75, type: 3,
+        });
+        this.nodes.push({
+          id: 21, x: width - 100, y: height + 150, size: 70, type: 3,
+        });
+        this.nodes.push({
+          id: 22, x: width - 300, y: height + 130, size: 85, type: 2,
+        });
+        this.nodes.push({
+          id: 31, x: width + 200, y: height + 130, size: 90, type: 1,
+        });
+        this.nodes.push({
+          id: 32, x: width, y: height + 50, size: 40, type: 0,
+        });
+        this.nodes.push({
+          id: 41, x: width + 380, y: height + 60, size: 90, type: 2,
+        });
+        this.nodes.push({
+          id: 42, x: width + 550, y: height - 60, size: 65, type: 1,
+        });
+        this.nodes.push({
+          id: 421, x: width + 600, y: height + 80, size: 50, type: 3,
+        });
+        this.nodes.push({
+          id: 121, x: width - 600, y: height + 180, size: 120, type: 1,
+        });
+        this.nodes.push({
+          id: 321, x: width + 500, y: height + 350, size: 160, type: 2,
+        });
+        this.nodes.push({
+          id: 221, x: width + 80, y: height + 300, size: 80, type: 2,
+        });
+        this.nodes.push({
+          id: 2211, x: width - 400, y: height + 350, size: 100, type: 0,
+        });
+
+        this.edges.push({
+          from: 1, to: 11,
+        });
+        this.edges.push({
+          from: 1, to: 12,
+        });
+        this.edges.push({
+          from: 2, to: 21,
+        });
+        this.edges.push({
+          from: 2, to: 22,
+        });
+        this.edges.push({
+          from: 3, to: 31,
+        });
+        this.edges.push({
+          from: 3, to: 32,
+        });
+        this.edges.push({
+          from: 4, to: 41,
+        });
+        this.edges.push({
+          from: 4, to: 42,
+        });
+        this.edges.push({
+          from: 42, to: 421,
+        });
+        this.edges.push({
+          from: 22, to: 121,
+        });
+        this.edges.push({
+          from: 321, to: 31,
+        });
+        this.edges.push({
+          from: 221, to: 21,
+        });
+        this.edges.push({
+          from: 2211, to: 22,
+        });
+
+        for (let i = 0; i < this.edges.length; i += 1) {
+          const node1 = this.nodes.find((element) => element.id === this.edges[i].from);
+          const node2 = this.nodes.find((element) => element.id === this.edges[i].to);
+          this.drawEdge(node1.x, node1.y, node2.x, node2.y, template);
+        }
+
+        for (let i = 0; i < this.nodes.length; i += 1) {
+          // eslint-disable-next-line
+          this.makeNode(this.nodes[i].x, this.nodes[i].y, this.nodes[i].size, this.nodes[i].type, '', template);
+        }
       }
     },
 
@@ -462,8 +603,13 @@ export default {
 
     book() {
       this.tooltip = this.book.title;
-      if (this.book == null) this.ifBookExist = false;
-      else this.ifBookExist = true;
+      if (this.book == null) {
+        this.ifBookExist = false;
+        this.$store.dispatch('showError', '책이 선택되지 않았어!');
+      } else {
+        this.ifBookExist = true;
+        this.$store.dispatch('hideError');
+      }
     },
   },
 };
@@ -495,9 +641,11 @@ export default {
   position: absolute;
   background-image: url('../../../assets/choose.svg');
   background-size: cover;
-  width: 14vw;
-  height: 14vw;
+  background-position: center;
+  width: 90%;
+  height: 100%;
   z-index: 18;
+  margin-left: 10%;
   display: inline-block
 }
 #choose-background {
@@ -524,19 +672,23 @@ export default {
 }
 #choose-dot {
   width: 100%;
-  height: 1.9vh;
+  height: 10%;
   background: #8BA9A3;
-  margin-bottom: 0.93vh;
+}
+#choose-dot1 {
+  width: 100%;
+  height: 8%;
+  background: lightgray;
 }
 .choose-template {
   position: absolute;
   display: inline-block;
   width: 14vw;
-  height: 18vh;
+  height: 95%;
   border: 5px solid #F0EBD7;
   border-radius: 1vw;
   background: #F0EBD7;
-  top: 0.3vw;
+  top: 2.5%;
 }
 
 #template1 {

@@ -51,23 +51,6 @@ export default {
         const width = this.activity.nodes[0].x;
         const height = this.activity.nodes[0].y;
 
-        // 땅 그리기
-        this.ctx[0].fillStyle = '#44A508';
-        this.ctx[0].beginPath();
-        this.ctx[0].moveTo(width - 1500 - paddingX, height + 1000 - paddingY);
-        this.ctx[0].lineTo(width - 1500 - paddingX, height + 400 - paddingY);
-        // eslint-disable-next-line max-len
-        this.ctx[0].bezierCurveTo(width - 500 - paddingX, height + 100 - paddingY, width + 500 - paddingX, height + 100 - paddingY, width + 1500 - paddingX, height + 400 - paddingY);
-        this.ctx[0].lineTo(width + 1500 - paddingX, height + 1000 - paddingY);
-        this.ctx[0].closePath();
-        this.ctx[0].fill();
-
-        // 구름 1 그리기
-        this.drawCloud(400, 300, paddingX, paddingY);
-
-        // 구름 2 그리기
-        this.drawCloud(-400, 600, paddingX, paddingY);
-
         // 템플릿(나무) 그리기
         this.ctx[0].beginPath();
         // eslint-disable-next-line max-len
@@ -131,11 +114,30 @@ export default {
       this.ctx[0].beginPath();
 
       if (this.activity.templateType === 1) {
+        const width = this.activity.nodes[0].x;
+        const height = this.activity.nodes[0].y;
+
         this.padding.x = this.activity.nodes[0].x - (this.canvas.width / 2) / 0.2;
         // eslint-disable-next-line max-len
         this.padding.y = this.activity.nodes[0].y * 0.75 - this.canvas.height / (0.4 * 0.75);
+        const paddingX = this.padding.x;
+        const paddingY = this.padding.y;
 
-        this.canvas.style.background = '#FFFDF2';
+        // 땅 그리기
+        this.ctx[0].fillStyle = '#44A508';
+        this.ctx[0].beginPath();
+        this.ctx[0].moveTo(width - 1500 - paddingX, height + 1000 - paddingY);
+        this.ctx[0].lineTo(width - 1500 - paddingX, height + 400 - paddingY);
+        // eslint-disable-next-line max-len
+        this.ctx[0].bezierCurveTo(width - 500 - paddingX, height + 100 - paddingY, width + 500 - paddingX, height + 100 - paddingY, width + 1500 - paddingX, height + 400 - paddingY);
+        this.ctx[0].lineTo(width + 1500 - paddingX, height + 1000 - paddingY);
+        this.ctx[0].closePath();
+        this.ctx[0].fill();
+        // 구름 1 그리기
+        this.drawCloud(400, 300, paddingX, paddingY);
+
+        // 구름 2 그리기
+        this.drawCloud(-400, 600, paddingX, paddingY);
 
         // edge 먼저 그리기
         // eslint-disable-next-line no-plusplus
@@ -152,10 +154,19 @@ export default {
         this.initSetting(0, 0);
 
         // node 그리기
+        // image 노드 먼저 그리기
+        for (let i = 0; i < this.activity.nodes.length; i += 1) {
+          if (this.activity.nodes[i].type === 43) {
+            // eslint-disable-next-line
+            this.makeNode(this.activity.nodes[i].x - this.padding.x, this.activity.nodes[i].y - this.padding.y, this.activity.nodes[i].size, this.activity.nodes[i].type, this.activity.nodes[i].label);
+          }
+        }
         // eslint-disable-next-line no-plusplus
         for (let i = 0; i < this.activity.nodes.length; i++) {
-          // eslint-disable-next-line max-len
-          this.makeNode(this.activity.nodes[i].x - this.padding.x, this.activity.nodes[i].y - this.padding.y, this.activity.nodes[i].size, this.activity.nodes[i].type, this.activity.nodes[i].label);
+          if (this.activity.nodes[i].type !== 43) {
+            // eslint-disable-next-line max-len
+            this.makeNode(this.activity.nodes[i].x - this.padding.x, this.activity.nodes[i].y - this.padding.y, this.activity.nodes[i].size, this.activity.nodes[i].type, this.activity.nodes[i].label);
+          }
         }
       } else if (this.activity.templateType === 2) {
         this.padding.x = this.activity.nodes[0].x - this.canvas.width / (0.2 * 2);
@@ -181,10 +192,19 @@ export default {
         this.ctx[0].drawImage(this.bookImg, this.activity.nodes[0].x - this.padding.x - 75, 0 - this.padding.y, 150, 200);
 
         // node 그리기
+        // image 노드 먼저 그리기
+        for (let i = 0; i < this.activity.nodes.length; i += 1) {
+          if (this.activity.nodes[i].type === 43) {
+            // eslint-disable-next-line
+            this.makeNode(this.activity.nodes[i].x - this.padding.x, this.activity.nodes[i].y - this.padding.y, this.activity.nodes[i].size, this.activity.nodes[i].type, this.activity.nodes[i].label);
+          }
+        }
         // eslint-disable-next-line no-plusplus
         for (let i = 0; i < this.activity.nodes.length; i++) {
-          // eslint-disable-next-line max-len
-          this.makeNode(this.activity.nodes[i].x - this.padding.x, this.activity.nodes[i].y - this.padding.y, this.activity.nodes[i].size, this.activity.nodes[i].type, this.activity.nodes[i].label);
+          if (this.activity.nodes[i].type !== 43) {
+            // eslint-disable-next-line max-len
+            this.makeNode(this.activity.nodes[i].x - this.padding.x, this.activity.nodes[i].y - this.padding.y, this.activity.nodes[i].size, this.activity.nodes[i].type, this.activity.nodes[i].label);
+          }
         }
       }
     },
@@ -195,14 +215,17 @@ export default {
       const bound = this.canvas.getBoundingClientRect();
       return { X: (x - bound.left) / this.scale, Y: (y - bound.top) / this.scale };
     },
+
     makeNode(x, y, size, type, text) {
-      let fontsize = size / 4;
+      let fontsize = size / 3;
       let linesize = 1;
-      if (text !== undefined) {
-        if (text.length > 8) fontsize /= 2;
-        else if (text.length > 5) fontsize = size / (text.length - 1);
-        linesize = Math.floor(text.length / 10) + 1;
-        if (text.length % 10 === 0) linesize -= 1;
+      let textLength = 0;
+      if (text !== undefined && type !== 43) {
+        textLength = this.getTextLength(text);
+        if (textLength > 12) fontsize /= 2;
+        else if (textLength > 8) fontsize = size / (textLength / 2 - 1);
+        linesize = Math.floor(textLength / 16) + 1;
+        if (textLength % 16 === 0) linesize -= 1;
       }
 
       if (this.activity.templateType === 1) {
@@ -225,14 +248,36 @@ export default {
           // eslint-disable-next-line max-len
           this.ctx[0].bezierCurveTo(x + size, y - size * 0.8, x, y - size * 0.8, x, y - size * 0.6);
           this.ctx[0].fill();
-          let textloc = ((linesize - 1) / 2) * -1;
-          for (let i = 0; i < linesize; i += 1) {
-            // eslint-disable-next-line prefer-template
-            this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
-            this.ctx[0].fillStyle = 'white';
-            // eslint-disable-next-line max-len
-            this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
-            textloc += 1;
+
+          let stringLine = 0;
+          let stringSIndex = 0;
+          let stringLength = 0;
+
+          // eslint-disable-next-line prefer-template
+          this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
+          this.ctx[0].fillStyle = 'white';
+
+          if (linesize !== 1) {
+            for (let i = 0; i < text.length; i += 1) {
+              if (escape(text.charAt(i)).length === 6) stringLength += 1;
+              stringLength += 1;
+              if (stringLength === 16 || i === text.length - 1) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              }
+            }
+          } else {
+            // eslint-disable-next-line
+            this.ctx[0].fillText(text, x - (fontsize / 2) * ((textLength - 1) / 2), y + fontsize / 4);
           }
         } else if (type === 1) {
           // 나뭇잎2 그리기
@@ -253,14 +298,35 @@ export default {
           // eslint-disable-next-line max-len
           this.ctx[0].bezierCurveTo(x + size, y - size / 2, x + size * 0.2, y - size * 0.9, x, y - size / 2);
           this.ctx[0].fill();
-          let textloc = ((linesize - 1) / 2) * -1;
-          for (let i = 0; i < linesize; i += 1) {
-            // eslint-disable-next-line prefer-template
-            this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
-            this.ctx[0].fillStyle = 'white';
-            // eslint-disable-next-line max-len
-            this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
-            textloc += 1;
+
+          let stringLine = 0;
+          let stringSIndex = 0;
+          let stringLength = 0;
+
+          // eslint-disable-next-line prefer-template
+          this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
+          this.ctx[0].fillStyle = 'white';
+
+          if (linesize !== 1) {
+            for (let i = 0; i < text.length; i += 1) {
+              if (escape(text.charAt(i)).length === 6) stringLength += 1;
+              stringLength += 1;
+              if (stringLength === 16 || i === text.length - 1) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              }
+            }
+          } else {
+            this.ctx[0].fillText(text, x - (fontsize / 2) * (textLength / 2), y + fontsize / 4);
           }
         } else if (type === 2) {
           // 나뭇잎3 그리기
@@ -284,14 +350,35 @@ export default {
           // eslint-disable-next-line max-len
           this.ctx[0].bezierCurveTo(x + size * 1.1, y - size * 0.3, x + size * 0.35, y - size * 0.9, x + size * 0.2, y - size * 0.6);
           this.ctx[0].fill();
-          let textloc = ((linesize - 1) / 2) * -1;
-          for (let i = 0; i < linesize; i += 1) {
-            // eslint-disable-next-line prefer-template
-            this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
-            this.ctx[0].fillStyle = 'white';
-            // eslint-disable-next-line max-len
-            this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
-            textloc += 1;
+
+          let stringLine = 0;
+          let stringSIndex = 0;
+          let stringLength = 0;
+
+          // eslint-disable-next-line prefer-template
+          this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
+          this.ctx[0].fillStyle = 'white';
+
+          if (linesize !== 1) {
+            for (let i = 0; i < text.length; i += 1) {
+              if (escape(text.charAt(i)).length === 6) stringLength += 1;
+              stringLength += 1;
+              if (stringLength === 16 || i === text.length - 1) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              }
+            }
+          } else {
+            this.ctx[0].fillText(text, x - (fontsize / 2) * (textLength / 2), y + fontsize / 4);
           }
         } else if (type === 3) {
           // 나뭇잎4 그리기
@@ -318,15 +405,63 @@ export default {
           // eslint-disable-next-line max-len
           this.ctx[0].bezierCurveTo(x + size * 1.0, y - size * 0.8, x + size * 0.2, y - size * 0.7, x + size * 0.3, y - size * 0.6);
           this.ctx[0].fill();
-          let textloc = ((linesize - 1) / 2) * -1;
-          for (let i = 0; i < linesize; i += 1) {
-            // eslint-disable-next-line prefer-template
-            this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
-            this.ctx[0].fillStyle = 'white';
-            // eslint-disable-next-line max-len
-            this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2 - 0.2), y + textloc * (fontsize + (fontsize / 3)));
-            textloc += 1;
+
+          let stringLine = 0;
+          let stringSIndex = 0;
+          let stringLength = 0;
+
+          // eslint-disable-next-line prefer-template
+          this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
+          this.ctx[0].fillStyle = 'white';
+
+          if (linesize !== 1) {
+            for (let i = 0; i < text.length; i += 1) {
+              if (escape(text.charAt(i)).length === 6) stringLength += 1;
+              stringLength += 1;
+              if (stringLength === 16 || i === text.length - 1) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              }
+            }
+          } else {
+            // eslint-disable-next-line
+            this.ctx[0].fillText(text, x - (fontsize / 2) * ((textLength - 2) / 2), y + fontsize / 4);
           }
+        } else if (type === 43) {
+          // 사진 노드 그리기
+          const image = new Image();
+          image.src = text;
+
+          this.ctx[0].drawImage(image, x - size * 0.84, y - size * 0.6, size * 1.6, size * 1.2);
+          // 테두리 그리기
+          this.ctx[0].beginPath();
+          // 기본 세팅
+          this.ctx[0].strokeStyle = '#fffdf2';
+          this.ctx[0].lineWidth = size / 3.3;
+          this.ctx[0].lineCap = 'round';
+
+          this.ctx[0].moveTo(x, y - size / 2);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x - size / 4, y - size * 0.9, x - size, y - size * 0.6, x - size * 0.8, y - size * 0.2);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x - size * 1.3, y + size / 4, x - size / 2, y + size * 0.8, x - size / 4, y + size / 2);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size / 2, y + size * 0.9, x + size * 1, y + size * 0.3, x + size * 0.75, y - 5);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size, y - size / 2, x + size * 0.2, y - size * 0.9, x, y - size / 2);
+          this.ctx[0].stroke();
         }
       } else if (this.activity.templateType === 2) {
         // eslint-disable-next-line
@@ -345,6 +480,7 @@ export default {
           this.ctx[0].fillStyle = 'white';
           this.ctx[0].shadowOffsetX = 0;
           this.ctx[0].shadowOffsetY = 0;
+          this.ctx[0].shadowBlur = 0;
           this.ctx[0].beginPath();
           // eslint-disable-next-line max-len
           this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
@@ -363,15 +499,34 @@ export default {
           // eslint-disable-next-line max-len
           this.ctx[0].translate(-(x + r * Math.cos(lightRad)), -(y - r * Math.sin(lightRad)));
 
-          let textloc = ((linesize - 1) / 2) * -1;
-          for (let i = 0; i < linesize; i += 1) {
-            this.ctx[0].shadowColor = 'transparent';
-            // eslint-disable-next-line prefer-template
-            this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
-            this.ctx[0].fillStyle = 'white';
-            // eslint-disable-next-line max-len
-            this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
-            textloc += 1;
+          let stringLine = 0;
+          let stringSIndex = 0;
+          let stringLength = 0;
+
+          // eslint-disable-next-line prefer-template
+          this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
+          this.ctx[0].fillStyle = 'white';
+
+          if (linesize !== 1) {
+            for (let i = 0; i < text.length; i += 1) {
+              if (escape(text.charAt(i)).length === 6) stringLength += 1;
+              stringLength += 1;
+              if (stringLength === 16 || i === text.length - 1) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              }
+            }
+          } else {
+            this.ctx[0].fillText(text, x - (fontsize / 2) * (textLength / 2), y + fontsize / 4);
           }
         } else if (type === 1) {
           this.ctx[0].shadowOffsetX = 0;
@@ -386,6 +541,7 @@ export default {
           this.ctx[0].fillStyle = 'white';
           this.ctx[0].shadowOffsetX = 0;
           this.ctx[0].shadowOffsetY = 0;
+          this.ctx[0].shadowBlur = 0;
           this.ctx[0].beginPath();
           // eslint-disable-next-line max-len
           this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
@@ -404,15 +560,34 @@ export default {
           // eslint-disable-next-line max-len
           this.ctx[0].translate(-(x + r * Math.cos(lightRad)), -(y - r * Math.sin(lightRad)));
 
-          let textloc = ((linesize - 1) / 2) * -1;
-          for (let i = 0; i < linesize; i += 1) {
-            this.ctx[0].shadowColor = 'transparent';
-            // eslint-disable-next-line prefer-template
-            this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
-            this.ctx[0].fillStyle = 'white';
-            // eslint-disable-next-line max-len
-            this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
-            textloc += 1;
+          let stringLine = 0;
+          let stringSIndex = 0;
+          let stringLength = 0;
+
+          // eslint-disable-next-line prefer-template
+          this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
+          this.ctx[0].fillStyle = 'white';
+
+          if (linesize !== 1) {
+            for (let i = 0; i < text.length; i += 1) {
+              if (escape(text.charAt(i)).length === 6) stringLength += 1;
+              stringLength += 1;
+              if (stringLength === 16 || i === text.length - 1) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              }
+            }
+          } else {
+            this.ctx[0].fillText(text, x - (fontsize / 2) * (textLength / 2), y + fontsize / 4);
           }
         } else if (type === 2) {
           this.ctx[0].shadowOffsetX = 0;
@@ -427,6 +602,7 @@ export default {
           this.ctx[0].fillStyle = 'white';
           this.ctx[0].shadowOffsetX = 0;
           this.ctx[0].shadowOffsetY = 0;
+          this.ctx[0].shadowBlur = 0;
           this.ctx[0].beginPath();
           // eslint-disable-next-line max-len
           this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
@@ -445,15 +621,34 @@ export default {
           // eslint-disable-next-line max-len
           this.ctx[0].translate(-(x + r * Math.cos(lightRad)), -(y - r * Math.sin(lightRad)));
 
-          let textloc = ((linesize - 1) / 2) * -1;
-          for (let i = 0; i < linesize; i += 1) {
-            this.ctx[0].shadowColor = 'transparent';
-            // eslint-disable-next-line prefer-template
-            this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
-            this.ctx[0].fillStyle = 'white';
-            // eslint-disable-next-line max-len
-            this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
-            textloc += 1;
+          let stringLine = 0;
+          let stringSIndex = 0;
+          let stringLength = 0;
+
+          // eslint-disable-next-line prefer-template
+          this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
+          this.ctx[0].fillStyle = 'white';
+
+          if (linesize !== 1) {
+            for (let i = 0; i < text.length; i += 1) {
+              if (escape(text.charAt(i)).length === 6) stringLength += 1;
+              stringLength += 1;
+              if (stringLength === 16 || i === text.length - 1) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              }
+            }
+          } else {
+            this.ctx[0].fillText(text, x - (fontsize / 2) * (textLength / 2), y + fontsize / 4);
           }
         } else if (type === 3) {
           this.ctx[0].shadowOffsetX = 0;
@@ -468,6 +663,7 @@ export default {
           this.ctx[0].fillStyle = 'white';
           this.ctx[0].shadowOffsetX = 0;
           this.ctx[0].shadowOffsetY = 0;
+          this.ctx[0].shadowBlur = 0;
           this.ctx[0].beginPath();
           // eslint-disable-next-line max-len
           this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
@@ -486,16 +682,69 @@ export default {
           // eslint-disable-next-line max-len
           this.ctx[0].translate(-(x + r * Math.cos(lightRad)), -(y - r * Math.sin(lightRad)));
 
-          let textloc = ((linesize - 1) / 2) * -1;
-          for (let i = 0; i < linesize; i += 1) {
-            this.ctx[0].shadowColor = 'transparent';
-            // eslint-disable-next-line prefer-template
-            this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
-            this.ctx[0].fillStyle = 'white';
-            // eslint-disable-next-line max-len
-            this.ctx[0].fillText(text.substring(i * 10, (i + 1) * 10), x - fontsize * (text.substring(i * 10, (i + 1) * 10).length / 2), y + textloc * (fontsize + (fontsize / 3)));
-            textloc += 1;
+          let stringLine = 0;
+          let stringSIndex = 0;
+          let stringLength = 0;
+
+          // eslint-disable-next-line prefer-template
+          this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
+          this.ctx[0].fillStyle = 'white';
+
+          if (linesize !== 1) {
+            for (let i = 0; i < text.length; i += 1) {
+              if (escape(text.charAt(i)).length === 6) stringLength += 1;
+              stringLength += 1;
+              if (stringLength === 16 || i === text.length - 1) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
+                // eslint-disable-next-line
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
+                stringLength = 0;
+                stringSIndex = i + 1;
+                stringLine += 1;
+              }
+            }
+          } else {
+            this.ctx[0].fillText(text, x - (fontsize / 2) * (textLength / 2), y + fontsize / 4);
           }
+        } else if (type === 43) {
+          // 사진 노드 그리기
+          const image = new Image();
+          image.src = text;
+
+          this.ctx[0].drawImage(image, x - size, y - size * 0.8, size * 2, size * 1.6);
+          // 테두리 그리기
+          this.ctx[0].beginPath();
+          // 기본 세팅
+          this.ctx[0].strokeStyle = '#fffdf2';
+          this.ctx[0].lineWidth = size / 3.3;
+
+          this.ctx[0].beginPath();
+          this.ctx[0].arc(x, y, size * 1.2, 0, Math.PI * 2);
+          this.ctx[0].stroke();
+
+          this.ctx[0].fillStyle = 'white';
+          this.ctx[0].beginPath();
+          // eslint-disable-next-line max-len
+          this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
+          this.ctx[0].rotate(-lightRad);
+          this.ctx[0].moveTo(0, -size * 0.15);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(-size * 0.05, -size * 0.15, -size * 0.1, -size * 0.075, -size * 0.1, 0);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(-size * 0.1, size * 0.075, -size * 0.05, size * 0.15, 0, size * 0.15);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(size * 0.05, size * 0.15, size * 0.1, size * 0.075, size * 0.1, 0);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(size * 0.1, -size * 0.075, size * 0.05, -size * 0.15, 0, -size * 0.15);
+          this.ctx[0].fill();
+          this.ctx[0].rotate(+lightRad);
+          // eslint-disable-next-line max-len
+          this.ctx[0].translate(-(x + r * Math.cos(lightRad)), -(y - r * Math.sin(lightRad)));
         }
       }
     },
@@ -623,6 +872,16 @@ export default {
     },
     async loadBookCover() {
       this.bookImg.src = await this.$store.getters.book(this.work.bid).thumbnail;
+    },
+    getTextLength(str) {
+      let len = 0;
+      for (let i = 0; i < str.length; i += 1) {
+        if (escape(str.charAt(i)).length === 6) {
+          len += 1;
+        }
+        len += 1;
+      }
+      return len;
     },
   },
 };

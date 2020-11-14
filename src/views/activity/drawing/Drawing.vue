@@ -3,7 +3,6 @@
     <template v-slot:left>
       <left-menu-button icon="mdi-check-bold" text="완료" id="drawing-finish" />
       <left-menu-button icon="mdi-pencil" text="연필" id="drawing-pen" />
-      <left-menu-button icon="mdi-eraser" text="지우개" id="drawing-eraser" />
       <left-menu-button icon="mdi-backup-restore" text="초기화" id="drawing-rest" />
       <!-- 툴바 -->
       <div v-show="showToolBar" id="drawing-tool-triangle" />
@@ -14,7 +13,7 @@
         >
           <div
             class="controls__color jsColor"
-            style="background-color: #2c2c2c; border: 3px solid rgba(200, 50, 50, 0.6);"
+            style="background-color: #2c2c2c; border: 10px solid rgba(200, 50, 50, 0.6);"
           />
           <div
             class="controls__color jsColor"
@@ -51,7 +50,7 @@
         </div></center>
 
         <div class="lines">
-          <div class="line" id="width2" style="border: 3px solid rgba(200, 50, 50, 0.6);">
+          <div class="line" id="width2" style="border: 10px solid rgba(200, 50, 50, 0.6);">
             <hr id="line1">
           </div>
           <div class="line" id="width5">
@@ -61,22 +60,54 @@
             <hr id="line3">
           </div>
         </div>
-
       </div>
     </template>
-
-    <div v-show="!ifBookSelected" id="no-book-text">
-      <img src="../../../assets/noBooks.png" id="no-book-img" />
-      책이 선택되지 않았어! <br>
-      그림 그릴 책을 선택해보자!
-    </div>
 
     <!-- 캔버스 -->
     <canvas id="drawing-canvas" v-show="ifBookSelected"/>
 
     <!-- 줄노트 -->
-    <div id="drawing-text" v-show="ifBookSelected">
-      {{ sentences[sentenceIndex] }}
+    <div id="drawing-text-box">
+    <v-carousel
+      v-model="sentenceIndex"
+      :show-arrows="false"
+      :cycle="false"
+      :hide-delimiter-background="true"
+      v-show="ifBookSelected"
+    >
+      <v-carousel-item
+        v-for="(sentence, index) in sentences"
+        :key="index"
+      >
+        <div id="drawing-text">
+          {{ sentence }}
+        </div>
+      </v-carousel-item>
+    </v-carousel>
+    </div>
+
+    <div id="drawing-arrow-box" v-show="ifBookSelected">
+      <v-btn
+        id="drawing-left-arrow"
+        icon
+        color="#668d8d"
+        x-large
+        :disabled="sentenceIndex == 0"
+        @click="prevSentence"
+      >
+        <v-icon>mdi-arrow-left-drop-circle</v-icon>
+      </v-btn>
+
+      <v-btn
+        id="drawing-right-arrow"
+        icon
+        color="#668d8d"
+        x-large
+        :disabled="sentenceIndex == sentences.length - 1"
+        @click="nextSentence"
+      >
+        <v-icon>mdi-arrow-right-drop-circle</v-icon>
+      </v-btn>
     </div>
 
     <finish-overlay
@@ -108,13 +139,28 @@ export default {
       strokeColor: 'black',
       scale: 1,
       submitted: false,
-      eraser: false,
       tooltip: '그림을 그릴 책을 선택해보자!',
-      ifBookSelected: false,
+      ifBookSelected: true,
     };
   },
 
   mounted() {
+    if (this.book !== undefined) {
+      this.ifBookSelected = true;
+      this.tooltip = this.book.title;
+      // eslint-disable-next-line
+      axios.get('/api/book/' + this.book.bid + '/main-sentence')
+        .then((res) => {
+          this.sentences = res.data.main_sentences;
+        }).catch((err) => {
+          console.error(err);
+        });
+    } else {
+      this.tooltip = '그림을 그릴 책을 선택해보자!';
+      this.ifBookSelected = false;
+      this.$store.dispatch('showError', '책이 선택되지 않았어!');
+    }
+
     this.canvas = document.getElementById('drawing-canvas');
     this.ctx.push(this.canvas.getContext('2d'));
 
@@ -126,8 +172,8 @@ export default {
     this.ctx[0].scale(1, 1);
     this.scale = 0.1;
     this.ctx[0].lineWidth = 20;
-    this.ctx[0].strokeStyle = '#2c2c2c';
-    this.strokeColor = '#2c2c2c';
+    this.ctx[0].strokeStyle = 'black';
+    this.strokeColor = 'black';
 
     this.canvas.addEventListener('touchstart', (e) => {
       this.startDraw(e);
@@ -155,11 +201,6 @@ export default {
       pen.addEventListener('click', this.penBtnClicked);
     }
 
-    const eraser = document.querySelector('#drawing-eraser');
-    if (eraser) {
-      eraser.addEventListener('click', this.eraserBtnClicked);
-    }
-
     const finish = document.querySelector('#drawing-finish');
     if (finish) {
       finish.addEventListener('click', this.finishBtnClicked);
@@ -169,23 +210,17 @@ export default {
     if (reset) {
       reset.addEventListener('click', this.resetBtnClicked);
     }
-
-    if (this.book !== undefined) {
-      this.ifBookSelected = true;
-      // eslint-disable-next-line
-      axios.get('/api/book/' + this.book.bid + '/main-sentence')
-        .then((res) => {
-          this.sentences = res.data.main_sentences;
-        }).catch((err) => {
-          console.error(err);
-        });
-    } else {
-      this.tooltip = '그림을 그릴 책을 선택해보자!';
-      this.ifBookSelected = false;
-    }
   },
 
   methods: {
+    nextSentence() {
+      this.sentenceIndex += 1;
+    },
+
+    prevSentence() {
+      this.sentenceIndex -= 1;
+    },
+
     startDraw(event) {
       this.showToolBar = false;
       this.ctx[0].beginPath();
@@ -217,7 +252,7 @@ export default {
     colorClicked(event) {
       this.colorBtnStyleClear();
       const color = event.target;
-      color.style.border = '3px solid rgba(200, 50, 50, 0.6)';
+      color.style.border = '10px solid rgba(200, 50, 50, 0.6)';
       this.ctx[0].strokeStyle = color.style.backgroundColor;
       this.strokeColor = color.style.backgroundColor;
     },
@@ -226,14 +261,14 @@ export default {
       const colors = document.querySelectorAll('.jsColor');
       colors.forEach((color) => {
         const c = color;
-        c.style.border = '3px solid rgba(255, 253, 242, 0.6)';
+        c.style.border = '10px solid rgba(255, 253, 242, 0.6)';
       });
     },
 
     lineClicked(event) {
       this.lineBtnStyleClear();
       const line = event.target;
-      line.style.border = '3px solid rgba(200, 50, 50, 0.6)';
+      line.style.border = '10px solid rgba(200, 50, 50, 0.6)';
       if (line.id === 'width2' || line.id === 'line1') this.ctx[0].lineWidth = 20;
       else if (line.id === 'width5' || line.id === 'line2') this.ctx[0].lineWidth = 40;
       else if (line.id === 'width8' || line.id === 'line3') this.ctx[0].lineWidth = 70;
@@ -243,49 +278,26 @@ export default {
       const lines = document.querySelectorAll('.line');
       lines.forEach((line) => {
         const l = line;
-        l.style.border = '3px solid rgba(255, 253, 242, 0.6)';
+        l.style.border = '10px solid rgba(255, 253, 242, 0.6)';
       });
     },
 
     penBtnClicked() {
       const pen = document.querySelector('#drawing-pen');
       pen.style.backgroundColor = '#83b1b1';
-      const eraser = document.querySelector('#drawing-eraser');
-      eraser.style.backgroundColor = '#83b1b1';
       this.ctx[0].strokeStyle = this.strokeColor;
       this.showToolBar = !this.showToolBar;
-      if (this.eraser === true) {
-        this.eraser = false;
-        this.ctx[0].lineWidth /= 2;
-      }
-    },
-
-    eraserBtnClicked() {
-      this.showToolBar = false;
-      const eraser = document.querySelector('#drawing-eraser');
-      // eslint-disable-next-line
-      if (eraser.style.backgroundColor !== 'rgb(36, 177, 161)') {
-        this.ctx[0].strokeStyle = 'white';
-        eraser.style.backgroundColor = '#24b1a1';
-        this.eraser = true;
-        this.ctx[0].lineWidth *= 2;
-      } else {
-        this.ctx[0].strokeStyle = this.strokeColor;
-        eraser.style.backgroundColor = '#83b1b1';
-        this.eraser = false;
-        this.ctx[0].lineWidth /= 2;
-      }
     },
 
     finishBtnClicked() {
       /* eslint-disable */
       const data = {
-        sentence: this.$route.params.sentence,
+        sentence: this.sentences[this.sentenceIndex],
         thumbnail: this.canvas.toDataURL(),
       };
 
       axios.post('/api/user/work/save', {
-        bid: this.$route.params.bid,
+        bid: this.book.bid,
         type: 2,
         content: JSON.stringify(data),
       }).then(() => {
@@ -322,18 +334,20 @@ export default {
           }).catch((err) => {
             console.error(err);
           });
+          this.$store.dispatch('hideError');
       } else {
         this.tooltip = '그림을 그릴 책을 선택해보자!';
+        this.$store.dispatch('showError', '책이 선택되지 않았어!');
       }
     },
   },
 };
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 #drawing-canvas {
   width: 95%;
-  height: calc(60% - 1vh);
+  height: calc(65% - 1vh);
   margin-left: 2.5%;
   margin-top: 2.5%;
 
@@ -342,11 +356,16 @@ export default {
   border-radius: 10px;
 }
 
-#drawing-text {
-  width: 92%;
-  height: 20vh;
-  margin-left: 4%;
+#drawing-text-box {
+  width: 100%;
+  height: 16vh;
   margin-top: 5%;
+}
+
+#drawing-text {
+  width: 88%;
+  height: 16vh;
+  margin-left: 6%;
 
   font-size: 3vh;
   color: black;
@@ -364,7 +383,7 @@ export default {
 
 #drawing-tool-triangle {
   position: absolute;
-  top: 17vh;
+  top: 28vh;
   left: 6.5vw;
   width: 0px;
   height: 0px;
@@ -411,7 +430,7 @@ export default {
   margin: 1vh;
   box-shadow: 3px 3px 5px grey;
   display: inline-block;
-  border: 3px solid rgba(255, 253, 242, 0.6);
+  border: 10px solid rgba(255, 253, 242, 0.6);
 }
 .jscolor {
   color: transparent;
@@ -429,14 +448,14 @@ export default {
   width: 90%;
   height: 4vh;
   background-color: white;
-  border: 3px solid rgba(255, 253, 242, 0.6);
+  border: 10px solid rgba(255, 253, 242, 0.6);
   margin-left: 5%;
   margin-bottom: 2vh;
   border-radius: 5px;
   box-shadow: 3px 3px 3px gray;
 }
 #line1 {
-  margin-top: calc(2vh - 2.5px);
+  margin-top: calc(2vh - 6px);
   margin-left: 10%;
   margin-right: 10%;
   height: 2px;
@@ -445,7 +464,7 @@ export default {
   pointer-events: none;
 }
 #line2 {
-  margin-top: calc(2vh - 4px);
+  margin-top: calc(2vh - 7.5px);
   margin-left: 10%;
   margin-right: 10%;
   height: 5px;
@@ -454,7 +473,7 @@ export default {
   pointer-events: none;
 }
 #line3 {
-  margin-top: calc(2vh - 5.5px);
+  margin-top: calc(2vh - 9px);
   margin-left: 10%;
   margin-right: 10%;
   height: 8px;
@@ -541,5 +560,16 @@ export default {
   height: 30vw;
   top: calc(40% - 15vw);
   left: calc(50% - 15vw);
+}
+
+#drawing-arrow-box {
+  margin-top: -3vh;
+  display: inline-block
+}
+#drawing-left-arrow {
+  float: left;
+}
+#drawing-right-arrow {
+  float: right;
 }
 </style>

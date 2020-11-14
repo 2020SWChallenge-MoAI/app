@@ -59,6 +59,11 @@ const appStateModule = {
       commit('setPopupMessage', message);
       commit('setPopup', true);
     },
+    resetState({ commit }) {
+      commit('setAppError', false);
+      commit('setAppLoading', false);
+      commit('setPopup', false);
+    },
   },
 };
 

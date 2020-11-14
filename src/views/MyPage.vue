@@ -3,85 +3,89 @@
     title="마이페이지"
     tooltip="나의 활동 기록을 살펴보자!"
     :recent-books="false"
+    :scrollable="true"
   >
-    <div class="top">
-      <profile :user="user" />
-      <result-table
-        :month="month"
-        @prev="month -= 1"
-        @next="month += 1"
-      />
-    </div>
-    <div class="bottom">
-      <div id="mypage-activity-left-bookname">
+    <div class="mypage">
+      <v-row class="top">
+        <v-col class="col-3">
+          <profile
+            class="profile"
+            :user="user"
+          />
+        </v-col>
+        <v-col class="col-9">
+          <result-table
+            class="result-table"
+            :month="month"
+            @prev="month -= 1"
+            @next="month += 1"
+          />
+        </v-col>
+      </v-row>
+      <div class="bottom">
+        <div class="activity-book-info">
+          <transition
+            :name="slideDirection"
+            mode="out-in"
+          >
+            <div :key="widIndex">
+              <div class="activity-book-title">
+                {{ book.title }}
+              </div>
+              <div class="activity-work-date">
+                {{ work.date }}
+              </div>
+            </div>
+          </transition>
+        </div>
+        <v-btn
+          class="activity-content-prev"
+          icon
+          color="#668d8d"
+          x-large
+          :disabled="isStart"
+          @click="prevWork"
+        >
+          <v-icon>mdi-arrow-left-drop-circle</v-icon>
+        </v-btn>
+
         <transition
-          name="slide-up"
+          :name="slideDirection"
           mode="out-in"
         >
-          <div :key="widIndex">
-            {{ book.title }}
+          <div
+            :key="widIndex"
+            class="activity-content"
+          >
+            <mind-map-result
+              v-if="work.type === 0"
+              :work="work"
+            />
+            <quiz-game-result
+              v-if="work.type === 1"
+              :work="work"
+            />
+            <drawing-result
+              v-if="work.type === 2"
+              :work="work"
+            />
+            <writing-result
+              v-if="work.type === 3"
+              :work="work"
+            />
           </div>
         </transition>
+        <v-btn
+          class="activity-content-next"
+          icon
+          color="#668d8d"
+          x-large
+          :disabled="isEnd"
+          @click="nextWork"
+        >
+          <v-icon>mdi-arrow-right-drop-circle</v-icon>
+        </v-btn>
       </div>
-      <transition
-        name="fade"
-        mode="out-in"
-      >
-        <div
-          id="mypage-activity-left-date"
-          :key="widIndex"
-        >
-          {{ work.date }}
-        </div>
-      </transition>
-
-      <v-btn
-        id="mypage-activity-left-arrow"
-        icon
-        color="#668d8d"
-        x-large
-        :disabled="isStart"
-        @click="prevWork"
-      >
-        <v-icon>mdi-arrow-left-drop-circle</v-icon>
-      </v-btn>
-
-      <transition
-        :name="slideDirection"
-        mode="out-in"
-      >
-        <div
-          id="mypage-activity"
-          :key="widIndex"
-        >
-          <mind-map-result
-            v-if="work.type === 0"
-            :work="work"
-          />
-          <quiz-game-result
-            v-if="work.type === 1"
-            :work="work"
-          />
-          <drawing-result
-            v-if="work.type === 2"
-            :work="work"
-          />
-          <writing-result
-            v-if="work.type === 3"
-            :work="work"
-          />
-        </div>
-      </transition>
-      <v-btn
-        id="mypage-activity-right-arrow"
-        icon
-        color="#668d8d"
-        x-large
-        :disabled="isEnd"
-        @click="nextWork"
-      >
-        <v-icon>mdi-arrow-right-drop-circle</v-icon>
-      </v-btn>
     </div>
   </sub-layout>
 </template>
@@ -110,7 +114,7 @@ export default {
   data() {
     return {
       user: {},
-      month: new Date().getMonth() + 1,
+      month: moment().month() + 1,
       wids: [],
       widIndex: 0,
       work: {},
@@ -118,7 +122,25 @@ export default {
       slideDirection: 'slide-left',
     };
   },
+  computed: {
+    isStart() {
+      return this.widIndex === 0;
+    },
+    isEnd() {
+      return this.widIndex === (this.wids.length - 1);
+    },
+    book() {
+      if (!Object.keys(this.work).length) return {};
+      return this.$store.getters.book(this.work.bid);
+    },
+  },
+  async created() {
+    const { data } = await axios.get('/api/user');
+    this.user = data;
+    this.wids = data.wids;
 
+    this.loadWork();
+  },
   methods: {
     prevWork() {
       this.slideDirection = 'slide-left';
@@ -143,108 +165,79 @@ export default {
       };
     },
   },
-  computed: {
-    isStart() {
-      return this.widIndex === 0;
-    },
-    isEnd() {
-      return this.widIndex === (this.wids.length - 1);
-    },
-    book() {
-      if (!Object.keys(this.work).length) return {};
-      return this.$store.getters.book(this.work.bid);
-    },
-  },
-  async created() {
-    const { data } = await axios.get('/api/user');
-    this.user = data;
-    this.wids = data.wids;
-
-    this.loadWork();
-  },
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+.mypage {
+  padding: 2vw;
+}
+
 .top {
-  width: 100%;
-  height: 40vh;
-  display: flex;
-  justify-content: space-between;
+  .profile {
+    height: 100%;
+    width: 100%;
+  }
+
+  .result-table {
+    height: 100%;
+    width: 100%;
+  }
 }
 
 .bottom {
   width: 100%;
-  height: 49%;
   margin-top: 1%;
-}
+  position: relative;
 
-#mypage-activity-left-bookname {
-  position: absolute;
-  width: 23vw;
-  height: 7vh;
-  border-radius: 3vw;
-  font-size: 2vw;
-  text-align: center;
-  padding-top: 0.6vh;
-  letter-spacing: -0.2vw;
-  line-height: 6vh;
-  word-spacing: 0.8vw;
+  .activity-book-info {
+    position: absolute;
+    clear: both;
+    width: 23vw;
+    border-radius: 2vw;
+    font-size: 2vw;
+    text-align: center;
+    padding: 1vh;
+    letter-spacing: -0.2vw;
+    line-height: 6vh;
+    word-spacing: 0.8vw;
 
-  top: 50vh;
-  left: 5vw;
-  background: lightsalmon;
-  z-index: 2;
-  overflow: hidden;
-}
+    top: 0;
+    left: 0;
+    background: lightsalmon;
+    z-index: 2;
 
-#mypage-activity-left-date {
-  position: absolute;
-  font-size: 2vw;
-  letter-spacing: -0.4vw;
-  word-spacing: 0.8vw;
-  top: 58vh;
-  left: 8vw;
-}
+    .activity-work-date {
+      background: white;
+      padding: 1vh;
+      font-size: 3vh;
+      border-radius: 2vw;
+    }
+  }
 
-#mypage-activity-left-arrow {
-  position: absolute;
-  top: 78vh;
-  left: 20vw;
-}
+  .activity-content-prev {
+    position: absolute;
+    top: 28vh;
+    left: 15vw;
+  }
 
-#mypage-activity-right-arrow {
-  position: absolute;
-  top: 78vh;
-  left: 71vw;
-}
+  .activity-content-next {
+    position: absolute;
+    top: 28vh;
+    right: 0;
+  }
 
-#mypage-activity {
-  position: absolute;
-  top: 46vh;
-  left: 26vw;
-  width: 44vw;
-  height: 38vh;
-  border: 2px solid gray;
-  background: #fffdf2;
-  z-index: 10;
-  overflow: hidden;
-}
-
-#mypage-activity-cover {
-  position: absolute;
-  top: 46vh;
-  left: 26vw;
-  width: 44vw;
-  height: 38vh;
-  border: 2px solid gray;
-  background: rgba(255, 253, 242, 1);
-  z-index: 15;
-
-  animation: fadein 1s;
-  -moz-animation: fadein 1s;
-  -webkit-animation: fadein 1s;
-  -o-animation: fadein 1s;
+  .activity-content {
+    position: absolute;
+    top: 0;
+    left: 21vw;
+    width: 44vw;
+    height: 38vh;
+    border: 2px solid gray;
+    background: #fffdf2;
+    z-index: 10;
+    overflow: hidden;
+  }
 }
 
 .slide-left-enter-active {

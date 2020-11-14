@@ -1,51 +1,53 @@
 <template>
   <sub-layout
     title="그림설명하기"
-    :tooltip="book ? book.title : '책 선택 안 됨'"
+    tooltip="원하는 그림을 골라서 설명해 보자!"
+    :scrollable="true"
   >
-    <div class="wrapper">
+    <div class="writing-intro">
+      <book-title :book="book" />
       <div class="main-images">
-        <main-image
-          v-for="image in images"
-          :key="image.rank"
-          :src="image.uri"
-          width="40%"
-          class="main-image"
-          @click.native="$router.push(`/activity/writing/process?rank=${image.rank}`)"
-        />
+        <div
+          class="main-images-prev"
+          :class="{ disabled: isStart }"
+          @click="prevPage"
+        >
+          <img src="@/assets/img/layouts/base/left/more.svg">
+        </div>
+        <div
+          class="main-images-next"
+          :class="{ disabled: isEnd }"
+          @click="nextPage"
+        >
+          <img src="@/assets/img/layouts/base/left/more.svg">
+        </div>
+        <div
+          v-for="(row, index) in rows"
+          :key="index"
+          class="main-image-row"
+        >
+          <main-image
+            v-for="image in row"
+            :key="image.rank"
+            :src="image.uri"
+            width="35%"
+            class="main-image"
+            @click.native="$router.push(`/activity/writing/process?rank=${image.rank}`)"
+          />
+        </div>
       </div>
-      <div
-        class="main-images-prev"
-        :class="{ disabled: isStart }"
-        @click="prevPage"
-      >
-        <img src="@/assets/img/layouts/base/left/more.svg">
-      </div>
-      <div
-        class="main-images-next"
-        :class="{ disabled: isEnd }"
-        @click="nextPage"
-      >
-        <img src="@/assets/img/layouts/base/left/more.svg">
-      </div>
-      <character-text-bubble
-        tooltip="원하는 그림을 골라서 설명해 보자!"
-        @click.native="nextPage"
-      />
     </div>
   </sub-layout>
 </template>
 
 <script>
 import _ from 'lodash';
-import CharacterTextBubble from '../../../components/CharacterTextBubble.vue';
+import BookTitle from '../../../components/views/activity/BookTitle.vue';
 import MainImage from '../../../components/views/activity/writing/MainImage.vue';
-
-const imagesPerPage = 4;
 
 export default {
   components: {
-    CharacterTextBubble,
+    BookTitle,
     MainImage,
   },
   data() {
@@ -53,6 +55,8 @@ export default {
       images: [],
       page: 0,
       delay: 300,
+      rowsPerPage: 2,
+      imagesPerRow: 2,
     };
   },
   computed: {
@@ -66,9 +70,19 @@ export default {
       if (!this.totalPages) return true;
       return this.page === (this.totalPages - 1);
     },
+    imagesPerPage() {
+      return this.rowsPerPage * this.imagesPerRow;
+    },
     totalPages() {
       if (!this.book) return 0;
-      return Math.ceil(this.book.imageNum / imagesPerPage);
+      return Math.ceil(this.book.imageNum / this.imagesPerPage);
+    },
+    rows() {
+      return this.images
+        .reduce((rows, image, index) => {
+          rows[Math.floor(index / this.imagesPerRow)].push(image);
+          return rows;
+        }, [...new Array(this.rowsPerPage)].map(() => []));
     },
   },
   watch: {
@@ -97,8 +111,8 @@ export default {
     },
     async loadImages() {
       const range = _.range(
-        imagesPerPage * this.page + 1,
-        Math.min(this.book.imageNum + 1, imagesPerPage * (this.page + 1) + 1),
+        this.imagesPerPage * this.page + 1,
+        Math.min(this.book.imageNum + 1, this.imagesPerPage * (this.page + 1) + 1),
       );
 
       this.images = await Promise.all(
@@ -122,7 +136,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
-.wrapper {
+.writing-intro {
   flex: 1;
   padding: 2vw;
   display: flex;
@@ -130,13 +144,9 @@ export default {
   justify-content: space-between;
 }
 
-.content {
-  display: flex;
-}
-
 .main-images-prev {
   position: absolute;
-  top: 30vh;
+  top: 50%;
   left: 0;
 
   &.disabled {
@@ -150,7 +160,7 @@ export default {
 
 .main-images-next {
   position: absolute;
-  top: 30vh;
+  top: 50%;
   right: 0;
 
   &.disabled {
@@ -164,9 +174,23 @@ export default {
 
 .main-images {
   display: flex;
-  flex-wrap: wrap;
+  flex-flow: column;
   justify-content: center;
   align-items: center;
+  flex: 1;
+  margin-top: 2vw;
+}
+
+.main-image-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 0;
+
+  &:not(:last-of-type) {
+    margin-bottom: 2vh;
+  }
 }
 
 .main-image {

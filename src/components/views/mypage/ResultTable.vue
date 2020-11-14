@@ -1,113 +1,94 @@
 <template>
-  <div class="result">
+  <div class="result-table">
     <div class="result-header">
-      <v-icon
+      <v-btn
         x-large
+        icon
         @click="$emit('prev')"
       >
-        mdi-menu-left
-      </v-icon>
-
-      <div
-        class="result-title"
-        transition="slide-x-transition"
-      >
+        <v-icon>mdi-menu-left</v-icon>
+      </v-btn>
+      <div class="result-title">
         {{ month }}월 마인드맵 평가
       </div>
-
-      <v-icon
+      <v-btn
         x-large
+        icon
         @click="$emit('next')"
       >
-        mdi-menu-right
-      </v-icon>
+        <v-icon>mdi-menu-right</v-icon>
+      </v-btn>
     </div>
-
-    <transition
-      name="slide"
-      mode="out-in"
-    >
-      <table
-        class="result-content"
-        style="background: lightblue;"
-      >
-        <thead>
-          <tr>
-            <th />
-            <th>1주</th>
-            <th>2주</th>
-            <th>3주</th>
-            <th>4주</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          <tr>
-            <td>이해도</td>
-            <td>10</td>
-            <td>21</td>
-            <td>10</td>
-            <td>21</td>
-          </tr>
-
-          <tr>
-            <td>성실성</td>
-            <td>10</td>
-            <td>21</td>
-            <td>10</td>
-            <td>21</td>
-          </tr>
-
-          <tr>
-            <td style="border-radius: 0 0 0 2vw;">
-              창의성
-            </td>
-            <td>10</td>
-            <td>21</td>
-            <td>10</td>
-            <td style="border-radius: 0 0 2vw 0;">
-              21
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </transition>
+    <table class="result-content">
+      <thead>
+        <tr>
+          <th />
+          <th>1주</th>
+          <th>2주</th>
+          <th>3주</th>
+          <th>4주</th>
+          <th>5주</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>이해도</td>
+          <td>10</td>
+          <td>21</td>
+          <td>10</td>
+          <td>21</td>
+          <td>21</td>
+        </tr>
+        <tr>
+          <td>성실성</td>
+          <td>10</td>
+          <td>21</td>
+          <td>10</td>
+          <td>21</td>
+          <td>21</td>
+        </tr>
+        <tr>
+          <td>창의성</td>
+          <td>10</td>
+          <td>21</td>
+          <td>10</td>
+          <td>21</td>
+          <td>21</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </template>
 
 <script>
 export default {
-  props: ['month'],
+  props: ['month', 'monthlyScore'],
 };
 </script>
 
 <style lang="scss" scoped>
-.result {
-  width: 50vw;
-  height: 39vh;
-  border-radius: 3vw;
+.result-table {
+  border-radius: 2vw;
   background: lightblue;
 }
 
 .result-header {
-  width: 48vw;
-  margin-left: 1vw;
-  margin-top: 2vh;
+  width: 100%;
+  padding: 2vh;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .result-title {
-  width: 40vw;
-  height: 4vh;
   text-align: center;
-  font-size: 2.5vw;
+  font-size: 4vh;
   display: inline-block;
 }
 
 .result-content {
-  width: 48vw;
-  height: 26vh;
-  margin-left: 1vw;
-  margin-top: 3vh;
+  width: 100%;
+  padding: 0 1vh 1vh 1vh;
   text-align: center;
 
   th {
@@ -117,6 +98,19 @@ export default {
   td {
     background: #fffdf2;
     font-size: 2.2vw;
+  }
+
+  & > *:first-child *:first-child {
+    border-top-left-radius: 2vw;
+  }
+  & > *:first-child *:last-child {
+    border-top-right-radius: 2vw;
+  }
+  & > *:last-child > *:last-child *:first-child {
+    border-bottom-left-radius: 2vw;
+  }
+  & > *:last-child > *:last-child *:last-child {
+    border-bottom-right-radius: 2vw;
   }
 }
 </style>

@@ -20,7 +20,7 @@
         <book-menu-button :book="book" />
       </li>
       <li
-        v-for="n in (2 - currentBooks.length)"
+        v-for="n in (booksPerPage - currentBooks.length)"
         :key="n"
         class="recent-book"
       >
@@ -38,12 +38,11 @@
 </template>
 
 <script>
-const booksPerPage = 2;
-
 export default {
   data() {
     return {
       page: 0,
+      booksPerPage: 2,
     };
   },
   computed: {
@@ -52,8 +51,8 @@ export default {
     },
     currentBooks() {
       return this.recentBooks.slice(
-        this.page * booksPerPage,
-        (this.page + 1) * booksPerPage,
+        this.page * this.booksPerPage,
+        (this.page + 1) * this.booksPerPage,
       );
     },
     isStart() {
@@ -64,7 +63,7 @@ export default {
       return this.page === (this.totalPages - 1);
     },
     totalPages() {
-      return Math.ceil(this.recentBooks.length / booksPerPage);
+      return Math.ceil(this.recentBooks.length / this.booksPerPage);
     },
   },
   async created() {

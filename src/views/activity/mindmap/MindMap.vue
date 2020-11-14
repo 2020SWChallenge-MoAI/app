@@ -1,5 +1,5 @@
 <template>
-  <sub-layout title="마인드맵" :tooltip="tooltip">
+  <sub-layout title="생각펼치기" :tooltip="tooltip">
     <template v-slot:left>
       <left-menu-button icon="mdi-check-bold" text="완료" id="canvas-finish" />
     </template>
@@ -17,8 +17,6 @@
     <div id="mindmap-tool-bar">
       <div class="mindmap-tools" v-ripple><div id="mindmap-tool-pen" /></div>
       <div class="mindmap-tools" v-ripple><div id="mindmap-tool-select" /></div>
-      <div class="mindmap-tools" v-ripple><div id="mindmap-tool-zoomin" /></div>
-      <div class="mindmap-tools" v-ripple><div id="mindmap-tool-zoomout" /></div>
       <div class="mindmap-tools" v-ripple><div id="mindmap-tool-delete" /></div>
     </div>
 
@@ -29,53 +27,93 @@
         <div id="ai-space" />
         <div id="ai-dotline">
           <div id="ai-dot" />
+          <div id="ai-dot1" />
           <div id="ai-dot" />
+          <div id="ai-dot1" />
           <div id="ai-dot" />
+          <div id="ai-dot1" />
           <div id="ai-dot" />
+          <div id="ai-dot1" />
           <div id="ai-dot" />
-          <div id="ai-dot" />
+          <div id="ai-dot1" />
           <div id="ai-dot" />
         </div>
       </div>
 
-      <div id="recommend-words" v-show="recommendClicked && recommendLoaded">
-        <div id="recommend-words-top">
-          <div class="recommend-word" id="recommend1" v-ripple>
-          </div>
-          <div class="recommend-word" id="recommend2" v-ripple>
-          </div>
-          <div class="recommend-word" id="recommend3" v-ripple>
-          </div>
+      <div
+        id="mindmap-left-arrow"
+        @click="beforeWords"
+        v-show="recommendClicked && recommendLoaded"
+        v-ripple
+      >
+      </div>
+
+      <div
+        id="recommend-container"
+        v-show="recommendClicked && recommendLoaded"
+        class="recommend-words"
+      >
+
+        <div
+          class="recommend-word"
+          v-for="(word, index) in showWords"
+          :key="index"
+          :id="'recommend-word' + index"
+          @click="wordClicked"
+          v-show="aiSupportType && recommendLoaded"
+        >
+          {{ word.word }}
         </div>
-        <div id="recommend-words-bot">
-          <div class="recommend-word" id="recommend4" v-ripple>
-          </div>
-          <div class="recommend-word" id="recommend5" v-ripple>
-          </div>
-          <div class="recommend-word" id="recommend6" v-ripple>
-          </div>
-        </div>
+
+        <main-image
+          v-for="(image, index) in images"
+          :key="image.rank"
+          :src="image.uri"
+          :id="'recommend-image' + index"
+          width="40%"
+          class="main-image"
+          @click.native="imageClicked(image.uri, 'recommend-image' + index)"
+          v-show="!aiSupportType && recommendLoaded"
+        />
+
+      </div>
+
+      <div
+        id="mindmap-right-arrow"
+        @click="afterWords"
+        v-show="recommendClicked && recommendLoaded"
+        v-ripple
+      >
       </div>
 
       <div id="recommend-start" v-if="!recommendClicked">
-        내 도움이 필요하면 버튼을 누르면 돼!
+        {{ aiSupportText }}
       </div>
 
       <div id="recommend-loading" v-if="recommendClicked && !recommendLoaded" />
-
-      <div id="right-btn" v-show="recommendClicked && recommendLoaded">
-      </div>
     </div>
   </sub-layout>
 </template>
 
 <script>
+import _ from 'lodash';
 import axios from 'axios';
+import MainImage from '../../../components/views/activity/writing/MainImage.vue';
+
+const imagesPerPage = 2;
 
 export default {
+  components: {
+    MainImage,
+  },
   data() {
     return {
       aiHelp: false,
+      // 인상장면
+      aiSupportType: true,
+      page: 0,
+      delay: 300,
+
       tooltip: '떠오르는 단어를 적어 커다란 나무를 완성해보자!',
       canvas: document.getElementById(''),
       ctx: [],
@@ -89,16 +127,16 @@ export default {
         T: -1, B: -1, L: -1, R: -1,
       },
 
-      nodes: [
-      ],
+      nodes: [],
 
-      edges: [
-      ],
+      edges: [],
 
-      words: [
-      ],
+      words: [],
+
+      images: [],
 
       wordIndex: 0,
+      showWords: [],
       selectedNode: -1,
       doubleSelectedNode: -1,
       doubleSelectedTime: false,
@@ -128,13 +166,14 @@ export default {
       intervals: [],
       timeouts: [],
 
-      aiSupportCount: 0,
-
       pinch: {
         x1: -1, y1: 0, x2: 0, y2: 0,
       },
       beforeMode: '',
       ifOneFinger: true,
+      aiSupportText: '내 도움이 필요하면 버튼을 누르면 돼!',
+
+      selectedImageURI: '',
     };
   },
 
@@ -161,7 +200,6 @@ export default {
     this.canvas.addEventListener('touchstart', (e) => {
       if (e.changedTouches.length === 2) {
         this.pinchStart(e);
-        this.tooltip = 'doubletouch start';
       } else this.startDraw(e);
     }, false);
     this.canvas.addEventListener('touchmove', (e) => {
@@ -176,9 +214,9 @@ export default {
         this.pinchFinish(e);
         this.touchmode = 'drag';
         const pen = document.querySelector('#mindmap-tool-pen');
-        pen.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
+        pen.parentElement.style.backgroundColor = 'rgba(184, 182, 172, 0.8)';
         const select = document.querySelector('#mindmap-tool-select');
-        select.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
+        select.parentElement.style.backgroundColor = 'rgba(184, 182, 172, 0.8)';
 
         this.startPos.x = -1;
         this.startPos.y = -1;
@@ -187,25 +225,15 @@ export default {
 
     const penBtn = document.querySelector('#mindmap-tool-pen');
     const selectBtn = document.querySelector('#mindmap-tool-select');
-    const zoomin = document.querySelector('#mindmap-tool-zoomin');
-    const zoomout = document.querySelector('#mindmap-tool-zoomout');
     const deleteBtn = document.querySelector('#mindmap-tool-delete');
     const finishBtn = document.querySelector('#canvas-finish');
     const aiSupportBtn = document.querySelector('#ai-background');
     const aiHelp = document.querySelector('#aiHelp');
-    const recommendWords = document.querySelectorAll('.recommend-word');
-    const nextBtn = document.querySelector('#right-btn');
     if (penBtn) {
       penBtn.addEventListener('click', this.modePen);
     }
     if (selectBtn) {
       selectBtn.addEventListener('click', this.modeSelect);
-    }
-    if (zoomin) {
-      zoomin.addEventListener('click', this.zoomin);
-    }
-    if (zoomout) {
-      zoomout.addEventListener('click', this.zoomout);
     }
     if (deleteBtn) {
       deleteBtn.addEventListener('click', this.deleteNode);
@@ -219,17 +247,6 @@ export default {
     if (aiHelp) {
       aiHelp.addEventListener('click', this.aiHelpSelected);
     }
-    if (nextBtn) {
-      nextBtn.addEventListener('click', this.nextBtnClicked);
-    }
-    recommendWords.forEach((word) => {
-      // eslint-disable-next-line no-unused-vars
-      word.addEventListener('click', (e) => {
-        this.recommendWordClicked(e);
-        this.touchmode = 'word';
-        this.wordSelected = word.innerText;
-      });
-    }, true);
 
     this.ctx[0].lineJoin = 'round';
     this.ctx[0].scale(0.9, 0.9);
@@ -240,71 +257,162 @@ export default {
     this.padding.x = this.canvas.width / 2 - this.canvas.width / (0.9 * 0.9 * 2);
     this.padding.y = this.canvas.height / 2 - this.canvas.height / (0.9 * 0.9 * 2);
 
-    this.edges.push({
-      id: 1, from: 0, to: 1,
-    });
-    this.edges.push({
-      id: 2, from: 0, to: 2,
-    });
-    this.edges.push({
-      id: 3, from: 0, to: 3,
-    });
-    this.edges.push({
-      id: 4, from: 0, to: 4,
-    });
-
     const width = this.canvas.width / 2;
     const height = this.canvas.height / 2;
+    const forTemplateBid = this.$route.params.bookId;
+    const storyBooks = [8, 10, 21, 22];
+    const actionBooks = [38, 40, 41, 90];
+    // const infoBooks = [31];
 
-    if (this.templateType === 1) {
-      this.nodes.push({
-        id: 0, x: width, y: height, size: 125, type: -1, link: true, parent: -1,
+    if (storyBooks.includes(forTemplateBid)) {
+      this.edges.push({
+        id: 1, from: 0, to: 1,
       });
+      this.edges.push({
+        id: 2, from: 0, to: 2,
+      });
+      this.edges.push({
+        id: 3, from: 0, to: 3,
+      });
+      this.edges.push({
+        id: 4, from: 0, to: 4,
+      });
+      // 동화책
+      if (this.templateType === 1) {
+        this.nodes.push({
+          id: 0, x: width, y: height, size: 125, type: -1, link: true, parent: -1, ai: '',
+        });
 
-      this.nodes.push({
-        // eslint-disable-next-line max-len
-        id: 1, label: '등장인물', x: width - 240, y: height - 100, size: 80, type: 0, link: true, parent: 0,
+        this.nodes.push({
+          // eslint-disable-next-line max-len
+          id: 1, label: '등장인물', x: width - 240, y: height - 100, size: 80, type: 0, link: true, parent: 0, ai: '',
+        });
+        this.nodes.push({
+          // eslint-disable-next-line max-len
+          id: 2, label: '줄거리', x: width + 240, y: height - 100, size: 80, type: 1, link: true, parent: 0, ai: '',
+        });
+        this.nodes.push({
+          // eslint-disable-next-line max-len
+          id: 3, label: '느낀점', x: width - 240, y: height + 100, size: 80, type: 2, link: true, parent: 0, ai: '',
+        });
+        this.nodes.push({
+          // eslint-disable-next-line max-len
+          id: 4, label: '인상장면', x: width + 240, y: height + 100, size: 80, type: 3, link: true, parent: 0, ai: '',
+        });
+      } else if (this.templateType === 2) {
+        this.nodes.push({
+          id: 0, x: width, y: 0 + 100, size: 150, type: -1, link: true, parent: -1, ai: '',
+        });
+
+        this.nodes.push({
+          // eslint-disable-next-line max-len
+          id: 1, label: '등장인물', x: width - 320, y: 120, size: 80, type: 0, link: true, parent: 0, ai: '',
+        });
+        this.nodes.push({
+          // eslint-disable-next-line max-len
+          id: 2, label: '줄거리', x: width - 150, y: 300, size: 80, type: 1, link: true, parent: 0, ai: '',
+        });
+        this.nodes.push({
+          // eslint-disable-next-line max-len
+          id: 3, label: '느낀점', x: width + 120, y: 250, size: 80, type: 2, link: true, parent: 0, ai: '',
+        });
+        this.nodes.push({
+          // eslint-disable-next-line max-len
+          id: 4, label: '인상장면', x: width + 300, y: 150, size: 80, type: 3, link: true, parent: 0, ai: '',
+        });
+      }
+    } else if (actionBooks.includes(forTemplateBid)) {
+      this.edges.push({
+        id: 1, from: 0, to: 1,
       });
-      this.nodes.push({
-        // eslint-disable-next-line max-len
-        id: 2, label: '줄거리', x: width + 240, y: height - 100, size: 80, type: 1, link: true, parent: 0,
+      this.edges.push({
+        id: 2, from: 0, to: 2,
       });
-      this.nodes.push({
-        // eslint-disable-next-line max-len
-        id: 3, label: '느낀점', x: width - 240, y: height + 100, size: 80, type: 2, link: true, parent: 0,
+      this.edges.push({
+        id: 3, from: 0, to: 3,
       });
-      this.nodes.push({
-        // eslint-disable-next-line max-len
-        id: 4, label: '인상장면', x: width + 240, y: height + 100, size: 80, type: 3, link: true, parent: 0,
+      this.edges.push({
+        id: 4, from: 0, to: 4,
       });
-    } else if (this.templateType === 2) {
       this.edges.push({
         id: 5, from: 0, to: 5,
       });
-      this.nodes.push({
-        id: 0, x: width, y: 0 + 100, size: 150, type: -1, link: true, parent: -1,
-      });
+      // 위인전 (사건)
+      if (this.templateType === 1) {
+        this.nodes.push({
+          id: 0, x: width, y: height, size: 125, type: -1, link: true, parent: -1, ai: '',
+        });
 
-      this.nodes.push({
-        // eslint-disable-next-line max-len
-        id: 1, label: '등장인물', x: width - 320, y: 120, size: 80, type: 0, link: true, parent: 0,
+        this.nodes.push({
+          // eslint-disable-next-line max-len
+          id: 1, label: '등장인물', x: width - 300, y: height, size: 80, type: 0, link: true, parent: 0, ai: '',
+        });
+        this.nodes.push({
+          // eslint-disable-next-line max-len
+          id: 2, label: '줄거리', x: width + 240, y: height - 100, size: 80, type: 1, link: true, parent: 0, ai: '',
+        });
+        this.nodes.push({
+          // eslint-disable-next-line max-len
+          id: 3, label: '느낀점', x: width - 240, y: height + 150, size: 80, type: 2, link: true, parent: 0, ai: '',
+        });
+        this.nodes.push({
+          // eslint-disable-next-line max-len
+          id: 4, label: '인상장면', x: width + 240, y: height + 100, size: 80, type: 3, link: true, parent: 0, ai: '',
+        });
+        this.nodes.push({
+          // eslint-disable-next-line max-len
+          id: 5, label: '사건', x: width - 200, y: height - 150, size: 80, type: 3, link: true, parent: 0, ai: '',
+        });
+      } else if (this.templateType === 2) {
+        this.nodes.push({
+          id: 0, x: width, y: 0 + 100, size: 150, type: -1, link: true, parent: -1, ai: '',
+        });
+
+        this.nodes.push({
+          // eslint-disable-next-line max-len
+          id: 1, label: '등장인물', x: width - 320, y: 120, size: 80, type: 0, link: true, parent: 0, ai: '',
+        });
+        this.nodes.push({
+          // eslint-disable-next-line max-len
+          id: 2, label: '줄거리', x: width - 150, y: 300, size: 80, type: 1, link: true, parent: 0, ai: '',
+        });
+        this.nodes.push({
+          // eslint-disable-next-line max-len
+          id: 3, label: '느낀점', x: width + 120, y: 250, size: 80, type: 2, link: true, parent: 0, ai: '',
+        });
+        this.nodes.push({
+          // eslint-disable-next-line max-len
+          id: 4, label: '인상장면', x: width + 300, y: 150, size: 80, type: 3, link: true, parent: 0, ai: '',
+        });
+        this.nodes.push({
+          // eslint-disable-next-line max-len
+          id: 5, label: '사건', x: width + 30, y: 400, size: 80, type: 3, link: true, parent: 0, ai: '',
+        });
+      }
+    } else {
+      this.edges.push({
+        id: 1, from: 0, to: 1,
       });
-      this.nodes.push({
-        // eslint-disable-next-line max-len
-        id: 2, label: '줄거리', x: width - 150, y: 300, size: 80, type: 1, link: true, parent: 0,
-      });
-      this.nodes.push({
-        // eslint-disable-next-line max-len
-        id: 3, label: '느낀점', x: width + 120, y: 250, size: 80, type: 2, link: true, parent: 0,
-      });
-      this.nodes.push({
-        // eslint-disable-next-line max-len
-        id: 4, label: '인상장면', x: width + 300, y: 150, size: 80, type: 3, link: true, parent: 0,
-      });
-      this.nodes.push({
-        // eslint-disable-next-line max-len
-        id: 5, label: '사건', x: width + 30, y: 400, size: 80, type: 3, link: true, parent: 0,
-      });
+      // 비문학 및 다른 선정되지 않은 책
+      if (this.templateType === 1) {
+        this.nodes.push({
+          id: 0, x: width, y: height, size: 125, type: -1, link: true, parent: -1, ai: '',
+        });
+
+        this.nodes.push({
+          // eslint-disable-next-line max-len
+          id: 1, label: '느낀점', x: width - 240, y: height + 100, size: 80, type: 2, link: true, parent: 0, ai: '',
+        });
+      } else if (this.templateType === 2) {
+        this.nodes.push({
+          id: 0, x: width, y: 0 + 100, size: 150, type: -1, link: true, parent: -1, ai: '',
+        });
+
+        this.nodes.push({
+          // eslint-disable-next-line max-len
+          id: 1, label: '느낀점', x: width + 120, y: 250, size: 80, type: 2, link: true, parent: 0, ai: '',
+        });
+      }
     }
 
     setTimeout(() => {
@@ -330,6 +438,7 @@ export default {
       this.startPos.y = coors.Y;
       this.beforeMode = 'pinch';
     },
+
     pinchMove(event) {
       event.preventDefault();
       const touch1 = event.changedTouches[0];
@@ -406,6 +515,12 @@ export default {
       }
       const index = this.nodes.findIndex((element) => element.id === this.popupNodeId);
       this.nodes[index].label = this.selectedNodeLabel;
+      // node가 추천받은 단어인지 확인
+      if (this.nodes[index].ai !== '') {
+        const ifAI = this.selectedNodeLabel.indexOf(this.nodes[index].ai);
+        // eslint-disable-next-line
+        if (ifAI == -1) this.nodes[index].ai = '';
+      }
       // eslint-disable-next-line
       if (this.nodes[index].size / (Math.min(this.nodes[index].label.length - 1, 8)) < 20) {
         this.nodes[index].size = (Math.min(this.nodes[index].label.length - 1, 8)) * 20;
@@ -465,11 +580,11 @@ export default {
         this.ctx[0].beginPath();
         this.ctx[0].fillStyle = '#836d4b';
         // eslint-disable-next-line max-len
-        this.ctx[0].fillRect(width - 20 - paddingX, height * 0.9 - paddingY + height / 3, 40, 140);
+        this.ctx[0].fillRect(width - 20 - paddingX, height * 0.9 - paddingY + 140, 40, 160);
         this.ctx[0].lineWidth = 12;
         this.ctx[0].strokeStyle = '#836d4b';
         // eslint-disable-next-line max-len
-        this.ctx[0].arc(width - paddingX, height * 0.9 - paddingY, height / 3, Math.PI * 0.25, Math.PI * 0.75);
+        this.ctx[0].arc(width - paddingX, height * 0.9 - paddingY, 140, Math.PI * 0.25, Math.PI * 0.75);
         this.ctx[0].stroke();
 
         // 책 이미지 넣기
@@ -509,7 +624,7 @@ export default {
         this.selectedNode = -1;
         this.ctx[0].beginPath();
         this.ctx[0].lineWidth = 12;
-        this.ctx[0].strokeStyle = '836d4b';
+        this.ctx[0].strokeStyle = '#836d4b';
         const coors = this.getPosition(event);
         this.ctx[0].moveTo(coors.X, coors.Y);
         this.startPos.x = coors.X;
@@ -522,7 +637,6 @@ export default {
         if (this.beforeMode === 'pinch') this.beforeMode = 'drag';
         if (this.startPos.x === -1) this.ifOneFinger = true;
         else this.ifOneFinger = false;
-        this.tooltip = this.ifOneFinger;
         if (this.ifOneFinger === true) {
           this.selectedNode = -1;
           const coors = this.getPosition(event);
@@ -565,6 +679,10 @@ export default {
           this.highlightNode(node.x - this.padding.x, node.y - this.padding.y, node.size, node.type);
         }
       } else if (this.touchmode === 'word') {
+        const coors = this.getPosition(event);
+        this.startPos.x = coors.X;
+        this.startPos.y = coors.Y;
+      } else if (this.touchmode === 'image') {
         const coors = this.getPosition(event);
         this.startPos.x = coors.X;
         this.startPos.y = coors.Y;
@@ -617,6 +735,15 @@ export default {
         const nodesize = Math.abs(coors.X - this.startPos.x) / 2 + Math.abs(coors.Y - this.startPos.y) / 2;
         const nodetype = Math.floor(this.startPos.x + this.startPos.y) % 4;
         this.makeNode(nodex, nodey, nodesize, nodetype, this.wordSelected);
+      } else if (this.touchmode === 'image') {
+        this.reDrawAll(this.padding.x, this.padding.y);
+        const coors = this.getPosition(event);
+        const nodex = (coors.X + this.startPos.x) / 2;
+        const nodey = (coors.Y + this.startPos.y) / 2;
+        // eslint-disable-next-line max-len
+        const nodesize = Math.abs(coors.X - this.startPos.x) / 2 + Math.abs(coors.Y - this.startPos.y) / 2;
+        const nodetype = 43;
+        this.makeNode(nodex, nodey, nodesize, nodetype, this.selectedImageURI);
       }
     },
 
@@ -740,7 +867,7 @@ export default {
             this.popupNodeId = newid;
             this.nodes.push({
               // eslint-disable-next-line max-len
-              id: newid, label: ' ', x: (this.maxPos.L + this.maxPos.R) / 2 + this.padding.x, y: (this.maxPos.T + this.maxPos.B) / 2 + this.padding.y, size: nodesize, type: newid % 4, link: false, parent: -1,
+              id: newid, label: ' ', x: (this.maxPos.L + this.maxPos.R) / 2 + this.padding.x, y: (this.maxPos.T + this.maxPos.B) / 2 + this.padding.y, size: nodesize, type: newid % 4, link: false, parent: -1, ai: '',
             });
 
             // 노드에 연결 안돼있는 엣지 제거
@@ -772,7 +899,7 @@ export default {
             const fontsize = Math.max(node.size / 8, 20);
 
             this.ctx[0].beginPath();
-            this.ctx[0].strokeStyle = 'black';
+            this.ctx[0].strokeStyle = 'gray';
             this.ctx[0].lineWidth = 3;
             this.ctx[0].setLineDash([5, 2]);
             // eslint-disable-next-line
@@ -801,7 +928,6 @@ export default {
           this.padding.y += this.startPos.y - coors.Y;
           this.startPos.x = -1;
           this.startPos.y = -1;
-          this.tooltip = '정상종료';
         } else this.ifOneFinger = true;
       } else if (this.touchmode === 'word') {
         const htmlInput = document.querySelector('#input-test');
@@ -815,13 +941,11 @@ export default {
         const nodey = (coors.Y + this.startPos.y) / 2;
         // eslint-disable-next-line max-len
         let nodesize = Math.max(Math.abs(coors.X - this.startPos.x) / 2 + Math.abs(coors.Y - this.startPos.y) / 2, 80);
-        console.log(nodesize, (Math.min(this.wordSelected.length - 1, 8)));
 
         // nodesize 조정
         if (nodesize / (Math.min(this.wordSelected.length - 1, 8)) < 20) {
           nodesize = (Math.min(this.wordSelected.length - 1, 8)) * 20;
         }
-        console.log(nodesize);
         const nodetype = Math.floor(this.startPos.x + this.startPos.y) % 4;
         const newid = new Date().getTime();
 
@@ -844,9 +968,8 @@ export default {
 
         this.nodes.push({
           // eslint-disable-next-line max-len
-          id: newid, label: this.wordSelected, x: nodex + this.padding.x, y: nodey + this.padding.y, size: nodesize, type: nodetype, link: false, parent: -1,
+          id: newid, label: this.wordSelected, x: nodex + this.padding.x, y: nodey + this.padding.y, size: nodesize, type: nodetype, link: false, parent: -1, ai: this.wordSelected,
         });
-        this.aiSupportCount += 1;
 
         // 노드에 연결 안돼있는 엣지 제거
         if (this.edgeId !== -1) {
@@ -877,8 +1000,8 @@ export default {
         // tool reset
         const pen = document.querySelector('#mindmap-tool-pen');
         const select = document.querySelector('#mindmap-tool-select');
-        pen.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
-        select.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
+        pen.parentElement.style.backgroundColor = 'rgba(184, 182, 172, 0.8)';
+        select.parentElement.style.backgroundColor = 'rgba(184, 182, 172, 0.8)';
 
         this.resetWordBackground();
 
@@ -888,13 +1011,15 @@ export default {
         if (this.doubleSelectedNode === this.selectedNode) {
           if (this.doubleSelectedTime) {
             const node = this.nodes.find((element) => element.id === this.selectedNode);
-            const htmlInput = document.querySelector('#input-test');
-            htmlInput.focus();
-            this.popupNodeId = this.selectedNode;
-            this.inputNodeLabel('');
-            this.selectedNodeLabel = node.label;
+            if (node.type !== 43) {
+              const htmlInput = document.querySelector('#input-test');
+              htmlInput.focus();
+              this.popupNodeId = this.selectedNode;
+              this.inputNodeLabel('');
+              this.selectedNodeLabel = node.label;
 
-            this.doubleSelectedTime = false;
+              this.doubleSelectedTime = false;
+            }
           } else {
             this.doubleSelectedTime = true;
             this.doubleSelectedNode = this.selectedNode;
@@ -924,14 +1049,80 @@ export default {
         this.beforeMode = 'pinch';
         this.touchmode = 'drag';
         const pen = document.querySelector('#mindmap-tool-pen');
-        pen.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
+        pen.parentElement.style.backgroundColor = 'rgba(184, 182, 172, 0.8)';
         const select = document.querySelector('#mindmap-tool-select');
-        select.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
+        select.parentElement.style.backgroundColor = 'rgba(184, 182, 172, 0.8)';
 
         this.pinch.x1 = -1;
         this.pinch.y1 = 0;
         this.pinch.x2 = 0;
         this.pinch.y2 = 0;
+
+        this.startPos.x = -1;
+        this.startPos.y = -1;
+      } else if (this.touchmode === 'image') {
+        this.reDrawAll(this.padding.x, this.padding.y);
+        const coors = this.getPosition(event);
+        const nodex = (coors.X + this.startPos.x) / 2;
+        const nodey = (coors.Y + this.startPos.y) / 2;
+        // eslint-disable-next-line max-len
+        const nodesize = Math.max(Math.abs(coors.X - this.startPos.x) / 2 + Math.abs(coors.Y - this.startPos.y) / 2, 80);
+
+        const nodetype = 43;
+        const newid = new Date().getTime();
+
+        // edge 없는 노드 삭제
+        for (let i = 1; i < this.nodes.length; i += 1) {
+          if (this.nodes[i].link === false) {
+            // 노드 삭제
+            const deleteNodeid = this.nodes[i].id;
+            this.nodes.splice(i, 1);
+
+            for (let j = 0; j < this.edges.length; j += 1) {
+              if (this.edges[j].to === deleteNodeid || this.edges[j].from === deleteNodeid) {
+                this.edges.splice(j, 1);
+                j -= 1;
+              }
+            }
+            i -= 1;
+          }
+        }
+
+        this.nodes.push({
+          // eslint-disable-next-line max-len
+          id: newid, label: this.selectedImageURI, x: nodex + this.padding.x, y: nodey + this.padding.y, size: nodesize, type: nodetype, link: false, parent: -1, ai: 'image',
+        });
+
+        // 노드에 연결 안돼있는 엣지 제거
+        if (this.edgeId !== -1) {
+          // eslint-disable-next-line max-len
+          if ((nodex + this.padding.x - nodesize < this.edgePos.x && this.edgePos.x < nodex + this.padding.x + nodesize) && (nodey + this.padding.y - nodesize < this.edgePos.y && this.edgePos.y < nodey + this.padding.y + nodesize)) {
+            const index = this.edges.findIndex((element) => element.id === this.edgeId);
+            const nodeindex = this.nodes.findIndex((element) => element.id === newid);
+            if (this.edges[index].to === -1) {
+              this.edges[index].to = newid;
+              this.nodes[nodeindex].parent = this.edges[index].from;
+              this.nodes[nodeindex].link = true;
+            } else {
+              this.edges[index].from = newid;
+              this.nodes[nodeindex].parent = this.edges[index].to;
+              this.nodes[nodeindex].link = true;
+            }
+          } else {
+            const index = this.edges.findIndex((element) => element.id === this.edgeId);
+            this.edges.splice(index, 1);
+          }
+        }
+        this.reDrawAll(this.padding.x, this.padding.y);
+
+        this.edgeId = -1;
+        this.selectedImageURI = '';
+        this.touchmode = 'drag';
+        // tool reset
+        const pen = document.querySelector('#mindmap-tool-pen');
+        const select = document.querySelector('#mindmap-tool-select');
+        pen.parentElement.style.backgroundColor = 'rgba(184, 182, 172, 0.8)';
+        select.parentElement.style.backgroundColor = 'rgba(184, 182, 172, 0.8)';
 
         this.startPos.x = -1;
         this.startPos.y = -1;
@@ -961,10 +1152,19 @@ export default {
         this.initSetting(paddingX - this.padding.x, paddingY - this.padding.y);
 
         // node 그리기
+        // image 노드 먼저 그리기
+        for (let i = 0; i < this.nodes.length; i += 1) {
+          if (this.nodes[i].type === 43) {
+            // eslint-disable-next-line
+            this.makeNode(this.nodes[i].x - paddingX, this.nodes[i].y - paddingY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+          }
+        }
         // eslint-disable-next-line no-plusplus
         for (let i = 0; i < this.nodes.length; i++) {
-          // eslint-disable-next-line max-len
-          this.makeNode(this.nodes[i].x - paddingX, this.nodes[i].y - paddingY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+          if (this.nodes[i].type !== 43) {
+            // eslint-disable-next-line max-len
+            this.makeNode(this.nodes[i].x - paddingX, this.nodes[i].y - paddingY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+          }
         }
       } else if (this.templateType === 2) {
         this.lightPos.x = this.canvas.width / 2 - paddingX;
@@ -987,10 +1187,19 @@ export default {
         this.ctx[0].drawImage(this.bookImg, this.canvas.width / 2 - paddingX - 75, 0 - paddingY, 150, 200);
 
         // node 그리기
+        // image 노드 먼저 그리기
+        for (let i = 0; i < this.nodes.length; i += 1) {
+          if (this.nodes[i].type === 43) {
+            // eslint-disable-next-line
+            this.makeNode(this.nodes[i].x - paddingX, this.nodes[i].y - paddingY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+          }
+        }
         // eslint-disable-next-line no-plusplus
         for (let i = 0; i < this.nodes.length; i++) {
-          // eslint-disable-next-line max-len
-          this.makeNode(this.nodes[i].x - paddingX, this.nodes[i].y - paddingY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+          if (this.nodes[i].type !== 43) {
+            // eslint-disable-next-line max-len
+            this.makeNode(this.nodes[i].x - paddingX, this.nodes[i].y - paddingY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+          }
         }
       }
     },
@@ -1005,15 +1214,15 @@ export default {
     },
 
     makeNode(x, y, size, type, text) {
-      let fontsize = size / 4;
+      let fontsize = size / 3;
       let linesize = 1;
       let textLength = 0;
-      if (text !== undefined) {
+      if (text !== undefined && type !== 43) {
         textLength = this.getTextLength(text);
-        if (textLength > 16) fontsize /= 2;
-        else if (textLength > 10) fontsize = size / (textLength / 2 - 1);
-        linesize = Math.floor(textLength / 20) + 1;
-        if (textLength % 20 === 0) linesize -= 1;
+        if (textLength > 12) fontsize /= 2;
+        else if (textLength > 8) fontsize = size / (textLength / 2 - 1);
+        linesize = Math.floor(textLength / 16) + 1;
+        if (textLength % 16 === 0) linesize -= 1;
       }
 
       if (this.templateType === 1) {
@@ -1049,13 +1258,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 20 || i === text.length - 1) {
+              if (stringLength === 16 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
@@ -1098,13 +1307,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 20 || i === text.length - 1) {
+              if (stringLength === 16 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
@@ -1150,13 +1359,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 20 || i === text.length - 1) {
+              if (stringLength === 16 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
@@ -1205,13 +1414,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 20 || i === text.length - 1) {
+              if (stringLength === 16 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
@@ -1220,8 +1429,35 @@ export default {
               }
             }
           } else {
-            this.ctx[0].fillText(text, x - (fontsize / 2) * (textLength / 2), y + fontsize / 4);
+            // eslint-disable-next-line
+            this.ctx[0].fillText(text, x - (fontsize / 2) * ((textLength - 1) / 2), y + fontsize / 4);
           }
+        } else if (type === 43) {
+          // 사진 노드 그리기
+          const image = new Image();
+          image.src = text;
+
+          this.ctx[0].drawImage(image, x - size * 0.84, y - size * 0.6, size * 1.6, size * 1.2);
+          // 테두리 그리기
+          this.ctx[0].beginPath();
+          // 기본 세팅
+          this.ctx[0].strokeStyle = '#fffdf2';
+          this.ctx[0].lineWidth = size / 3.3;
+          this.ctx[0].lineCap = 'round';
+
+          this.ctx[0].moveTo(x, y - size / 2);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x - size / 4, y - size * 0.9, x - size, y - size * 0.6, x - size * 0.8, y - size * 0.2);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x - size * 1.3, y + size / 4, x - size / 2, y + size * 0.8, x - size / 4, y + size / 2);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size / 2, y + size * 0.9, x + size * 1, y + size * 0.3, x + size * 0.75, y - 5);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size, y - size / 2, x + size * 0.2, y - size * 0.9, x, y - size / 2);
+          this.ctx[0].stroke();
         }
       } else if (this.templateType === 2) {
         // eslint-disable-next-line
@@ -1271,13 +1507,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 20 || i === text.length - 1) {
+              if (stringLength === 16 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
@@ -1332,13 +1568,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 20 || i === text.length - 1) {
+              if (stringLength === 16 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
@@ -1393,13 +1629,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 20 || i === text.length - 1) {
+              if (stringLength === 16 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
@@ -1454,13 +1690,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 20 || i === text.length - 1) {
+              if (stringLength === 16 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
@@ -1471,6 +1707,40 @@ export default {
           } else {
             this.ctx[0].fillText(text, x - (fontsize / 2) * (textLength / 2), y + fontsize / 4);
           }
+        } else if (type === 43) {
+          // 사진 노드 그리기
+          const image = new Image();
+          image.src = text;
+
+          this.ctx[0].drawImage(image, x - size, y - size * 0.8, size * 2, size * 1.6);
+          // 테두리 그리기
+          this.ctx[0].beginPath();
+          // 기본 세팅
+          this.ctx[0].strokeStyle = '#fffdf2';
+          this.ctx[0].lineWidth = size / 3.3;
+
+          this.ctx[0].beginPath();
+          this.ctx[0].arc(x, y, size * 1.2, 0, Math.PI * 2);
+          this.ctx[0].stroke();
+
+          this.ctx[0].fillStyle = 'white';
+          this.ctx[0].beginPath();
+          // eslint-disable-next-line max-len
+          this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
+          this.ctx[0].rotate(-lightRad);
+          this.ctx[0].moveTo(0, -size * 0.15);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(-size * 0.05, -size * 0.15, -size * 0.1, -size * 0.075, -size * 0.1, 0);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(-size * 0.1, size * 0.075, -size * 0.05, size * 0.15, 0, size * 0.15);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(size * 0.05, size * 0.15, size * 0.1, size * 0.075, size * 0.1, 0);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(size * 0.1, -size * 0.075, size * 0.05, -size * 0.15, 0, -size * 0.15);
+          this.ctx[0].fill();
+          this.ctx[0].rotate(+lightRad);
+          // eslint-disable-next-line max-len
+          this.ctx[0].translate(-(x + r * Math.cos(lightRad)), -(y - r * Math.sin(lightRad)));
         }
       }
     },
@@ -1566,16 +1836,45 @@ export default {
           // eslint-disable-next-line max-len
           this.ctx[0].bezierCurveTo(x + size * 1.0, y - size * 0.8, x + size * 0.2, y - size * 0.7, x + size * 0.3, y - size * 0.6);
           this.ctx[0].stroke();
+        } else if (type === 43) {
+          // 테두리 그리기
+          this.ctx[0].beginPath();
+          // 기본 세팅
+          this.ctx[0].strokeStyle = '#649a28';
+          this.ctx[0].lineWidth = size / 8;
+          this.ctx[0].lineCap = 'round';
+
+          this.ctx[0].moveTo(x, y - size / 2);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x - size / 4, y - size * 0.9, x - size, y - size * 0.6, x - size * 0.8, y - size * 0.2);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x - size * 1.3, y + size / 4, x - size / 2, y + size * 0.8, x - size / 4, y + size / 2);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size / 2, y + size * 0.9, x + size * 1, y + size * 0.3, x + size * 0.75, y - 5);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size, y - size / 2, x + size * 0.2, y - size * 0.9, x, y - size / 2);
+          this.ctx[0].stroke();
         }
       } else if (this.templateType === 2) {
-        if (type === 0) this.ctx[0].strokeStyle = '#5c4a92';
-        else if (type === 1) this.ctx[0].strokeStyle = '#866bc6';
-        else if (type === 2) this.ctx[0].strokeStyle = '#917fb0';
-        else if (type === 3) this.ctx[0].strokeStyle = '#5d37d3';
-        this.ctx[0].beginPath();
-        this.ctx[0].lineWidth = size / 10;
-        this.ctx[0].arc(x, y, size, 0, Math.PI * 2);
-        this.ctx[0].stroke();
+        this.ctx[0].lineWidth = size / 8;
+        if (type < 43) {
+          if (type === 0) this.ctx[0].strokeStyle = '#5c4a92';
+          else if (type === 1) this.ctx[0].strokeStyle = '#866bc6';
+          else if (type === 2) this.ctx[0].strokeStyle = '#917fb0';
+          else if (type === 3) this.ctx[0].strokeStyle = '#5d37d3';
+          this.ctx[0].beginPath();
+          this.ctx[0].arc(x, y, size, 0, Math.PI * 2);
+          this.ctx[0].stroke();
+        } else if (type === 43) {
+          this.ctx[0].strokeStyle = '#866bc6';
+          this.ctx[0].lineWidth = size / 8;
+          this.ctx[0].beginPath();
+          this.ctx[0].arc(x, y, size * 1.2, 0, Math.PI * 2);
+          this.ctx[0].stroke();
+        }
       }
     },
 
@@ -1606,12 +1905,12 @@ export default {
       const pen = document.querySelector('#mindmap-tool-pen');
       if (this.touchmode === 'pen') {
         this.touchmode = 'drag';
-        pen.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
+        pen.parentElement.style.backgroundColor = 'rgba(184, 182, 172, 0.8)';
       } else {
         this.touchmode = 'pen';
-        pen.parentElement.style.border = '3px solid rgba(255, 255, 255, 0.8)';
+        pen.parentElement.style.backgroundColor = 'rgba(255, 223, 64, 0.8)';
         const select = document.querySelector('#mindmap-tool-select');
-        select.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
+        select.parentElement.style.backgroundColor = 'rgba(184, 182, 172, 0.8)';
       }
     },
 
@@ -1621,12 +1920,12 @@ export default {
       const select = document.querySelector('#mindmap-tool-select');
       if (this.touchmode === 'select') {
         this.touchmode = 'drag';
-        select.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
+        select.parentElement.style.backgroundColor = 'rgba(184, 182, 172, 0.8)';
       } else {
         this.touchmode = 'select';
-        select.parentElement.style.border = '3px solid rgba(255, 255, 255, 0.8)';
+        select.parentElement.style.backgroundColor = 'rgba(255, 223, 64, 0.8)';
         const pen = document.querySelector('#mindmap-tool-pen');
-        pen.parentElement.style.border = '3px solid rgba(184, 182, 172, 0.8)';
+        pen.parentElement.style.backgroundColor = 'rgba(184, 182, 172, 0.8)';
       }
     },
 
@@ -1664,189 +1963,137 @@ export default {
       this.selectedNode = -1;
     },
 
-    zoomin() {
-      if (this.canvasScale < 3) {
-        this.canvasScale += 0.1;
-        this.scale *= 1.1;
-        this.ctx[0].scale(1.1, 1.1);
-        this.reDrawAll(this.padding.x, this.padding.y);
-      }
-    },
-
-    zoomout() {
-      if (this.canvasScale > 0.1) {
-        this.canvasScale -= 0.1;
-        this.scale *= 0.9;
-        this.ctx[0].scale(0.9, 0.9);
-        this.reDrawAll(this.padding.x, this.padding.y);
-      }
-    },
-
-    nextBtnClicked() {
-      this.wordIndex += 6;
-      this.wordIndex %= 60;
-      const word1 = document.querySelector('#recommend1');
-      const word2 = document.querySelector('#recommend2');
-      const word3 = document.querySelector('#recommend3');
-      const word4 = document.querySelector('#recommend4');
-      const word5 = document.querySelector('#recommend5');
-      const word6 = document.querySelector('#recommend6');
-
-      word1.innerHTML = this.words[this.wordIndex].word;
-      word2.innerHTML = this.words[this.wordIndex + 1].word;
-      word3.innerHTML = this.words[this.wordIndex + 2].word;
-      word4.innerHTML = this.words[this.wordIndex + 3].word;
-      word5.innerHTML = this.words[this.wordIndex + 4].word;
-      word6.innerHTML = this.words[this.wordIndex + 5].word;
-
-      this.wordCanSelect = false;
-      this.wordSelected = '';
-      this.resetWordBackground();
-
-      word1.style.fontSize = '2.5vw'; word1.style.paddingTop = '1vw';
-      word2.style.fontSize = '2.5vw'; word2.style.paddingTop = '1vw';
-      word3.style.fontSize = '2.5vw'; word3.style.paddingTop = '1vw';
-      word4.style.fontSize = '2.5vw'; word4.style.paddingTop = '1vw';
-      word5.style.fontSize = '2.5vw'; word5.style.paddingTop = '1vw';
-      word6.style.fontSize = '2.5vw'; word6.style.paddingTop = '1vw';
-
-      // eslint-disable-next-line brace-style
-      if (word1.innerHTML.length > 5) { word1.style.fontSize = '1.5vw'; word1.style.paddingTop = '1.5vw'; }
-      // eslint-disable-next-line brace-style
-      else if (word2.innerHTML.length > 5) { word2.style.fontSize = '1.5vw'; word2.style.paddingTop = '1.5vw'; }
-      // eslint-disable-next-line brace-style
-      else if (word3.innerHTML.length > 5) { word3.style.fontSize = '1.5vw'; word3.style.paddingTop = '1.5vw'; }
-      // eslint-disable-next-line brace-style
-      else if (word4.innerHTML.length > 5) { word4.style.fontSize = '1.5vw'; word4.style.paddingTop = '1.5vw'; }
-      // eslint-disable-next-line brace-style
-      else if (word5.innerHTML.length > 5) { word5.style.fontSize = '1.5vw'; word5.style.paddingTop = '1.5vw'; }
-      // eslint-disable-next-line brace-style
-      else if (word6.innerHTML.length > 5) { word6.style.fontSize = '1.5vw'; word6.style.paddingTop = '1.5vw'; }
-      // eslint-disable-next-line brace-style
-    },
-
-    aiSupportBtnClicked() {
+    async aiSupportBtnClicked() {
       this.recommendClicked = true;
       this.recommendLoaded = false;
       const node = this.nodes.find((element) => element.id === this.selectedNode);
       const ancWord = [];
-      if (this.selectedNode >= 1) ancWord.push(node.label);
+      if (this.selectedNode >= 1) {
+        if (node.ai === '') ancWord.push(node.label);
+        else ancWord.push(node.ai);
+      }
       if (node !== undefined) {
+        this.aiSupportType = true;
+        if (node.id === 4) this.aiSupportType = false;
         if (node.parent >= 10) {
           const parentNode = this.nodes.find((element) => element.id === node.parent);
-          ancWord.push(parentNode.label);
+          if (parentNode.ai === '') ancWord.push(parentNode.label);
+          else ancWord.push(parentNode.ai);
         }
+      } else {
+        this.aiSupportType = true;
       }
 
-      // eslint-disable-next-line
-      axios.get('/api/book/' + this.$route.params.bookId + '/keyword', {
-        params: {
-          num: 60, anc: JSON.stringify(ancWord),
-        },
-      }).then((res) => {
-        this.words = res.data.keywords;
-        this.wordIndex = 0;
+      if (this.aiSupportType) {
+        // eslint-disable-next-line
+        const a = await axios.get('/api/book/' + this.$route.params.bookId + '/keyword', {
+          params: {
+            num: 60, anc: JSON.stringify(ancWord),
+          },
+        }).then((res) => {
+          this.words = res.data.keywords;
+          this.wordIndex = 0;
 
-        const word1 = document.querySelector('#recommend1');
-        const word2 = document.querySelector('#recommend2');
-        const word3 = document.querySelector('#recommend3');
-        const word4 = document.querySelector('#recommend4');
-        const word5 = document.querySelector('#recommend5');
-        const word6 = document.querySelector('#recommend6');
+          const aiContainer = document.querySelector('#recommend-container');
+          aiContainer.classList.add('recommend-words');
+          aiContainer.classList.remove('recommend-images');
 
-        word1.innerHTML = this.words[0].word;
-        word2.innerHTML = this.words[1].word;
-        word3.innerHTML = this.words[2].word;
-        word4.innerHTML = this.words[3].word;
-        word5.innerHTML = this.words[4].word;
-        word6.innerHTML = this.words[5].word;
+          this.showWords.length = 0;
+          for (let i = 0; i < Math.min(6, this.words.length); i += 1) {
+            this.showWords.push(this.words[i]);
+          }
 
-        // eslint-disable-next-line brace-style
-        if (word1.innerHTML.length > 5) { word1.style.fontSize = '1.5vw'; word1.style.paddingTop = '1.5vw'; }
-        // eslint-disable-next-line brace-style
-        else if (word2.innerHTML.length > 5) { word2.style.fontSize = '1.5vw'; word2.style.paddingTop = '1.5vw'; }
-        // eslint-disable-next-line brace-style
-        else if (word3.innerHTML.length > 5) { word3.style.fontSize = '1.5vw'; word3.style.paddingTop = '1.5vw'; }
-        // eslint-disable-next-line brace-style
-        else if (word4.innerHTML.length > 5) { word4.style.fontSize = '1.5vw'; word4.style.paddingTop = '1.5vw'; }
-        // eslint-disable-next-line brace-style
-        else if (word5.innerHTML.length > 5) { word5.style.fontSize = '1.5vw'; word5.style.paddingTop = '1.5vw'; }
-        // eslint-disable-next-line brace-style
-        else if (word6.innerHTML.length > 5) { word6.style.fontSize = '1.5vw'; word6.style.paddingTop = '1.5vw'; }
-        // eslint-disable-next-line brace-style
-
-        this.recommendLoaded = true;
-      }).catch((err) => {
-        console.warn('ERROR!!!!: ', err);
-      });
-    },
-
-    recommendWordClicked(e) {
-      const word1 = document.querySelector('#recommend1');
-      const word2 = document.querySelector('#recommend2');
-      const word3 = document.querySelector('#recommend3');
-      const word4 = document.querySelector('#recommend4');
-      const word5 = document.querySelector('#recommend5');
-      const word6 = document.querySelector('#recommend6');
-
-      if (this.wordCanSelect) {
-        // eslint-disable-next-line brace-style
-        if (e.target.id === 'recommend1') { word1.style.background = '#b6b6b6'; this.wordSelected = word1.innerHTML; }
-        // eslint-disable-next-line brace-style
-        else if (e.target.id === 'recommend2') { word2.style.background = '#b6b6b6'; this.wordSelected = word2.innerHTML; }
-        // eslint-disable-next-line brace-style
-        else if (e.target.id === 'recommend3') { word3.style.background = '#b6b6b6'; this.wordSelected = word3.innerHTML; }
-        // eslint-disable-next-line brace-style
-        else if (e.target.id === 'recommend4') { word4.style.background = '#b6b6b6'; this.wordSelected = word4.innerHTML; }
-        // eslint-disable-next-line brace-style
-        else if (e.target.id === 'recommend5') { word5.style.background = '#b6b6b6'; this.wordSelected = word5.innerHTML; }
-        // eslint-disable-next-line brace-style
-        else if (e.target.id === 'recommend6') { word6.style.background = '#b6b6b6'; this.wordSelected = word6.innerHTML; }
-        this.wordCanSelect = false;
+          this.recommendLoaded = true;
+        }).catch((err) => {
+          this.recommendClicked = false;
+          this.aiSupportText = '추천할 수 있는 단어가 없어...';
+          console.log(err);
+        });
       } else {
-        // eslint-disable-next-line no-lonely-if
-        if (e.target.id === 'recommend1') {
-          this.resetWordBackground();
-          word1.style.background = '#b6b6b6';
-          this.wordSelected = word1.innerText;
-        } else if (e.target.id === 'recommend2') {
-          this.resetWordBackground();
-          word2.style.background = '#b6b6b6';
-          this.wordSelected = word2.innerText;
-        } else if (e.target.id === 'recommend3') {
-          this.resetWordBackground();
-          word3.style.background = '#b6b6b6';
-          this.wordSelected = word3.innerText;
-        } else if (e.target.id === 'recommend4') {
-          this.resetWordBackground();
-          word4.style.background = '#b6b6b6';
-          this.wordSelected = word4.innerText;
-        } else if (e.target.id === 'recommend5') {
-          this.resetWordBackground();
-          word5.style.background = '#b6b6b6';
-          this.wordSelected = word5.innerText;
-        } else if (e.target.id === 'recommend6') {
-          this.resetWordBackground();
-          word6.style.background = '#b6b6b6';
-          this.wordSelected = word6.innerText;
-        }
+        this.delayedLoadImages = _.debounce(this.loadImages, this.delay);
+        const aiContainer = document.querySelector('#recommend-container');
+        aiContainer.classList.remove('recommend-words');
+        aiContainer.classList.add('recommend-images');
+        this.load();
       }
     },
 
     resetWordBackground() {
-      const word1 = document.querySelector('#recommend1');
-      const word2 = document.querySelector('#recommend2');
-      const word3 = document.querySelector('#recommend3');
-      const word4 = document.querySelector('#recommend4');
-      const word5 = document.querySelector('#recommend5');
-      const word6 = document.querySelector('#recommend6');
+      const recommendWords = document.querySelectorAll('.recommend-word-selected');
+      recommendWords.forEach((word) => {
+        word.classList.remove('recommend-word-selected');
+        word.classList.add('recommend-word');
+      }, true);
+    },
 
-      word1.style.background = '#F0EBD7';
-      word2.style.background = '#F0EBD7';
-      word3.style.background = '#F0EBD7';
-      word4.style.background = '#F0EBD7';
-      word5.style.background = '#F0EBD7';
-      word6.style.background = '#F0EBD7';
+    wordClicked(e) {
+      this.resetWordBackground();
+      // eslint-disable-next-line
+      const word = document.querySelector('#' + e.target.id);
+      if (this.wordSelected === word.innerText) {
+        word.classList.remove('recommend-word-selected');
+        word.classList.add('recommend-word');
+        this.wordSelected = '';
+        this.touchmode = 'drag';
+      } else {
+        this.resetWordBackground();
+        word.classList.add('recommend-word-selected');
+        word.classList.remove('recommend-word');
+        this.wordSelected = word.innerText;
+        this.touchmode = 'word';
+      }
+    },
+
+    imageClicked(uri, id) {
+      // 효과 삭제
+      const images = document.querySelectorAll('.main-image');
+      images.forEach((img) => {
+        // eslint-disable-next-line
+        img.classList.add('recommend-image');
+        img.classList.remove('recommend-image-selected');
+      });
+      // eslint-disable-next-line
+      const image = document.querySelector('#' + id);
+      image.classList.add('recommend-image-selected');
+      image.classList.remove('recommend-image');
+      this.touchmode = 'image';
+      this.selectedImageURI = uri;
+    },
+
+    beforeWords() {
+      if (this.wordIndex > 0 && this.aiSupportType) {
+        this.wordIndex -= 1;
+        this.resetWordBackground();
+        this.wordSelected = '';
+        this.touchmode = 'drag';
+
+        this.showWords.length = 0;
+        for (let i = 0; i < 6; i += 1) {
+          this.showWords.push(this.words[this.wordIndex * 6 + i]);
+        }
+      } else if (this.page > 0 && !this.aiSupportType) {
+        this.page -= 1;
+        this.touchmode = 'drag';
+        this.selectedImageURI = '';
+      }
+    },
+
+    afterWords() {
+      if (this.wordIndex <= this.words.length / 6 - 2 && this.aiSupportType) {
+        this.wordIndex += 1;
+        this.resetWordBackground();
+        this.wordSelected = '';
+        this.touchmode = 'drag';
+
+        this.showWords.length = 0;
+        for (let i = 0; i < 6; i += 1) {
+          this.showWords.push(this.words[this.wordIndex * 6 + i]);
+        }
+      } else if (!this.aiSupportType && this.page < this.totalPages - 1) {
+        this.page += 1;
+        this.touchmode = 'drag';
+        this.selectedImageURI = '';
+      }
     },
 
     finishBtnClicked() {
@@ -1879,7 +2126,7 @@ export default {
         // eslint-disable-next-line
         params: {
           // eslint-disable-next-line
-          nodes: this.nodes, edges: this.edges, template: this.templateType, bookId: this.$route.params.bookId, thumbnail: this.bookThumbnail, bookTitle: this.bookTitle, aiSupportCount: this.aiSupportCount,
+          nodes: this.nodes, edges: this.edges, template: this.templateType, bookId: this.$route.params.bookId, thumbnail: this.bookThumbnail, bookTitle: this.bookTitle,
         },
       });
     },
@@ -1888,6 +2135,7 @@ export default {
       this.aiHelp = !this.aiHelp;
       this.recommendClicked = false;
       this.recommendLoaded = false;
+      this.aiSupportText = '내 도움이 필요하면 버튼을 누르면 돼!';
     },
 
     inputNodeLabel(str) {
@@ -1917,7 +2165,7 @@ export default {
       if (labelLength % 20 === 0 && labelLength !== 0) linesize -= 1;
 
       this.ctx[0].beginPath();
-      this.ctx[0].strokeStyle = 'black';
+      this.ctx[0].strokeStyle = 'gray';
       this.ctx[0].lineWidth = 3;
       this.ctx[0].setLineDash([5, 2]);
       // eslint-disable-next-line
@@ -1928,7 +2176,7 @@ export default {
       let stringSIndex = 0;
       let stringLength = 0;
 
-      this.ctx[0].fillStyle = 'black';
+      this.ctx[0].fillStyle = 'gray';
       // eslint-disable-next-line
       this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
 
@@ -1981,7 +2229,7 @@ export default {
           this.makeNode(node.x - this.padding.x, node.y - this.padding.y, node.size, node.type, '');
 
           this.ctx[0].beginPath();
-          this.ctx[0].strokeStyle = 'black';
+          this.ctx[0].strokeStyle = 'gray';
           this.ctx[0].lineWidth = 3;
           this.ctx[0].setLineDash([5, 2]);
           // eslint-disable-next-line
@@ -1992,7 +2240,7 @@ export default {
           stringSIndex = 0;
           stringLength = 0;
 
-          this.ctx[0].fillStyle = 'black';
+          this.ctx[0].fillStyle = 'gray';
           // eslint-disable-next-line
           this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
 
@@ -2039,7 +2287,7 @@ export default {
 
         const firsttime = setTimeout(() => {
           this.ctx[0].beginPath();
-          this.ctx[0].strokeStyle = 'black';
+          this.ctx[0].strokeStyle = 'gray';
           this.ctx[0].lineWidth = 3;
           this.ctx[0].setLineDash([5, 2]);
           // eslint-disable-next-line
@@ -2061,7 +2309,7 @@ export default {
           this.makeNode(node.x - this.padding.x, node.y - this.padding.y, node.size, node.type, '');
 
           this.ctx[0].beginPath();
-          this.ctx[0].strokeStyle = 'black';
+          this.ctx[0].strokeStyle = 'gray';
           this.ctx[0].lineWidth = 3;
           this.ctx[0].setLineDash([5, 2]);
           // eslint-disable-next-line
@@ -2089,13 +2337,33 @@ export default {
           len += 1;
         }
         len += 1;
-        if (len % 10 === 9 && i < str.length - 1) {
-          if (escape(str.charAt(i)).length === 6) {
-            len += 1;
-          }
-        }
       }
       return len;
+    },
+
+    // 인상장면
+    async loadImages() {
+      const range = _.range(
+        imagesPerPage * this.page + 1,
+        Math.min(this.book.imageNum + 1, imagesPerPage * (this.page + 1) + 1),
+      );
+
+      this.images = await Promise.all(
+        range.map(async (rank) => ({
+          rank, uri: await this.$store.dispatch('downloadBookMainImage', { rank, bid: this.book.bid, thumbnail: true }),
+        })),
+      );
+    },
+    async load() {
+      this.page = 0;
+      if (!this.totalPages) {
+        this.recommendClicked = false;
+        this.aiSupportText = '삽화가 부족해...';
+      } else {
+        await this.loadImages();
+        this.recommendLoaded = true;
+        this.selectedImageURI = '';
+      }
     },
   },
 
@@ -2107,6 +2375,22 @@ export default {
         const htmlInput = document.querySelector('#input-test');
         htmlInput.focus();
       }
+    },
+    book() {
+      this.load();
+    },
+    page() {
+      this.loadImages();
+    },
+  },
+
+  computed: {
+    totalPages() {
+      if (!this.book) return 0;
+      return Math.ceil(this.book.imageNum / imagesPerPage);
+    },
+    book() {
+      return this.$store.getters.currentBook;
     },
   },
 
@@ -2137,11 +2421,11 @@ export default {
 #mindmap-tool-bar {
   position: absolute;
   width: 6vw;
-  height: 31vw;
+  height: 19vw;
   background: rgba(184, 182, 172, 0.5);
   z-index: 20;
   border-radius: 1vw;
-  top: calc(50% - 15.5vw);
+  top: calc(50% - 9.5vw);
   left: calc(100% - 7vw);
 }
 .mindmap-tools {
@@ -2171,22 +2455,6 @@ export default {
   background-repeat: no-repeat;
   background-position: center center;
 }
-#mindmap-tool-zoomin {
-  width: 4vw;
-  height: 4vw;
-  background-image: url('../../../assets/img/views/activity/mindmap/zoom-in.png');
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: center center;
-}
-#mindmap-tool-zoomout {
-  width: 4vw;
-  height: 4vw;
-  background-image: url('../../../assets/img/views/activity/mindmap/zoom-out.png');
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: center center;
-}
 #mindmap-tool-delete {
   width: 4vw;
   height: 4vw;
@@ -2206,16 +2474,18 @@ export default {
   top: 72%;
   left: 2.5%;
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  display: inline-block;
 }
 #ai-img {
   position: absolute;
   background-image: url('../../../assets/img/views/activity/mindmap/ai-recommend.png');
   background-size: cover;
-  width: 12vw;
-  height: 18vh;
+  background-position: center center;
+  width: 90%;
+  height: 90%;
   z-index: 18;
-  display: inline-block;
-  margin-left: 0.5vw;
+  margin-left: 10%;
+  margin-top: 5%;
 }
 #ai-background {
   position: absolute;
@@ -2241,36 +2511,48 @@ export default {
 }
 #ai-dot {
   width: 100%;
-  height: 1.8vh;
+  height: 10%;
   background: #8BA9A3;
-  margin-bottom: 0.72vw;
+}
+#ai-dot1 {
+  width: 100%;
+  height: 8%;
+  background: lightgray;
 }
 
-#recommend-words {
+.recommend-words {
   position: absolute;
   width: 65%;
   height: 100%;
-  margin-left: 20%;
+  margin-left: 30%;
+}
+.recommend-images {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  width: 65%;
+  height: 100%;
+  margin-left: 30%;
 }
 #recommend-start {
   position: absolute;
   width: 80%;
   height: 100%;
   margin-left: 18%;
-  font-size: 2.8vw;
+  font-size: 4vh;
   font-family: BM HANNA_TTF;
   font-style: normal;
   font-weight: 900;
   text-align: center;
-  padding-top: 4vw;
+  padding-top: 5vh;
   color: black;
 }
 #recommend-loading {
   position: absolute;
-  margin-left: 50%;
-  margin-top: 5%;
-  width: 7vw;
-  height: 7vw;
+  top: calc(50% - 5vh);
+  left: calc(55% - 5vh);
+  width: 10vh;
+  height: 10vh;
   border: 10px solid rgba(255,174,0,.3);
   border-radius: 50%;
   border-top-color: #FFAE00;
@@ -2284,133 +2566,87 @@ export default {
   to { -webkit-transform: rotate(360deg); }
 }
 
-#recommend-words-top {
-  position: absolute;
-  width: 100%;
-  height: 50%;
-}
-#recommend-words-bot {
-  position: absolute;
-  width: 100%;
-  height: 50%;
-  margin-top: 15%;
-}
-#recommend1 {
-  position: absolute;
-  width: 12vw;
-  height: 5.5vw;
+.recommend-word {
+  width: 24%;
+  height: 7vh;
+
+  margin-top: 2vh;
+  margin-bottom: 1vh;
+  margin-left: 3%;
+  margin-right: 3%;
+
   background: #F0EBD7;
   border-radius: 10px;
   margin-top: 0.6vw;
   text-align: center;
-  font-size: 2.5vw;
-  padding-top: 1vw;
+  color: black;
+  font-size: 3vh;
+  padding-top: 1vh;
   font-family: BM HANNA_TTF;
   font-style: normal;
   font-weight: 900;
   display: inline-block;
-  margin-left: 2vw;
-  margin-right: 2vw;
   box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.25);
+  overflow-y: scroll;
+  -ms-overflow-style: none;
 }
-#recommend2 {
-  position: absolute;
-  width: 12vw;
-  height: 5.5vw;
-  background: #F0EBD7;
+.recommend-word::-webkit-scrollbar {
+  display: none;
+}
+
+.recommend-word-selected {
+  width: 24%;
+  height: 7vh;
+
+  margin-top: 2vh;
+  margin-bottom: 1vh;
+  margin-left: 3%;
+  margin-right: 3%;
+
+  background: gray;
   border-radius: 10px;
   margin-top: 0.6vw;
   text-align: center;
-  font-size: 2.5vw;
-  padding-top: 1vw;
+  color: black;
+  font-size: 3vh;
+  padding-top: 1vh;
   font-family: BM HANNA_TTF;
   font-style: normal;
   font-weight: 900;
   display: inline-block;
-  margin-left: 18vw;
-  margin-right: 2vw;
   box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.25);
+  overflow-y: scroll;
+  -ms-overflow-style: none;
 }
-#recommend3 {
-  position: absolute;
-  width: 12vw;
-  height: 5.5vw;
-  background: #F0EBD7;
-  border-radius: 10px;
-  margin-top: 0.6vw;
-  text-align: center;
-  font-size: 2.5vw;
-  padding-top: 1vw;
-  font-family: BM HANNA_TTF;
-  font-style: normal;
-  font-weight: 900;
-  display: inline-block;
-  margin-left: 34vw;
-  margin-right: 2vw;
-  box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.25);
+.recommend-word-selected::-webkit-scrollbar {
+  display: none;
 }
-#recommend4 {
+
+#mindmap-left-arrow {
+  width: 10%;
+  height: 100%;
   position: absolute;
-  width: 12vw;
-  height: 5.5vw;
-  background: #F0EBD7;
-  border-radius: 10px;
-  margin-top: 0.6vw;
-  text-align: center;
-  font-size: 2.5vw;
-  padding-top: 1vw;
-  font-family: BM HANNA_TTF;
-  font-style: normal;
-  font-weight: 900;
-  display: inline-block;
-  margin-left: 2vw;
-  margin-right: 2vw;
-  box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.25);
+  left: 20%;
+  z-index: 100;
+  background-image: url('../../../assets/img/views/activity/mindmap/left-arrow.svg');
+  background-size: 30%;
+  background-position: center, center;
+  background-color: lightgray;
+  border-radius: 1vw;
 }
-#recommend5 {
+#mindmap-right-arrow {
+  width: 10%;
+  height: 100%;
   position: absolute;
-  width: 12vw;
-  height: 5.5vw;
-  background: #F0EBD7;
-  border-radius: 10px;
-  margin-top: 0.6vw;
-  text-align: center;
-  font-size: 2.5vw;
-  padding-top: 1vw;
-  font-family: BM HANNA_TTF;
-  font-style: normal;
-  font-weight: 900;
-  display: inline-block;
-  margin-left: 18vw;
-  margin-right: 2vw;
-  box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.25);
-}
-#recommend6 {
-  position: absolute;
-  width: 12vw;
-  height: 5.5vw;
-  background: #F0EBD7;
-  border-radius: 10px;
-  margin-top: 0.6vw;
-  text-align: center;
-  font-size: 2.5vw;
-  padding-top: 1vw;
-  font-family: BM HANNA_TTF;
-  font-style: normal;
-  font-weight: 900;
-  display: inline-block;
-  margin-left: 34vw;
-  margin-right: 2vw;
-  box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.25);
-}
-#right-btn {
-  position: absolute;
-  width: 12vw;
-  height: 18vh;
-  margin-left: 83%;
-  padding: 0;
-  background-image: url('../../../assets/img/views/activity/mindmap/next.png');
-  background-size: cover;
+  left: 90%;
+  z-index: 100;
+  background-image: url('../../../assets/img/views/activity/mindmap/right-arrow.svg');
+  background-size: 30%;
+  background-position: center, center;
+  background-color: lightgray;
+  border: 0;
+  box-shadow: 0;
+  border-radius: 1vw;
 }
 
 #input-test {
@@ -2422,5 +2658,20 @@ export default {
 }
 #input-test:focus {
   outline: none;
+}
+
+.main-image {
+  display: inline-block;
+  margin-left: 2.5%;
+  margin-right: 2.5%;
+}
+
+.recommend-image-selected {
+  border: 1vw solid gray;
+  border-radius: 1vw;
+}
+.recommend-image {
+  border: 1vw solid white;
+  border-radius: 1vw;
 }
 </style>

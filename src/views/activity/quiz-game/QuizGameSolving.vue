@@ -2,8 +2,9 @@
   <sub-layout
     title="독서퀴즈"
     :tooltip="book ? book.title : '책 선택 안 됨'"
+    :scrollable="true"
   >
-    <div class="wrapper">
+    <div class="quiz-game-solving">
       <div class="content">
         <div class="question">
           <div class="question-text">
@@ -68,7 +69,6 @@
         </div>
       </div>
     </div>
-
     <finish-overlay
       v-show="submitted && correct"
       :success="true"
@@ -202,12 +202,16 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.wrapper {
+.quiz-game-solving {
   display: flex;
   flex-flow: column;
   justify-content: space-between;
   flex: 1;
   padding: 2vw;
+
+  & > div:not(:last-child) {
+    margin-bottom: 1vw;
+  }
 }
 
 .content > div:not(:last-child) {

@@ -1,16 +1,11 @@
 <template>
-  <sub-layout title="마인드맵" tooltip="떠오르는 단어를 적어 커다란 나무를 완성해보자!">
+  <sub-layout title="생각펼치기" :tooltip="tooltip">
     <template v-slot:left>
       <left-menu-button icon="mdi-bookmark-check-outline" text="제출하기" id="canvas-submit" />
     </template>
 
     <!-- 캔버스 -->
     <canvas id="center-canvas" />
-
-    <div id="mindmap-tool-bar">
-      <div class="mindmap-tools" v-ripple><div id="mindmap-tool-zoomin" /></div>
-      <div class="mindmap-tools" v-ripple><div id="mindmap-tool-zoomout" /></div>
-    </div>
 
     <finish-overlay
       v-show="submitted"
@@ -33,6 +28,7 @@ import axios from 'axios';
 export default {
   data() {
     return {
+      tooltip: '떠오르는 단어를 적어 커다란 나무를 완성해보자!',
       canvas: document.getElementById(''),
       ctx: [],
       templateType: this.$route.params.template,
@@ -47,10 +43,18 @@ export default {
 
       lightPos: { x: 0, y: 0 },
 
+      touchmode: 'drag',
+
       bookImg: new Image(),
       leaf1Img: new Image(),
       leaf2Img: new Image(),
       submitted: false,
+
+      pinch: {
+        x1: -1, y1: 0, x2: 0, y2: 0,
+      },
+      beforeMode: '',
+      ifOneFinger: true,
     };
   },
 
@@ -62,27 +66,30 @@ export default {
     this.canvas.height = this.canvas.clientHeight;
 
     this.canvas.addEventListener('touchstart', (e) => {
-      this.startDraw(e);
+      if (e.changedTouches.length === 2) {
+        this.pinchStart(e);
+      } else this.startDraw(e);
     }, false);
     this.canvas.addEventListener('touchmove', (e) => {
-      this.draw(e);
+      if (e.changedTouches.length === 2) {
+        this.pinchMove(e);
+        this.touchmode = 'pinch';
+      } else this.draw(e);
     }, false);
     // eslint-disable-next-line no-unused-vars
     this.canvas.addEventListener('touchend', (e) => {
-      this.finishDraw(e);
+      if (e.changedTouches.length === 2) {
+        this.pinchFinish(e);
+        this.touchmode = 'drag';
+
+        this.startPos.x = -1;
+        this.startPos.y = -1;
+      } else this.finishDraw(e);
     }, false);
 
     const submitBtn = document.querySelector('#canvas-submit');
-    const zoomin = document.querySelector('#mindmap-tool-zoomin');
-    const zoomout = document.querySelector('#mindmap-tool-zoomout');
     if (submitBtn) {
       submitBtn.addEventListener('click', this.submitBtnClicked);
-    }
-    if (zoomin) {
-      zoomin.addEventListener('click', this.zoomin);
-    }
-    if (zoomout) {
-      zoomout.addEventListener('click', this.zoomout);
     }
 
     this.canvas.width = this.canvas.clientWidth;
@@ -95,6 +102,7 @@ export default {
     } else if (this.templateType === 2) {
       this.ctx[0].scale(0.4, 0.4);
       this.ctx[0].scale(1, 1);
+      this.scale = 0.4;
       this.padding.x = this.canvas.width / 2 - this.canvas.width / (0.4 * 2);
       this.padding.y = -this.canvas.height * 0.6;
     }
@@ -111,6 +119,90 @@ export default {
   },
 
   methods: {
+    pinchStart(event) {
+      event.preventDefault();
+      const touch1 = event.changedTouches[0];
+      const touch2 = event.changedTouches[1];
+
+      this.pinch.x1 = touch1.clientX;
+      this.pinch.y1 = touch1.clientY;
+      this.pinch.x2 = touch2.clientX;
+      this.pinch.y2 = touch2.clientY;
+
+      // 한손가락 종료 오류 대비를 위함
+      const coors = this.getPosition(event);
+      this.startPos.x = coors.X;
+      this.startPos.y = coors.Y;
+      this.beforeMode = 'pinch';
+    },
+
+    pinchMove(event) {
+      event.preventDefault();
+      const touch1 = event.changedTouches[0];
+      const touch2 = event.changedTouches[1];
+
+      if (this.pinch.x1 === -1) {
+        this.pinch.x1 = touch1.clientX;
+        this.pinch.y1 = touch1.clientY;
+        this.pinch.x2 = touch2.clientX;
+        this.pinch.y2 = touch2.clientY;
+      }
+
+      // eslint-disable-next-line
+      const zoomSize = (Math.sqrt((touch1.clientX - this.pinch.x1) ** 2 + (touch1.clientY - this.pinch.y1) ** 2 + Math.sqrt((touch2.clientX - this.pinch.x2) ** 2 + (touch2.clientY - this.pinch.y2) ** 2))) / 2;
+      // eslint-disable-next-line
+      const zoomCenter = { x: (this.pinch.x1 + this.pinch.x2) / 2, y: (this.pinch.y1 + this.pinch.y2) / 2 };
+      // eslint-disable-next-line
+      const size1 = Math.sqrt((this.pinch.x1 - this.pinch.x2) ** 2 + (this.pinch.y1 - this.pinch.y2) ** 2);
+      // eslint-disable-next-line
+      const size2 = Math.sqrt((touch1.clientX - touch2.clientX) ** 2 + (touch1.clientY - touch2.clientY) ** 2);
+      const zoomRatio = size2 / size1;
+
+      this.ctx[0].scale(zoomRatio, zoomRatio);
+      this.ctx[0].scale(1, 1);
+      this.scale *= zoomRatio;
+
+      const moveX = zoomCenter.x / zoomRatio - zoomCenter.x;
+      const moveY = zoomCenter.y / zoomRatio - zoomCenter.y;
+      this.padding.x -= moveX;
+      this.padding.y -= moveY;
+
+      this.pinch.x1 = touch1.clientX;
+      this.pinch.y1 = touch1.clientY;
+      this.pinch.x2 = touch2.clientX;
+      this.pinch.y2 = touch2.clientY;
+      this.reDrawAll(this.padding.x, this.padding.y);
+      this.beforeMode = 'pinch';
+    },
+
+    pinchFinish(event) {
+      event.preventDefault();
+      const touch1 = event.changedTouches[0];
+      const touch2 = event.changedTouches[1];
+
+      // eslint-disable-next-line
+      const zoomSize = (Math.sqrt((touch1.clientX - this.pinch.x1) ** 2 + (touch1.clientY - this.pinch.y1) ** 2) + Math.sqrt((touch2.clientX - this.pinch.x2) ** 2 + (touch2.clientY - this.pinch.y2) ** 2)) / 2;
+      // eslint-disable-next-line
+      // const zoomCenter = { x: (touch1.clientX + touch2.clientX) / 2, y: (touch1.clientY + touch2.clientY) / 2 };
+      // eslint-disable-next-line
+      const size1 = Math.sqrt((this.pinch.x1 - this.pinch.x2) ** 2 + (this.pinch.y1 - this.pinch.y2) ** 2);
+      // eslint-disable-next-line
+      const size2 = Math.sqrt((touch1.clientX - touch2.clientX) ** 2 + (touch1.clientY - touch2.clientY) ** 2);
+      const zoomRatio = size2 / size1;
+
+      this.ctx[0].scale(zoomRatio, zoomRatio);
+      this.ctx[0].scale(1, 1);
+      this.scale *= zoomRatio;
+
+      this.pinch.x1 = -1;
+      this.pinch.y1 = 0;
+      this.pinch.x2 = 0;
+      this.pinch.y2 = 0;
+      this.reDrawAll(this.padding.x, this.padding.y);
+      this.beforeMode = 'pinch';
+      this.ifOneFinger = true;
+    },
+
     initSetting(changeX, changeY) {
       const paddingX = changeX + this.padding.x;
       const paddingY = changeY + this.padding.y;
@@ -119,23 +211,6 @@ export default {
       if (this.templateType === 1) {
         const width = this.canvas.width / 2;
         const height = this.canvas.height / 2;
-
-        // 땅 그리기
-        this.ctx[0].fillStyle = '#44A508';
-        this.ctx[0].beginPath();
-        this.ctx[0].moveTo(width - 1500 - paddingX, height + 1000 - paddingY);
-        this.ctx[0].lineTo(width - 1500 - paddingX, height + 400 - paddingY);
-        // eslint-disable-next-line max-len
-        this.ctx[0].bezierCurveTo(width - 500 - paddingX, height + 100 - paddingY, width + 500 - paddingX, height + 100 - paddingY, width + 1500 - paddingX, height + 400 - paddingY);
-        this.ctx[0].lineTo(width + 1500 - paddingX, height + 1000 - paddingY);
-        this.ctx[0].closePath();
-        this.ctx[0].fill();
-
-        // 구름 1 그리기
-        this.drawCloud(400, 300, paddingX, paddingY);
-
-        // 구름 2 그리기
-        this.drawCloud(-400, 600, paddingX, paddingY);
 
         // 템플릿(나무) 그리기
         this.ctx[0].beginPath();
@@ -155,11 +230,11 @@ export default {
         this.ctx[0].beginPath();
         this.ctx[0].fillStyle = '#836d4b';
         // eslint-disable-next-line max-len
-        this.ctx[0].fillRect(width - 20 - paddingX, height * 0.9 - paddingY + height / 3, 40, 140);
+        this.ctx[0].fillRect(width - 20 - paddingX, height * 0.9 - paddingY + 140, 40, 160);
         this.ctx[0].lineWidth = 12;
         this.ctx[0].strokeStyle = '#836d4b';
         // eslint-disable-next-line max-len
-        this.ctx[0].arc(width - paddingX, height * 0.9 - paddingY, height / 3, Math.PI * 0.25, Math.PI * 0.75);
+        this.ctx[0].arc(width - paddingX, height * 0.9 - paddingY, 140, Math.PI * 0.25, Math.PI * 0.75);
         this.ctx[0].stroke();
 
         // 책 이미지 넣기
@@ -198,46 +273,51 @@ export default {
     },
 
     startDraw(event) {
-      this.selectedNode = -1;
-      const coors = this.getPosition(event);
-      this.startPos.x = coors.X;
-      this.startPos.y = coors.Y;
+      if (this.beforeMode === 'pinch') this.beforeMode = 'drag';
+      if (this.startPos.x === -1) this.ifOneFinger = true;
+      else this.ifOneFinger = false;
+
+      if (this.ifOneFinger === true) {
+        const coors = this.getPosition(event);
+        this.startPos.x = coors.X;
+        this.startPos.y = coors.Y;
+      }
     },
 
     draw(event) {
-      const coors = this.getPosition(event);
-      const changeX = this.startPos.x - coors.X;
-      const changeY = this.startPos.y - coors.Y;
+      if (this.beforeMode !== 'pinch' && this.ifOneFinger === true) {
+        const coors = this.getPosition(event);
+        const changeX = this.startPos.x - coors.X;
+        const changeY = this.startPos.y - coors.Y;
 
-      this.ctx[0].clearRect(0, 0, 100000, 100000);
-      this.ctx[0].beginPath();
+        this.ctx[0].clearRect(0, 0, 100000, 100000);
+        this.ctx[0].beginPath();
 
-      // edge 먼저 그리기
-      // eslint-disable-next-line no-plusplus
-      for (let i = 0; i < this.edges.length; i++) {
-        let from = this.nodes.find((element) => element.id === this.edges[i].from);
-        let to = this.nodes.find((element) => element.id === this.edges[i].to);
-        if (this.edges[i].from === -1) from = { x: this.edgePos.x, y: this.edgePos.y };
-        else if (this.edges[i].to === -1) to = { x: this.edgePos.x, y: this.edgePos.y };
-        // eslint-disable-next-line max-len
-        this.drawEdge(from.x - this.padding.x - changeX, from.y - this.padding.y - changeY, to.x - this.padding.x - changeX, to.y - this.padding.y - changeY);
-      }
-
-      // 템플릿 그리기
-      this.initSetting(changeX, changeY);
-
-      // node 그리기
-      // eslint-disable-next-line no-plusplus
-      for (let i = 0; i < this.nodes.length; i++) {
-        // eslint-disable-next-line max-len
-        this.makeNode(this.nodes[i].x - this.padding.x - changeX, this.nodes[i].y - this.padding.y - changeY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+        this.reDrawAll(this.padding.x + changeX, this.padding.y + changeY);
       }
     },
 
     finishDraw(event) {
-      const coors = this.getPosition(event);
-      this.padding.x += this.startPos.x - coors.X;
-      this.padding.y += this.startPos.y - coors.Y;
+      if (this.touchmode === 'drag') {
+        if (this.beforeMode !== 'pinch' && this.ifOneFinger === true) {
+          const coors = this.getPosition(event);
+          this.padding.x += this.startPos.x - coors.X;
+          this.padding.y += this.startPos.y - coors.Y;
+          this.startPos.x = -1;
+          this.startPos.y = -1;
+        } else this.ifOneFinger = true;
+      } else if (this.touchmode === 'pinch') {
+        this.beforeMode = 'pinch';
+        this.touchmode = 'drag';
+
+        this.pinch.x1 = -1;
+        this.pinch.y1 = 0;
+        this.pinch.x2 = 0;
+        this.pinch.y2 = 0;
+
+        this.startPos.x = -1;
+        this.startPos.y = -1;
+      }
     },
 
     reDrawAll(paddingX, paddingY) {
@@ -245,6 +325,25 @@ export default {
       this.ctx[0].beginPath();
 
       if (this.templateType === 1) {
+        const width = this.canvas.width / 2;
+        const height = this.canvas.height / 2;
+        // 땅 그리기
+        this.ctx[0].fillStyle = '#44A508';
+        this.ctx[0].beginPath();
+        this.ctx[0].moveTo(width - 1500 - paddingX, height + 1000 - paddingY);
+        this.ctx[0].lineTo(width - 1500 - paddingX, height + 400 - paddingY);
+        // eslint-disable-next-line max-len
+        this.ctx[0].bezierCurveTo(width - 500 - paddingX, height + 100 - paddingY, width + 500 - paddingX, height + 100 - paddingY, width + 1500 - paddingX, height + 400 - paddingY);
+        this.ctx[0].lineTo(width + 1500 - paddingX, height + 1000 - paddingY);
+        this.ctx[0].closePath();
+        this.ctx[0].fill();
+
+        // 구름 1 그리기
+        this.drawCloud(400, 300, paddingX, paddingY);
+
+        // 구름 2 그리기
+        this.drawCloud(-400, 600, paddingX, paddingY);
+
         // edge 먼저 그리기
         // eslint-disable-next-line no-plusplus
         for (let i = 0; i < this.edges.length; i++) {
@@ -260,10 +359,19 @@ export default {
         this.initSetting(paddingX - this.padding.x, paddingY - this.padding.y);
 
         // node 그리기
+        // image 노드 먼저 그리기
+        for (let i = 0; i < this.nodes.length; i += 1) {
+          if (this.nodes[i].type === 43) {
+            // eslint-disable-next-line
+            this.makeNode(this.nodes[i].x - paddingX, this.nodes[i].y - paddingY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+          }
+        }
         // eslint-disable-next-line no-plusplus
         for (let i = 0; i < this.nodes.length; i++) {
-          // eslint-disable-next-line max-len
-          this.makeNode(this.nodes[i].x - paddingX, this.nodes[i].y - paddingY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+          if (this.nodes[i].type !== 43) {
+            // eslint-disable-next-line max-len
+            this.makeNode(this.nodes[i].x - paddingX, this.nodes[i].y - paddingY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+          }
         }
       } else if (this.templateType === 2) {
         this.lightPos.x = this.canvas.width / 2 - paddingX;
@@ -286,15 +394,25 @@ export default {
         this.ctx[0].drawImage(this.bookImg, this.canvas.width / 2 - paddingX - 75, 0 - paddingY, 150, 200);
 
         // node 그리기
+        // image 노드 먼저 그리기
+        for (let i = 0; i < this.nodes.length; i += 1) {
+          if (this.nodes[i].type === 43) {
+            // eslint-disable-next-line
+            this.makeNode(this.nodes[i].x - paddingX, this.nodes[i].y - paddingY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+          }
+        }
         // eslint-disable-next-line no-plusplus
         for (let i = 0; i < this.nodes.length; i++) {
-          // eslint-disable-next-line max-len
-          this.makeNode(this.nodes[i].x - paddingX, this.nodes[i].y - paddingY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+          if (this.nodes[i].type !== 43) {
+            // eslint-disable-next-line max-len
+            this.makeNode(this.nodes[i].x - paddingX, this.nodes[i].y - paddingY, this.nodes[i].size, this.nodes[i].type, this.nodes[i].label);
+          }
         }
       }
     },
 
     getPosition(event) {
+      event.preventDefault();
       const touches = event.changedTouches;
       const x = (touches[0].clientX - this.canvas.offsetLeft);
       const y = (touches[0].clientY - this.canvas.offsetTop);
@@ -303,15 +421,15 @@ export default {
     },
 
     makeNode(x, y, size, type, text) {
-      let fontsize = size / 4;
+      let fontsize = size / 3;
       let linesize = 1;
       let textLength = 0;
-      if (text !== undefined) {
+      if (text !== undefined && type !== 43) {
         textLength = this.getTextLength(text);
-        if (textLength > 16) fontsize /= 2;
-        else if (textLength > 10) fontsize = size / (textLength / 2 - 1);
-        linesize = Math.floor(textLength / 20) + 1;
-        if (textLength % 20 === 0) linesize -= 1;
+        if (textLength > 12) fontsize /= 2;
+        else if (textLength > 8) fontsize = size / (textLength / 2 - 1);
+        linesize = Math.floor(textLength / 16) + 1;
+        if (textLength % 16 === 0) linesize -= 1;
       }
 
       if (this.templateType === 1) {
@@ -347,13 +465,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 20 || i === text.length - 1) {
+              if (stringLength === 16 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
@@ -396,13 +514,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 20 || i === text.length - 1) {
+              if (stringLength === 16 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
@@ -448,13 +566,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 20 || i === text.length - 1) {
+              if (stringLength === 16 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
@@ -503,13 +621,13 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 20 || i === text.length - 1) {
+              if (stringLength === 16 || i === text.length - 1) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
                 this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
                 stringLength = 0;
@@ -518,8 +636,35 @@ export default {
               }
             }
           } else {
-            this.ctx[0].fillText(text, x - (fontsize / 2) * (textLength / 2), y + fontsize / 4);
+            // eslint-disable-next-line
+            this.ctx[0].fillText(text, x - (fontsize / 2) * ((textLength - 1) / 2), y + fontsize / 4);
           }
+        } else if (type === 43) {
+          // 사진 노드 그리기
+          const image = new Image();
+          image.src = text;
+
+          this.ctx[0].drawImage(image, x - size * 0.84, y - size * 0.6, size * 1.6, size * 1.2);
+          // 테두리 그리기
+          this.ctx[0].beginPath();
+          // 기본 세팅
+          this.ctx[0].strokeStyle = '#fffdf2';
+          this.ctx[0].lineWidth = size / 3.3;
+          this.ctx[0].lineCap = 'round';
+
+          this.ctx[0].moveTo(x, y - size / 2);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x - size / 4, y - size * 0.9, x - size, y - size * 0.6, x - size * 0.8, y - size * 0.2);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x - size * 1.3, y + size / 4, x - size / 2, y + size * 0.8, x - size / 4, y + size / 2);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size / 2, y + size * 0.9, x + size * 1, y + size * 0.3, x + size * 0.75, y - 5);
+
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(x + size, y - size / 2, x + size * 0.2, y - size * 0.9, x, y - size / 2);
+          this.ctx[0].stroke();
         }
       } else if (this.templateType === 2) {
         // eslint-disable-next-line
@@ -538,6 +683,7 @@ export default {
           this.ctx[0].fillStyle = 'white';
           this.ctx[0].shadowOffsetX = 0;
           this.ctx[0].shadowOffsetY = 0;
+          this.ctx[0].shadowBlur = 0;
           this.ctx[0].beginPath();
           // eslint-disable-next-line max-len
           this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
@@ -568,15 +714,15 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 20 || i === text.length - 1) {
+              if (stringLength === 16 || i === text.length - 1) {
                 // eslint-disable-next-line
-                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
-                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
@@ -598,6 +744,7 @@ export default {
           this.ctx[0].fillStyle = 'white';
           this.ctx[0].shadowOffsetX = 0;
           this.ctx[0].shadowOffsetY = 0;
+          this.ctx[0].shadowBlur = 0;
           this.ctx[0].beginPath();
           // eslint-disable-next-line max-len
           this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
@@ -628,15 +775,15 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 20 || i === text.length - 1) {
+              if (stringLength === 16 || i === text.length - 1) {
                 // eslint-disable-next-line
-                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
-                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
@@ -658,6 +805,7 @@ export default {
           this.ctx[0].fillStyle = 'white';
           this.ctx[0].shadowOffsetX = 0;
           this.ctx[0].shadowOffsetY = 0;
+          this.ctx[0].shadowBlur = 0;
           this.ctx[0].beginPath();
           // eslint-disable-next-line max-len
           this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
@@ -688,15 +836,15 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 20 || i === text.length - 1) {
+              if (stringLength === 16 || i === text.length - 1) {
                 // eslint-disable-next-line
-                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
-                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
@@ -718,6 +866,7 @@ export default {
           this.ctx[0].fillStyle = 'white';
           this.ctx[0].shadowOffsetX = 0;
           this.ctx[0].shadowOffsetY = 0;
+          this.ctx[0].shadowBlur = 0;
           this.ctx[0].beginPath();
           // eslint-disable-next-line max-len
           this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
@@ -748,15 +897,15 @@ export default {
             for (let i = 0; i < text.length; i += 1) {
               if (escape(text.charAt(i)).length === 6) stringLength += 1;
               stringLength += 1;
-              if (stringLength === 20 || i === text.length - 1) {
+              if (stringLength === 16 || i === text.length - 1) {
                 // eslint-disable-next-line
-                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
-              } else if (stringLength === 19 && escape(text.charAt(i + 1).length === 6)) {
+              } else if (stringLength === 15 && escape(text.charAt(i + 1).length === 6)) {
                 // eslint-disable-next-line
-                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine);
+                this.ctx[0].fillText(text.substring(stringSIndex, i + 1), x - size / 1.5 + fontsize / 2, y - ((linesize - 1) * 1.5 * fontsize) / 2 + fontsize * 1.5 * stringLine + fontsize / 4);
                 stringLength = 0;
                 stringSIndex = i + 1;
                 stringLine += 1;
@@ -765,6 +914,41 @@ export default {
           } else {
             this.ctx[0].fillText(text, x - (fontsize / 2) * (textLength / 2), y + fontsize / 4);
           }
+        } else if (type === 43) {
+          // 사진 노드 그리기
+          const image = new Image();
+          image.src = text;
+
+          this.ctx[0].drawImage(image, x - size, y - size * 0.8, size * 2, size * 1.6);
+          // 테두리 그리기
+          this.ctx[0].beginPath();
+          // 기본 세팅
+          this.ctx[0].strokeStyle = '#fffdf2';
+          this.ctx[0].lineWidth = size / 3.3;
+          this.ctx[0].lineCap = 'round';
+
+          this.ctx[0].beginPath();
+          this.ctx[0].arc(x, y, size * 1.2, 0, Math.PI * 2);
+          this.ctx[0].stroke();
+
+          this.ctx[0].fillStyle = 'white';
+          this.ctx[0].beginPath();
+          // eslint-disable-next-line max-len
+          this.ctx[0].translate(x + r * Math.cos(lightRad), y - r * Math.sin(lightRad));
+          this.ctx[0].rotate(-lightRad);
+          this.ctx[0].moveTo(0, -size * 0.15);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(-size * 0.05, -size * 0.15, -size * 0.1, -size * 0.075, -size * 0.1, 0);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(-size * 0.1, size * 0.075, -size * 0.05, size * 0.15, 0, size * 0.15);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(size * 0.05, size * 0.15, size * 0.1, size * 0.075, size * 0.1, 0);
+          // eslint-disable-next-line max-len
+          this.ctx[0].bezierCurveTo(size * 0.1, -size * 0.075, size * 0.05, -size * 0.15, 0, -size * 0.15);
+          this.ctx[0].fill();
+          this.ctx[0].rotate(+lightRad);
+          // eslint-disable-next-line max-len
+          this.ctx[0].translate(-(x + r * Math.cos(lightRad)), -(y - r * Math.sin(lightRad)));
         }
       }
     },
@@ -784,24 +968,6 @@ export default {
         this.ctx[0].strokeStyle = '#9A8653';
         this.ctx[0].lineTo(x2, y2);
         this.ctx[0].stroke();
-      }
-    },
-
-    zoomin() {
-      if (this.canvasScale < 3) {
-        this.canvasScale += 0.1;
-        this.scale *= 1.1;
-        this.ctx[0].scale(1.1, 1.1);
-        this.reDrawAll(this.padding.x, this.padding.y);
-      }
-    },
-
-    zoomout() {
-      if (this.canvasScale > 0.1) {
-        this.canvasScale -= 0.1;
-        this.scale *= 0.9;
-        this.ctx[0].scale(0.9, 0.9);
-        this.reDrawAll(this.padding.x, this.padding.y);
       }
     },
 
@@ -877,14 +1043,18 @@ export default {
     },
 
     submitBtnClicked() {
-      console.log(this.$route.params.aiSupportCount);
       const data = {
         // eslint-disable-next-line
-        nodes: this.nodes, edges: this.edges, templateType: this.templateType, bookId: this.$route.params.bookId, bookTitle: this.$route.params.bookTitle, aiSupportCount: this.$route.params.aiSupportCount,
+        nodes: this.nodes,
+        edges: this.edges,
+        templateType: this.templateType,
       };
+      console.log(this.$route.params.bookId, data);
 
       axios.post('/api/user/work/save', {
-        bid: this.$route.params.bookId, type: 0, thumbnail: btoa('string'), content: JSON.stringify(data),
+        bid: this.$route.params.bookId,
+        type: 0,
+        content: JSON.stringify(data),
       }).then(() => {
         this.submitted = true;
       }).catch((err) => {
@@ -953,43 +1123,5 @@ export default {
   border-radius: 1vw;
   top: 0;
   left: 0;
-}
-
-#mindmap-tool-bar {
-  position: absolute;
-  width: 6vw;
-  height: 13vw;
-  background: rgba(184, 182, 172, 0.5);
-  z-index: 20;
-  border-radius: 1vw;
-  top: calc(50% - 6.5vw);
-  left: calc(100% - 7vw);
-}
-.mindmap-tools {
-  width: 5vw;
-  height: 5vw;
-  padding: calc(0.5vw - 1.5px);
-  margin: 0.5vw;
-  margin-top: 1vw;
-  margin-bottom: 1vw;
-  background: rgba(184, 182, 172, 0.8);
-  border: 3px solid rgba(184, 182, 172, 0.8);
-  border-radius: 1vw;
-}
-#mindmap-tool-zoomin {
-  width: 4vw;
-  height: 4vw;
-  background-image: url('../../../assets/img/views/activity/mindmap/zoom-in.png');
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: center center;
-}
-#mindmap-tool-zoomout {
-  width: 4vw;
-  height: 4vw;
-  background-image: url('../../../assets/img/views/activity/mindmap/zoom-out.png');
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: center center;
 }
 </style>

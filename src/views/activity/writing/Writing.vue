@@ -2,6 +2,7 @@
   <sub-layout
     title="그림설명하기"
     :tooltip="book ? book.title : '책 선택 안 됨'"
+    :scrollable="true"
   >
     <template v-slot:left>
       <left-menu-button
@@ -15,10 +16,20 @@
         @click.native="reset"
       />
     </template>
+    <finish-overlay
+      v-show="submitted"
+      :success="true"
+      message="좋았어!"
+    >
+      <overlay-button
+        text="활동 마치기"
+        @click.native="$router.replace('/')"
+      />
+    </finish-overlay>
     <v-form
       ref="content"
-      class="scroll"
       lazy-validation
+      class="wrapper"
     >
       <main-image
         :src="imageSrc"
@@ -32,19 +43,9 @@
         solo
         class="description"
         placeholder="여기를 눌러서 이 그림에 맞는 설명을 써 줘!"
-        :rules="[v => (!!v && v.length > 50) || '설명이 너무 짧은 것 같아!']"
+        :rules="[v => (!!v && v.length > 20) || '설명이 너무 짧은 것 같아!']"
       />
     </v-form>
-    <finish-overlay
-      v-show="submitted"
-      :success="true"
-      message="좋았어!"
-    >
-      <overlay-button
-        text="활동 마치기"
-        @click.native="$router.replace('/')"
-      />
-    </finish-overlay>
   </sub-layout>
 </template>
 
@@ -111,11 +112,9 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.scroll {
-  flex: 1;
+.wrapper {
   display: flex;
   flex-flow: column;
-  overflow-y: scroll;
   align-items: center;
 }
 
@@ -126,6 +125,7 @@ export default {
 .description {
   padding-right: 1vw;
   width: 80%;
+  font-size: 3vh;
 
   ::v-deep .v-input__slot {
     background: none !important;

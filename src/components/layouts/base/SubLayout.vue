@@ -43,6 +43,12 @@
           <div class="hole" />
           <div class="hole" />
         </div>
+        <div
+          id="content-wrapper"
+          :class="{scrollable: scrollable}"
+        >
+          <slot v-if="!appLoading && !appError" />
+        </div>
         <v-overlay
           v-show="loadingOverlay"
           absolute
@@ -65,13 +71,14 @@
           :value="appError"
         >
           <div class="error-overlay">
-            <v-icon x-large>
-              mdi-alert-decagram
-            </v-icon>
+            <v-img
+              src="@/assets/noBooks.png"
+              height="30vh"
+              contain
+            />
             <h1>{{ errorMessage }}</h1>
           </div>
         </v-overlay>
-        <slot v-if="!appLoading && !appError" />
       </div>
     </div>
   </base-layout>
@@ -96,6 +103,10 @@ export default {
       type: Boolean,
       default: true,
     },
+    scrollable: {
+      type: Boolean,
+      default: false,
+    },
   },
   computed: {
     appLoading() {
@@ -111,7 +122,7 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 #content {
   position: relative;
   flex: 1;
@@ -162,6 +173,17 @@ export default {
   display: flex;
   flex-flow: column;
   min-height: 0;
+}
+
+#content-wrapper {
+  width: 100%;
+  display: flex;
+  flex-flow: column;
+  flex: 1;
+
+  &.scrollable {
+    overflow-y: scroll;
+  }
 }
 
 #holes {
