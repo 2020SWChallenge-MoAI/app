@@ -8,7 +8,7 @@
     <canvas id="center-canvas" />
 
     <input
-      id="input-test"
+      id="input-hidden"
       v-model="selectedNodeLabel"
       @keyup.enter="enter"
       autocomplete="off"
@@ -229,24 +229,13 @@ export default {
     const finishBtn = document.querySelector('#canvas-finish');
     const aiSupportBtn = document.querySelector('#ai-background');
     const aiHelp = document.querySelector('#aiHelp');
-    if (penBtn) {
-      penBtn.addEventListener('click', this.modePen);
-    }
-    if (selectBtn) {
-      selectBtn.addEventListener('click', this.modeSelect);
-    }
-    if (deleteBtn) {
-      deleteBtn.addEventListener('click', this.deleteNode);
-    }
-    if (finishBtn) {
-      finishBtn.addEventListener('click', this.finishBtnClicked);
-    }
-    if (aiSupportBtn) {
-      aiSupportBtn.addEventListener('click', this.aiSupportBtnClicked);
-    }
-    if (aiHelp) {
-      aiHelp.addEventListener('click', this.aiHelpSelected);
-    }
+
+    if (penBtn) penBtn.addEventListener('click', this.modePen);
+    if (selectBtn) selectBtn.addEventListener('click', this.modeSelect);
+    if (deleteBtn) deleteBtn.addEventListener('click', this.deleteNode);
+    if (finishBtn) finishBtn.addEventListener('click', this.finishBtnClicked);
+    if (aiSupportBtn) aiSupportBtn.addEventListener('click', this.aiSupportBtnClicked);
+    if (aiHelp) aiHelp.addEventListener('click', this.aiHelpSelected);
 
     this.ctx[0].lineJoin = 'round';
     this.ctx[0].scale(0.9, 0.9);
@@ -259,161 +248,40 @@ export default {
 
     const width = this.canvas.width / 2;
     const height = this.canvas.height / 2;
-    const forTemplateBid = this.$route.params.bookId;
-    const storyBooks = [8, 10, 21, 22];
-    const actionBooks = [38, 40, 41, 90];
-    // const infoBooks = [31];
+    
+    this.edges.push({
+      id: 1, from: 0, to: 1,
+    });
+    this.edges.push({
+      id: 2, from: 0, to: 2,
+    });
+    this.edges.push({
+      id: 3, from: 0, to: 3,
+    });
+    this.edges.push({
+      id: 4, from: 0, to: 4,
+    });
 
-    if (storyBooks.includes(forTemplateBid)) {
-      this.edges.push({
-        id: 1, from: 0, to: 1,
-      });
-      this.edges.push({
-        id: 2, from: 0, to: 2,
-      });
-      this.edges.push({
-        id: 3, from: 0, to: 3,
-      });
-      this.edges.push({
-        id: 4, from: 0, to: 4,
-      });
-      // 동화책
-      if (this.templateType === 1) {
-        this.nodes.push({
-          id: 0, x: width, y: height, size: 125, type: -1, link: true, parent: -1, ai: '',
-        });
+    this.nodes.push({
+      id: 0, x: width, y: height, size: 125, type: -1, link: true, parent: -1, ai: '',
+    });
 
-        this.nodes.push({
-          // eslint-disable-next-line max-len
-          id: 1, label: '등장인물', x: width - 240, y: height - 100, size: 80, type: 0, link: true, parent: 0, ai: '',
-        });
-        this.nodes.push({
-          // eslint-disable-next-line max-len
-          id: 2, label: '줄거리', x: width + 240, y: height - 100, size: 80, type: 1, link: true, parent: 0, ai: '',
-        });
-        this.nodes.push({
-          // eslint-disable-next-line max-len
-          id: 3, label: '느낀점', x: width - 240, y: height + 100, size: 80, type: 2, link: true, parent: 0, ai: '',
-        });
-        this.nodes.push({
-          // eslint-disable-next-line max-len
-          id: 4, label: '인상장면', x: width + 240, y: height + 100, size: 80, type: 3, link: true, parent: 0, ai: '',
-        });
-      } else if (this.templateType === 2) {
-        this.nodes.push({
-          id: 0, x: width, y: 0 + 100, size: 150, type: -1, link: true, parent: -1, ai: '',
-        });
-
-        this.nodes.push({
-          // eslint-disable-next-line max-len
-          id: 1, label: '등장인물', x: width - 320, y: 120, size: 80, type: 0, link: true, parent: 0, ai: '',
-        });
-        this.nodes.push({
-          // eslint-disable-next-line max-len
-          id: 2, label: '줄거리', x: width - 150, y: 300, size: 80, type: 1, link: true, parent: 0, ai: '',
-        });
-        this.nodes.push({
-          // eslint-disable-next-line max-len
-          id: 3, label: '느낀점', x: width + 120, y: 250, size: 80, type: 2, link: true, parent: 0, ai: '',
-        });
-        this.nodes.push({
-          // eslint-disable-next-line max-len
-          id: 4, label: '인상장면', x: width + 300, y: 150, size: 80, type: 3, link: true, parent: 0, ai: '',
-        });
-      }
-    } else if (actionBooks.includes(forTemplateBid)) {
-      this.edges.push({
-        id: 1, from: 0, to: 1,
-      });
-      this.edges.push({
-        id: 2, from: 0, to: 2,
-      });
-      this.edges.push({
-        id: 3, from: 0, to: 3,
-      });
-      this.edges.push({
-        id: 4, from: 0, to: 4,
-      });
-      this.edges.push({
-        id: 5, from: 0, to: 5,
-      });
-      // 위인전 (사건)
-      if (this.templateType === 1) {
-        this.nodes.push({
-          id: 0, x: width, y: height, size: 125, type: -1, link: true, parent: -1, ai: '',
-        });
-
-        this.nodes.push({
-          // eslint-disable-next-line max-len
-          id: 1, label: '등장인물', x: width - 300, y: height, size: 80, type: 0, link: true, parent: 0, ai: '',
-        });
-        this.nodes.push({
-          // eslint-disable-next-line max-len
-          id: 2, label: '줄거리', x: width + 240, y: height - 100, size: 80, type: 1, link: true, parent: 0, ai: '',
-        });
-        this.nodes.push({
-          // eslint-disable-next-line max-len
-          id: 3, label: '느낀점', x: width - 240, y: height + 150, size: 80, type: 2, link: true, parent: 0, ai: '',
-        });
-        this.nodes.push({
-          // eslint-disable-next-line max-len
-          id: 4, label: '인상장면', x: width + 240, y: height + 100, size: 80, type: 3, link: true, parent: 0, ai: '',
-        });
-        this.nodes.push({
-          // eslint-disable-next-line max-len
-          id: 5, label: '사건', x: width - 200, y: height - 150, size: 80, type: 3, link: true, parent: 0, ai: '',
-        });
-      } else if (this.templateType === 2) {
-        this.nodes.push({
-          id: 0, x: width, y: 0 + 100, size: 150, type: -1, link: true, parent: -1, ai: '',
-        });
-
-        this.nodes.push({
-          // eslint-disable-next-line max-len
-          id: 1, label: '등장인물', x: width - 320, y: 120, size: 80, type: 0, link: true, parent: 0, ai: '',
-        });
-        this.nodes.push({
-          // eslint-disable-next-line max-len
-          id: 2, label: '줄거리', x: width - 150, y: 300, size: 80, type: 1, link: true, parent: 0, ai: '',
-        });
-        this.nodes.push({
-          // eslint-disable-next-line max-len
-          id: 3, label: '느낀점', x: width + 120, y: 250, size: 80, type: 2, link: true, parent: 0, ai: '',
-        });
-        this.nodes.push({
-          // eslint-disable-next-line max-len
-          id: 4, label: '인상장면', x: width + 300, y: 150, size: 80, type: 3, link: true, parent: 0, ai: '',
-        });
-        this.nodes.push({
-          // eslint-disable-next-line max-len
-          id: 5, label: '사건', x: width + 30, y: 400, size: 80, type: 3, link: true, parent: 0, ai: '',
-        });
-      }
-    } else {
-      this.edges.push({
-        id: 1, from: 0, to: 1,
-      });
-      // 비문학 및 다른 선정되지 않은 책
-      if (this.templateType === 1) {
-        this.nodes.push({
-          id: 0, x: width, y: height, size: 125, type: -1, link: true, parent: -1, ai: '',
-        });
-
-        this.nodes.push({
-          // eslint-disable-next-line max-len
-          id: 1, label: '느낀점', x: width - 240, y: height + 100, size: 80, type: 2, link: true, parent: 0, ai: '',
-        });
-      } else if (this.templateType === 2) {
-        this.nodes.push({
-          id: 0, x: width, y: 0 + 100, size: 150, type: -1, link: true, parent: -1, ai: '',
-        });
-
-        this.nodes.push({
-          // eslint-disable-next-line max-len
-          id: 1, label: '느낀점', x: width + 120, y: 250, size: 80, type: 2, link: true, parent: 0, ai: '',
-        });
-      }
-    }
+    this.nodes.push({
+      // eslint-disable-next-line max-len
+      id: 1, label: '등장인물', x: width - 240, y: height - 100, size: 80, type: 0, link: true, parent: 0, ai: '',
+    });
+    this.nodes.push({
+      // eslint-disable-next-line max-len
+      id: 2, label: '줄거리', x: width + 240, y: height - 100, size: 80, type: 1, link: true, parent: 0, ai: '',
+    });
+    this.nodes.push({
+      // eslint-disable-next-line max-len
+      id: 3, label: '느낀점', x: width - 240, y: height + 100, size: 80, type: 2, link: true, parent: 0, ai: '',
+    });
+    this.nodes.push({
+      // eslint-disable-next-line max-len
+      id: 4, label: '인상장면', x: width + 240, y: height + 100, size: 80, type: 3, link: true, parent: 0, ai: '',
+    });
 
     setTimeout(() => {
       this.reDrawAll(this.padding.x, this.padding.y);
@@ -452,8 +320,6 @@ export default {
       }
 
       // eslint-disable-next-line
-      const zoomSize = (Math.sqrt((touch1.clientX - this.pinch.x1) ** 2 + (touch1.clientY - this.pinch.y1) ** 2 + Math.sqrt((touch2.clientX - this.pinch.x2) ** 2 + (touch2.clientY - this.pinch.y2) ** 2))) / 2;
-      // eslint-disable-next-line
       const zoomCenter = { x: (this.pinch.x1 + this.pinch.x2) / 2, y: (this.pinch.y1 + this.pinch.y2) / 2 };
       // eslint-disable-next-line
       const size1 = Math.sqrt((this.pinch.x1 - this.pinch.x2) ** 2 + (this.pinch.y1 - this.pinch.y2) ** 2);
@@ -486,8 +352,6 @@ export default {
       // eslint-disable-next-line
       const zoomSize = (Math.sqrt((touch1.clientX - this.pinch.x1) ** 2 + (touch1.clientY - this.pinch.y1) ** 2) + Math.sqrt((touch2.clientX - this.pinch.x2) ** 2 + (touch2.clientY - this.pinch.y2) ** 2)) / 2;
       // eslint-disable-next-line
-      // const zoomCenter = { x: (touch1.clientX + touch2.clientX) / 2, y: (touch1.clientY + touch2.clientY) / 2 };
-      // eslint-disable-next-line
       const size1 = Math.sqrt((this.pinch.x1 - this.pinch.x2) ** 2 + (this.pinch.y1 - this.pinch.y2) ** 2);
       // eslint-disable-next-line
       const size2 = Math.sqrt((touch1.clientX - touch2.clientX) ** 2 + (touch1.clientY - touch2.clientY) ** 2);
@@ -507,12 +371,8 @@ export default {
     },
 
     enter() {
-      this.intervals.forEach(clearInterval);
-      this.intervals.length = 0;
-      for (let t = 0; t < this.timeouts.length; t += 1) {
-        clearTimeout(this.timeouts[t]);
-        this.timeouts.splice(t, 1);
-      }
+      this.clearIntervalNTimeout();
+
       const index = this.nodes.findIndex((element) => element.id === this.popupNodeId);
       this.nodes[index].label = this.selectedNodeLabel;
       // node가 추천받은 단어인지 확인
@@ -528,7 +388,7 @@ export default {
       this.reDrawAll(this.padding.x, this.padding.y);
       this.selectedNodeLabel = '';
       this.popupNodeId = -1;
-      const htmlInput = document.querySelector('#input-test');
+      const htmlInput = document.querySelector('#input-hidden');
       htmlInput.value = '';
       htmlInput.blur();
     },
@@ -541,26 +401,6 @@ export default {
       if (this.templateType === 1) {
         const width = this.canvas.width / 2;
         const height = this.canvas.height / 2;
-
-        // 종료시 배경 그리기 (땅, 구름)
-        if (this.finish) {
-          // 땅 그리기
-          this.ctx[0].fillStyle = '#44A508';
-          this.ctx[0].beginPath();
-          this.ctx[0].moveTo(width - 1500 - paddingX, height + 1000 - paddingY);
-          this.ctx[0].lineTo(width - 1500 - paddingX, height + 400 - paddingY);
-          // eslint-disable-next-line max-len
-          this.ctx[0].bezierCurveTo(width - 500 - paddingX, height + 100 - paddingY, width + 500 - paddingX, height + 100 - paddingY, width + 1500 - paddingX, height + 400 - paddingY);
-          this.ctx[0].lineTo(width + 1500 - paddingX, height + 1000 - paddingY);
-          this.ctx[0].closePath();
-          this.ctx[0].fill();
-
-          // 구름 1 그리기
-          this.drawCloud(400, 300, paddingX, paddingY);
-
-          // 구름 2 그리기
-          this.drawCloud(-400, 600, paddingX, paddingY);
-        }
 
         // 템플릿(나무) 그리기
         this.ctx[0].beginPath();
@@ -610,13 +450,10 @@ export default {
     startDraw(event) {
       this.ctx[0].shadowOffsetX = 0;
       this.ctx[0].shadowOffsetY = 0;
-      this.intervals.forEach(clearInterval);
-      this.intervals.length = 0;
-      for (let t = 0; t < this.timeouts.length; t += 1) {
-        clearTimeout(this.timeouts[t]);
-        this.timeouts.splice(t, 1);
-      }
-      const htmlInput = document.querySelector('#input-test');
+      
+      this.clearIntervalNTimeout();
+
+      const htmlInput = document.querySelector('#input-hidden');
       this.popupNodeId = -1;
       htmlInput.blur();
       if (this.touchmode === 'pen') {
@@ -750,7 +587,7 @@ export default {
     finishDraw(event) {
       if (this.touchmode === 'pen') {
         // 초기화
-        const htmlInput = document.querySelector('#input-test');
+        const htmlInput = document.querySelector('#input-hidden');
         htmlInput.value = '';
         this.selectedNodeLabel = '';
         this.popupNodeId = -1;
@@ -930,7 +767,7 @@ export default {
           this.startPos.y = -1;
         } else this.ifOneFinger = true;
       } else if (this.touchmode === 'word') {
-        const htmlInput = document.querySelector('#input-test');
+        const htmlInput = document.querySelector('#input-hidden');
         htmlInput.value = '';
         this.selectedNodeLabel = '';
         this.popupNodeId = -1;
@@ -1012,7 +849,7 @@ export default {
           if (this.doubleSelectedTime) {
             const node = this.nodes.find((element) => element.id === this.selectedNode);
             if (node.type !== 43) {
-              const htmlInput = document.querySelector('#input-test');
+              const htmlInput = document.querySelector('#input-hidden');
               htmlInput.focus();
               this.popupNodeId = this.selectedNode;
               this.inputNodeLabel('');
@@ -1025,7 +862,7 @@ export default {
             this.doubleSelectedNode = this.selectedNode;
             setTimeout(() => {
               if (this.popupNodeId !== -1) {
-                const htmlInput = document.querySelector('#input-test');
+                const htmlInput = document.querySelector('#input-hidden');
                 htmlInput.focus();
               }
               this.doubleSelectedTime = false;
@@ -1036,7 +873,7 @@ export default {
           this.doubleSelectedNode = this.selectedNode;
           setTimeout(() => {
             if (this.popupNodeId !== -1) {
-              const htmlInput = document.querySelector('#input-test');
+              const htmlInput = document.querySelector('#input-hidden');
               htmlInput.focus();
             }
             this.doubleSelectedTime = false;
@@ -2097,13 +1934,7 @@ export default {
     },
 
     finishBtnClicked() {
-      // interval, timeout 모두 제거
-      this.intervals.forEach(clearInterval);
-      this.intervals.length = 0;
-      for (let t = 0; t < this.timeouts.length; t += 1) {
-        clearTimeout(this.timeouts[t]);
-        this.timeouts.splice(t, 1);
-      }
+      this.clearIntervalNTimeout();
 
       // 연결 안돼있는 edge 제거
       for (let i = 0; i < this.edges.length; i += 1) {
@@ -2139,12 +1970,7 @@ export default {
     },
 
     inputNodeLabel(str) {
-      this.intervals.forEach(clearInterval);
-      this.intervals.length = 0;
-      for (let t = 0; t < this.timeouts.length; t += 1) {
-        clearTimeout(this.timeouts[t]);
-        this.timeouts.splice(t, 1);
-      }
+      this.clearIntervalNTimeout();
 
       // 초기 실행
       const index = this.nodes.findIndex((element) => element.id === this.popupNodeId);
@@ -2157,6 +1983,7 @@ export default {
       // 작은 노드에서 위치 조정하기 위한 변수
       let textpadding = 0;
 
+      // 노드 크기에 맞게 글자 크기 조정 및 글 길이 조정
       const fontsize = Math.max(node.size / 8, 20);
       if (node.size < 160 && node.size > 120) textpadding = 0.5;
       else if (node.size <= 120) textpadding = 1;
@@ -2164,6 +1991,7 @@ export default {
       let linesize = Math.floor(labelLength / 20) + 1;
       if (labelLength % 20 === 0 && labelLength !== 0) linesize -= 1;
 
+      // 글 박스 그리기
       this.ctx[0].beginPath();
       this.ctx[0].strokeStyle = 'gray';
       this.ctx[0].lineWidth = 3;
@@ -2176,6 +2004,7 @@ export default {
       let stringSIndex = 0;
       let stringLength = 0;
 
+      // 글 박스에 글 그리기
       this.ctx[0].fillStyle = 'gray';
       // eslint-disable-next-line
       this.ctx[0].font = 'bold ' + fontsize + 'px Calibri';
@@ -2298,6 +2127,7 @@ export default {
         }, 300);
         this.timeouts.push(firsttime);
 
+        // 글 위치 커서 깜빡임
         const interval = setInterval(() => {
           for (let t = 0; t < this.timeouts.length; t += 1) {
             clearTimeout(this.timeouts[t]);
@@ -2332,13 +2162,24 @@ export default {
 
     getTextLength(str) {
       let len = 0;
-      for (let i = 0; i < str.length; i += 1) {
+      for (let i = 0; i < str.length; i += 1) { 
+        // 한글일 때 +2
         if (escape(str.charAt(i)).length === 6) {
           len += 1;
         }
         len += 1;
       }
       return len;
+    },
+
+    clearIntervalNTimeout() {
+      // interval, timeout 모두 제거
+      this.intervals.forEach(clearInterval);
+      this.intervals.length = 0;
+      for (let t = 0; t < this.timeouts.length; t += 1) {
+        clearTimeout(this.timeouts[t]);
+      }
+      this.timeouts.length = 0;
     },
 
     // 인상장면
@@ -2372,7 +2213,7 @@ export default {
       // eslint-disable-next-line
       if (this.popupNodeId != -1) {
         this.inputNodeLabel(this.selectedNodeLabel);
-        const htmlInput = document.querySelector('#input-test');
+        const htmlInput = document.querySelector('#input-hidden');
         htmlInput.focus();
       }
     },
@@ -2395,13 +2236,7 @@ export default {
   },
 
   beforeDestroy() {
-    // interval, timeout 모두 제거
-    this.intervals.forEach(clearInterval);
-    this.intervals.length = 0;
-    for (let t = 0; t < this.timeouts.length; t += 1) {
-      clearTimeout(this.timeouts[t]);
-      this.timeouts.splice(t, 1);
-    }
+    this.clearIntervalNTimeout();
   },
 };
 </script>
@@ -2649,14 +2484,14 @@ export default {
   border-radius: 1vw;
 }
 
-#input-test {
+#input-hidden {
   position: absolute;
   background: orange;
   top: -20vh;
   left: -20vw;
   z-index: 1;
 }
-#input-test:focus {
+#input-hidden:focus {
   outline: none;
 }
 
